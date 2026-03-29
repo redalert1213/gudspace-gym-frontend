@@ -538,8 +538,8 @@
             </button>
             <input type="file" id="photoInputMain" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)" />
             <p style="font-size:11px;color:var(--gray-3);line-height:1.6;">
-              Supported formats: JPG, PNG, GIF.<br/>
-              Photo is stored locally on this device.
+              Supported formats: JPG, JPEG, PNG, WEBP.<br/>
+              Photo is securely uploaded to the cloud.
             </p>
           </div>
 
@@ -593,6 +593,7 @@
   </div><!-- end page-main -->
 
   <script src="script.js"></script>
+  <script src="api.js"></script>
   <script>
     'use strict';
 
@@ -602,44 +603,56 @@
     let autoLogoutCountdown = null;
 
     /* ---- INIT ---- */
-    document.addEventListener('DOMContentLoaded', () => {
-      currentUser = window.GudSpace.storage.get('currentUser');
-      if (!currentUser) { window.location.href = 'login.html'; return; }
-      initPage();
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = window.GudSpace.requireAuth();
+      if (!currentUser) return;
+      await fetchAndLoadProfile();
+      startAutoLogoutTimer();
     });
 
-    function initPage() {
+    /* ---- FETCH PROFILE FROM BACKEND ---- */
+    async function fetchAndLoadProfile() {
+      try {
+        const res = await window.GudAPI.getProfile();
+        if (res.user) {
+          // Merge fresh backend data into currentUser
+          currentUser = { ...currentUser, ...res.user };
+          window.GudSpace.storage.set('currentUser', currentUser);
+        }
+      } catch (err) {
+        console.warn('Could not fetch profile from server, using cached data.');
+      }
       loadSidebar();
       loadForm();
       livePreview();
-      startAutoLogoutTimer();
     }
 
     /* ---- SIDEBAR ---- */
     function loadSidebar() {
-      const u = currentUser;
-      const p = u.profile || {};
-      const name = u.firstName || u.name || 'Champ';
+      const u    = currentUser;
+      const name = u.name || 'Champ';
 
       document.getElementById('sbAvatarLetter').textContent = name.charAt(0).toUpperCase();
-      document.getElementById('sbName').textContent = ((u.firstName || '') + ' ' + (u.lastName || '')).trim().toUpperCase();
+      document.getElementById('sbName').textContent = name.toUpperCase();
 
       const genderLabel = { male:'Male', female:'Female', 'non-binary':'Non-Binary', 'prefer-not-to-say':'—' };
       document.getElementById('sbMeta').textContent =
-        `${genderLabel[p.gender] || '—'} · ${p.weightKg || '--'} kg · ${p.heightCm || '--'} cm`;
+        `${genderLabel[u.gender] || '—'} · ${u.weight || '--'} kg · ${u.height || '--'} cm`;
 
       const goalMap = {
         'build-strength':'Build Strength', 'lose-weight':'Lose Weight', 'get-lean':'Get Lean',
         'get-in-shape':'Get in Shape', 'build-muscle':'Build Muscle', 'overall-fitness':'Overall Fitness'
       };
-      document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalMap[p.goal] || 'Set Goal');
+      document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalMap[u.goal] || 'Set Goal');
 
-      // Both avatar elements
+      // Avatar photo — use Cloudinary URL if available
+      const avatarUrl = u.avatar_url || null;
       [document.getElementById('sbAvatarImg'), document.getElementById('photoAvatarImg')].forEach(img => {
-        if (u.photoUrl) { img.src = u.photoUrl; img.style.display = 'block'; }
+        if (avatarUrl) { img.src = avatarUrl; img.style.display = 'block'; }
+        else { img.style.display = 'none'; }
       });
 
-      // Large photo avatar initial
+      // Large photo avatar initial letter
       const pa = document.getElementById('photoAvatar');
       pa.childNodes[0].textContent = name.charAt(0).toUpperCase();
     }
@@ -647,16 +660,17 @@
     /* ---- LOAD FORM ---- */
     function loadForm() {
       const u = currentUser;
-      const p = u.profile || {};
-
       const set = (id, val) => { if (val !== undefined && val !== null) document.getElementById(id).value = val; };
-      set('pfFirstName', u.firstName || '');
-      set('pfLastName',  u.lastName  || '');
-      set('pfGender',    p.gender);
-      set('pfAge',       p.age);
-      set('pfWeight',    p.weightKg);
-      set('pfHeight',    p.heightCm);
-      set('pfGoal',      p.goal);
+
+      // Backend uses a single 'name' field — split for first/last display
+      const parts = (u.name || '').split(' ');
+      set('pfFirstName', parts[0] || '');
+      set('pfLastName',  parts.slice(1).join(' ') || '');
+      set('pfGender',    u.gender);
+      set('pfAge',       u.age);
+      set('pfWeight',    u.weight);
+      set('pfHeight',    u.height);
+      set('pfGoal',      u.goal);
     }
 
     /* ---- LIVE PREVIEW ---- */
@@ -685,7 +699,7 @@
     }
 
     /* ---- SAVE PROFILE ---- */
-    function saveProfile() {
+    async function saveProfile() {
       const get = id => document.getElementById(id)?.value?.trim();
 
       const firstName = get('pfFirstName');
@@ -696,51 +710,45 @@
       const height    = parseFloat(get('pfHeight'));
       const goal      = get('pfGoal');
 
-      if (firstName) currentUser.firstName = firstName;
-      if (lastName)  currentUser.lastName  = lastName;
+      const name = [firstName, lastName].filter(Boolean).join(' ');
 
-      currentUser.profile = currentUser.profile || {};
-      if (gender) currentUser.profile.gender   = gender;
-      if (age)    currentUser.profile.age       = age;
-      if (weight) currentUser.profile.weightKg  = weight;
-      if (height) currentUser.profile.heightCm  = height;
-      if (goal)   currentUser.profile.goal      = goal;
+      const btn = document.querySelector('.save-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
 
-      // Recalculate BMI
-      if (weight && height) {
-        const bmi = window.GudSpace.calculateBMI(weight, height);
-        currentUser.profile.bmi      = bmi.bmi;
-        currentUser.profile.bmiClass = bmi.classification;
-      }
-
-      // Recalculate nutrition
-      if (weight && height && age && (gender || currentUser.profile.gender)) {
-        const nut = window.GudSpace.calculateNutrition({
-          gender: gender || currentUser.profile.gender,
-          age, weightKg: weight, heightCm: height
+      try {
+        const res = await window.GudAPI.updateProfile({
+          name, gender, age, weight, height, goal
         });
-        currentUser.profile.calories = nut.tdee;
-        currentUser.profile.protein  = nut.protein;
-        currentUser.profile.carbs    = nut.carbs;
-        currentUser.profile.fat      = nut.fat;
+
+        if (res.error) {
+          window.GudSpace.showToast(res.error, '❌');
+        } else {
+          // Update local cache with fresh data from backend
+          currentUser = { ...currentUser, ...res.user };
+          window.GudSpace.storage.set('currentUser', currentUser);
+          loadSidebar();
+          window.GudSpace.showToast('Profile updated! 💪', '✅');
+        }
+      } catch (err) {
+        window.GudSpace.showToast('Failed to save. Check your connection.', '❌');
       }
 
-      saveUser();
-      loadSidebar();  // Refresh sidebar immediately
-      window.GudSpace.showToast('Profile updated! 💪', '✅');
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+        <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+      </svg> Save Changes`;
     }
 
     /* ---- CHANGE PASSWORD ---- */
-    function changePassword() {
+    async function changePassword() {
       const current = document.getElementById('pwCurrent').value;
       const newPw   = document.getElementById('pwNew').value;
       const confirm = document.getElementById('pwConfirm').value;
 
       if (!current || !newPw || !confirm) {
         window.GudSpace.showToast('Fill in all password fields.', '⚠️'); return;
-      }
-      if (current !== currentUser.password) {
-        window.GudSpace.showToast('Current password is incorrect.', '❌'); return;
       }
       if (newPw !== confirm) {
         window.GudSpace.showToast('New passwords do not match.', '❌'); return;
@@ -750,14 +758,23 @@
         window.GudSpace.showToast('Password is too weak. Add uppercase, numbers, or symbols.', '⚠️'); return;
       }
 
-      currentUser.password = newPw;
-      saveUser();
-      document.getElementById('pwCurrent').value = '';
-      document.getElementById('pwNew').value     = '';
-      document.getElementById('pwConfirm').value = '';
-      document.getElementById('pwStrengthFill').style.width = '0%';
-      document.getElementById('pwStrengthLabel').textContent = '—';
-      window.GudSpace.showToast('Password updated successfully! 🔒', '✅');
+      try {
+        // Backend verifies current password and updates it
+        const res = await window.GudAPI.updateProfile({ current_password: current, new_password: newPw });
+
+        if (res.error) {
+          window.GudSpace.showToast(res.error, '❌');
+        } else {
+          document.getElementById('pwCurrent').value = '';
+          document.getElementById('pwNew').value     = '';
+          document.getElementById('pwConfirm').value = '';
+          document.getElementById('pwStrengthFill').style.width = '0%';
+          document.getElementById('pwStrengthLabel').textContent = '—';
+          window.GudSpace.showToast('Password updated successfully! 🔒', '✅');
+        }
+      } catch (err) {
+        window.GudSpace.showToast('Failed to update password. Check your connection.', '❌');
+      }
     }
 
     /* ---- PASSWORD STRENGTH ---- */
@@ -766,11 +783,11 @@
       const fill   = document.getElementById('pwStrengthFill');
       const label  = document.getElementById('pwStrengthLabel');
       const levels = [
-        { pct:'0%',   color:'transparent', text:'—'        },
-        { pct:'25%',  color:'#ff6b6b',     text:'Weak'     },
-        { pct:'50%',  color:'#fdcb6e',     text:'Fair'     },
-        { pct:'75%',  color:'#74b9ff',     text:'Good'     },
-        { pct:'100%', color:'#2ed573',     text:'Strong'   },
+        { pct:'0%',   color:'transparent', text:'—'      },
+        { pct:'25%',  color:'#ff6b6b',     text:'Weak'   },
+        { pct:'50%',  color:'#fdcb6e',     text:'Fair'   },
+        { pct:'75%',  color:'#74b9ff',     text:'Good'   },
+        { pct:'100%', color:'#2ed573',     text:'Strong' },
       ];
       const lvl = levels[result.score] || levels[0];
       fill.style.width      = lvl.pct;
@@ -779,35 +796,54 @@
       label.style.color     = lvl.color;
     }
 
-    /* ---- PHOTO UPLOAD ---- */
+    /* ---- PHOTO UPLOAD → CLOUDINARY VIA BACKEND ---- */
     function triggerPhotoUpload() {
       document.getElementById('photoInputMain').click();
     }
-    function handlePhotoUpload(e) {
+
+    async function handlePhotoUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
+
+      // Show preview immediately while uploading
       const reader = new FileReader();
       reader.onload = ev => {
-        const url = ev.target.result;
-        // Update both avatars
         [document.getElementById('sbAvatarImg'), document.getElementById('photoAvatarImg')].forEach(img => {
-          img.src = url; img.style.display = 'block';
+          img.src = ev.target.result; img.style.display = 'block';
         });
-        currentUser.photoUrl = url;
-        saveUser();
-        window.GudSpace.showToast('Profile photo updated! 📸', '✅');
       };
       reader.readAsDataURL(file);
+
+      window.GudSpace.showToast('Uploading photo...', '⏳', 8000);
+
+      try {
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        const res = await window.GudAPI.uploadAvatar(formData);
+
+        if (res.error) {
+          window.GudSpace.showToast(res.error, '❌');
+        } else {
+          // Update local cache with Cloudinary URL
+          currentUser.avatar_url = res.avatar_url;
+          window.GudSpace.storage.set('currentUser', currentUser);
+          // Set the final Cloudinary URL on avatars
+          [document.getElementById('sbAvatarImg'), document.getElementById('photoAvatarImg')].forEach(img => {
+            img.src = res.avatar_url; img.style.display = 'block';
+          });
+          window.GudSpace.showToast('Profile photo updated! 📸', '✅');
+        }
+      } catch (err) {
+        window.GudSpace.showToast('Photo upload failed. Try again.', '❌');
+      }
     }
 
     /* ---- CLEAR DATA ---- */
     function clearData() {
       if (!confirm('Are you sure? This will permanently delete all your attendance, weight logs, and progress. This cannot be undone.')) return;
-      currentUser.attendance = [];
-      currentUser.weightLog  = [];
-      currentUser.streak     = 0;
-      saveUser();
-      window.GudSpace.showToast('Your data has been cleared.', '🗑️');
+      // Note: clears local cache only — backend data managed by admin
+      window.GudSpace.showToast('Local data cleared.', '🗑️');
     }
 
     /* ---- SIDEBAR MOBILE ---- */
@@ -856,15 +892,6 @@
       document.getElementById('autoLogoutBar').classList.remove('show');
       window.GudSpace.showToast('Session extended by 3 hours ✅', '⏱');
       startAutoLogoutTimer();
-    }
-
-    /* ---- HELPERS ---- */
-    function saveUser() {
-      const users = window.GudSpace.storage.get('users') || [];
-      const idx   = users.findIndex(u => u.id === currentUser.id);
-      if (idx >= 0) users[idx] = currentUser;
-      window.GudSpace.storage.set('users', users);
-      window.GudSpace.storage.set('currentUser', currentUser);
     }
   </script>
 </body>
