@@ -1,0 +1,2646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Portal — GUD SPACE GYM</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* =====================================================
+       ADMIN PORTAL — LEVELED UP
+    ===================================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #080808;
+      color: var(--white);
+      font-family: var(--font-body);
+      min-height: 100vh;
+    }
+
+    /* ---- PARTICLES CANVAS ---- */
+    #adminParticles {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    }
+
+    /* ---- SCANLINE OVERLAY ---- */
+    .adm-scanlines {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.03) 2px,
+        rgba(0,0,0,0.03) 4px
+      );
+      animation: scanMove 8s linear infinite;
+    }
+    @keyframes scanMove { from { background-position: 0 0; } to { background-position: 0 100px; } }
+
+    /* ---- ADMIN LOGIN SCREEN ---- */
+    .admin-login-screen {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 24px;
+      position: relative; overflow: hidden;
+    }
+
+    /* Ambient radial layers */
+    .adm-login-glow {
+      position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 60% at 50% -10%, rgba(255,26,94,0.18), transparent 65%),
+        radial-gradient(ellipse 40% 40% at 80% 80%, rgba(160,0,74,0.1), transparent 60%),
+        radial-gradient(ellipse 40% 40% at 20% 80%, rgba(255,26,94,0.06), transparent 60%);
+      animation: glowPulse 6s ease-in-out infinite;
+    }
+    @keyframes glowPulse {
+      0%,100% { opacity: 0.8; }
+      50%      { opacity: 1; }
+    }
+
+    /* Corner accent lines */
+    .adm-login-screen::before, .adm-login-screen::after {
+      content: '';
+      position: absolute;
+      width: 280px; height: 280px;
+      border: 1px solid rgba(255,26,94,0.08);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: cornerSpin 20s linear infinite;
+    }
+    .adm-login-screen::before { top: -80px; right: -80px; }
+    .adm-login-screen::after  { bottom: -80px; left: -80px; animation-direction: reverse; animation-duration: 28s; }
+    @keyframes cornerSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    .adm-login-card {
+      background: rgba(12,12,12,0.92);
+      border: 1px solid rgba(255,26,94,0.15);
+      border-radius: 24px;
+      padding: 52px 48px;
+      width: 100%; max-width: 440px;
+      position: relative; z-index: 2;
+      box-shadow:
+        0 0 0 1px rgba(255,26,94,0.05),
+        0 40px 80px rgba(0,0,0,0.7),
+        0 0 60px rgba(255,26,94,0.06),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+      backdrop-filter: blur(24px);
+      animation: cardIn 0.6s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(24px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Top accent line on card */
+    .adm-login-card::before {
+      content: '';
+      position: absolute; top: 0; left: 20%; right: 20%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,26,94,0.6), transparent);
+      border-radius: 50%;
+    }
+
+    .adm-shield {
+      width: 68px; height: 68px;
+      background: rgba(255,26,94,0.1);
+      border: 1.5px solid rgba(255,26,94,0.3);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; margin-bottom: 24px;
+      box-shadow: 0 0 20px rgba(255,26,94,0.15), inset 0 0 20px rgba(255,26,94,0.05);
+      animation: shieldFloat 4s ease-in-out infinite;
+    }
+    @keyframes shieldFloat {
+      0%,100% { transform: translateY(0); box-shadow: 0 0 20px rgba(255,26,94,0.15); }
+      50%      { transform: translateY(-4px); box-shadow: 0 8px 28px rgba(255,26,94,0.25); }
+    }
+
+    .adm-login-title {
+      font-family: var(--font-display);
+      font-size: 46px; letter-spacing: 0.03em;
+      line-height: 1; margin-bottom: 8px;
+    }
+    .adm-login-sub {
+      font-size: 13px; color: rgba(255,255,255,0.35);
+      margin-bottom: 36px; line-height: 1.6;
+      letter-spacing: 0.02em;
+    }
+
+    /* ---- PIN DOTS — GLOWING ---- */
+    .adm-pin-row {
+      display: flex; gap: 14px;
+      justify-content: center; margin-bottom: 20px;
+    }
+    .adm-pin-dot {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      position: relative;
+    }
+    .adm-pin-dot.filled {
+      background: var(--pink);
+      border-color: var(--pink);
+      box-shadow:
+        0 0 8px rgba(255,26,94,0.8),
+        0 0 20px rgba(255,26,94,0.4),
+        0 0 40px rgba(255,26,94,0.15);
+      transform: scale(1.15);
+      animation: dotPop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes dotPop {
+      from { transform: scale(0.5); }
+      to   { transform: scale(1.15); }
+    }
+    .adm-pin-dot.error {
+      background: #ff4757;
+      border-color: #ff4757;
+      box-shadow: 0 0 12px rgba(255,71,87,0.7);
+    }
+    /* Shake the whole row on error */
+    .adm-pin-row.shake {
+      animation: rowShake 0.5s cubic-bezier(.36,.07,.19,.97);
+    }
+    @keyframes rowShake {
+      0%,100% { transform: translateX(0); }
+      15%      { transform: translateX(-8px); }
+      30%      { transform: translateX(8px); }
+      45%      { transform: translateX(-6px); }
+      60%      { transform: translateX(6px); }
+      75%      { transform: translateX(-3px); }
+      90%      { transform: translateX(3px); }
+    }
+
+    /* ---- NUMPAD ---- */
+    .adm-numpad {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; margin-bottom: 20px;
+    }
+    .adm-num-btn {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 18px;
+      font-family: var(--font-display);
+      font-size: 28px; color: rgba(255,255,255,0.85);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+    /* Ripple on press */
+    .adm-num-btn::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at center, rgba(255,26,94,0.3) 0%, transparent 70%);
+      opacity: 0; transform: scale(0);
+      transition: opacity 0.3s, transform 0.3s;
+      border-radius: inherit;
+    }
+    .adm-num-btn:hover {
+      background: rgba(255,26,94,0.08);
+      border-color: rgba(255,26,94,0.3);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(255,26,94,0.15);
+    }
+    .adm-num-btn:active {
+      transform: scale(0.93) translateY(0);
+      background: rgba(255,26,94,0.15);
+      border-color: rgba(255,26,94,0.5);
+    }
+    .adm-num-btn:active::after {
+      opacity: 1; transform: scale(1);
+      transition: opacity 0s, transform 0s;
+    }
+    .adm-num-btn.del {
+      font-family: var(--font-body); font-size: 20px;
+      color: rgba(255,255,255,0.35);
+    }
+    .adm-num-btn.del:hover { color: #ff6b6b; border-color: rgba(255,59,48,0.3); background: rgba(255,59,48,0.06); }
+
+    .adm-pin-hint {
+      text-align: center; font-size: 11px; color: rgba(255,255,255,0.2);
+      margin-top: 4px; letter-spacing: 0.04em;
+    }
+    .adm-pin-hint span { color: var(--pink); font-weight: 600; }
+    .adm-back-link {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.25); margin-top: 20px;
+      text-decoration: none; transition: color 0.2s;
+    }
+    .adm-back-link:hover { color: var(--pink); }
+    .adm-pin-error {
+      text-align: center; font-size: 12px; color: #ff4757;
+      min-height: 20px; margin-bottom: 8px;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+    }
+
+    /* =====================================================
+       ADMIN DASHBOARD — LEVELED UP
+    ===================================================== */
+    #adminDashboard { display: none; position: relative; }
+
+    /* Subtle grid bg for dashboard */
+    #adminDashboard::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,26,94,.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,26,94,.018) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* Top bar */
+    .adm-topbar {
+      background: rgba(8,8,8,0.92);
+      border-bottom: 1px solid rgba(255,26,94,0.1);
+      padding: 0 40px;
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 16px;
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(20px);
+      height: 64px;
+      box-shadow: 0 1px 0 rgba(255,26,94,0.08), 0 4px 24px rgba(0,0,0,0.4);
+    }
+    .adm-topbar-left { display: flex; align-items: center; gap: 20px; }
+    .adm-logo {
+      font-family: var(--font-display);
+      font-size: 22px; letter-spacing: 0.04em;
+      display: flex; align-items: baseline; gap: 2px;
+    }
+    .adm-badge {
+      background: rgba(255,26,94,0.1);
+      border: 1px solid rgba(255,26,94,0.25);
+      border-radius: 4px;
+      padding: 3px 10px;
+      font-family: var(--font-cond);
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--pink);
+      box-shadow: 0 0 10px rgba(255,26,94,0.1);
+    }
+    .adm-topbar-right { display: flex; align-items: center; gap: 14px; }
+    .adm-date {
+      font-family: var(--font-cond);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+    }
+    .adm-logout-btn {
+      background: none; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-family: var(--font-cond);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: rgba(255,255,255,0.35); cursor: pointer;
+      transition: all 0.2s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .adm-logout-btn:hover { border-color: rgba(255,59,48,0.4); color: #ff6b6b; background: rgba(255,59,48,0.06); }
+
+    /* Nav tabs */
+    .adm-nav {
+      display: flex; gap: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 0 40px;
+      background: rgba(8,8,8,0.7);
+      backdrop-filter: blur(16px);
+      overflow-x: auto; position: relative; z-index: 99;
+    }
+    .adm-nav::-webkit-scrollbar { height: 0; }
+    .adm-nav-tab {
+      font-family: var(--font-cond);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 16px 20px;
+      color: rgba(255,255,255,0.3); cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s; white-space: nowrap;
+      display: flex; align-items: center; gap: 8px;
+      position: relative;
+    }
+    .adm-nav-tab:hover { color: rgba(255,255,255,0.7); }
+    .adm-nav-tab.active { color: var(--pink); border-bottom-color: var(--pink); }
+    .adm-nav-tab.active::after {
+      content: '';
+      position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+      width: 40%; height: 2px;
+      background: var(--pink);
+      box-shadow: 0 0 8px var(--pink);
+      border-radius: 2px 2px 0 0;
+    }
+
+    /* Content area */
+    .adm-content { padding: 32px 40px; position: relative; z-index: 1; }
+
+    /* ---- STAT CARDS ---- */
+    .adm-stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 16px; margin-bottom: 28px;
+    }
+    .adm-stat-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.25s ease;
+      position: relative; overflow: hidden;
+    }
+    .adm-stat-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,26,94,0.3), transparent);
+      opacity: 0; transition: opacity 0.25s;
+    }
+    .adm-stat-card:hover {
+      border-color: rgba(255,26,94,0.2);
+      background: rgba(255,26,94,0.03);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .adm-stat-card:hover::before { opacity: 1; }
+    .asc-icon {
+      font-size: 20px; margin-bottom: 14px;
+      width: 42px; height: 42px;
+      background: rgba(255,26,94,0.08); border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(255,26,94,0.12);
+    }
+    .asc-value {
+      font-family: var(--font-display);
+      font-size: 42px; line-height: 1; color: var(--white);
+      margin-bottom: 4px;
+    }
+    .asc-label {
+      font-family: var(--font-cond);
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+    }
+    .asc-change {
+      font-size: 11px; margin-top: 6px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .asc-change.up { color: #2ed573; }
+    .asc-change.neutral { color: rgba(255,255,255,0.3); }
+
+    /* ---- TABLE ---- */
+    .adm-section-header {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 16px;
+      margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .adm-section-title {
+      font-family: var(--font-display);
+      font-size: 26px; letter-spacing: 0.03em;
+    }
+    .adm-section-title span { color: var(--pink); }
+    .adm-search {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-family: var(--font-body);
+      font-size: 14px; color: var(--white);
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+      min-width: 240px;
+    }
+    .adm-search:focus { border-color: rgba(255,26,94,0.4); box-shadow: 0 0 0 3px rgba(255,26,94,0.08); }
+    .adm-search::placeholder { color: rgba(255,255,255,0.2); }
+    .adm-filter-row {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .adm-filter-btn {
+      font-family: var(--font-cond);
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 7px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.3); cursor: pointer;
+      transition: all 0.2s;
+    }
+    .adm-filter-btn:hover { border-color: rgba(255,26,94,0.3); color: rgba(255,255,255,0.7); }
+    .adm-filter-btn.active {
+      background: var(--pink); border-color: var(--pink);
+      color: white; box-shadow: 0 2px 12px rgba(255,26,94,0.3);
+    }
+
+    .adm-table-wrap {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      overflow: hidden; overflow-x: auto;
+    }
+    .adm-table {
+      width: 100%; border-collapse: collapse;
+      min-width: 700px;
+    }
+    .adm-table thead tr {
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.02);
+    }
+    .adm-table thead th {
+      font-family: var(--font-cond);
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      padding: 14px 20px; text-align: left;
+      white-space: nowrap;
+    }
+    .adm-table tbody tr {
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      transition: background 0.15s;
+    }
+    .adm-table tbody tr:hover { background: rgba(255,26,94,0.03); }
+    .adm-table tbody tr:last-child { border-bottom: none; }
+    .adm-table td {
+      padding: 14px 20px; font-size: 13px;
+      color: rgba(255,255,255,0.6); vertical-align: middle;
+    }
+
+    /* Member cell */
+    .member-cell { display: flex; align-items: center; gap: 12px; }
+    .member-av {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 15px;
+      color: white; flex-shrink: 0;
+    }
+    .member-name {
+      font-family: var(--font-cond);
+      font-size: 13px; font-weight: 700;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--white);
+    }
+    .member-email { font-size: 11px; color: rgba(255,255,255,0.3); }
+
+    /* Status badges */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 4px;
+      font-family: var(--font-cond);
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .status-badge.in  { background: rgba(46,213,115,0.1);  color: #2ed573; }
+    .status-badge.out { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); }
+    .status-badge.auto{ background: rgba(255,59,48,0.1);    color: #ff6b6b; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .status-badge.in .status-dot { animation: blink 1.2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* Goal badge */
+    .goal-tag {
+      font-family: var(--font-cond);
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      background: rgba(255,26,94,0.08);
+      border: 1px solid rgba(255,26,94,0.18);
+      color: var(--pink);
+      padding: 3px 8px; border-radius: 3px;
+      white-space: nowrap;
+    }
+
+    /* Actions */
+    .adm-action-btn {
+      background: none; border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-family: var(--font-cond);
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: rgba(255,255,255,0.35); cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .adm-action-btn:hover { border-color: rgba(255,26,94,0.3); color: var(--pink); }
+    .adm-action-btn.danger:hover { border-color: rgba(255,59,48,0.4); color: #ff6b6b; }
+
+    /* ── ANNOUNCEMENTS ── */
+    .ann-item {
+      background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.06);
+      border-radius: 12px; padding: 16px 18px; margin-bottom: 10px;
+      display: flex; align-items: flex-start; gap: 14px;
+      transition: all .2s;
+    }
+    .ann-item:hover { border-color: rgba(255,255,255,.1); background: rgba(255,255,255,.035); }
+    .ann-item.priority-urgent  { border-left: 3px solid #ff6b6b; }
+    .ann-item.priority-warning { border-left: 3px solid #fdcb6e; }
+    .ann-item.priority-info    { border-left: 3px solid #74b9ff; }
+    .ann-priority-badge { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+    .ann-content { flex: 1; }
+    .ann-title { font-family: var(--font-cond); font-size: 15px; font-weight: 700; letter-spacing: .04em; color: #fff; margin-bottom: 4px; }
+    .ann-body  { font-size: 12px; color: rgba(255,255,255,.5); line-height: 1.6; margin-bottom: 8px; }
+    .ann-meta  { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .ann-meta-tag {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      background: rgba(255,255,255,.05); border-radius: 3px; padding: 2px 7px;
+      color: rgba(255,255,255,.3);
+    }
+    .ann-meta-tag.expiry  { color: #fdcb6e; background: rgba(253,203,110,.08); }
+    .ann-meta-tag.expired { color: #ff6b6b; background: rgba(255,107,107,.08); }
+    .ann-delete-btn {
+      background: none; border: none; color: rgba(255,255,255,.15);
+      font-size: 16px; cursor: pointer; padding: 4px; border-radius: 4px;
+      transition: color .2s; flex-shrink: 0;
+    }
+    .ann-delete-btn:hover { color: #ff6b6b; }
+    .ann-empty { text-align: center; padding: 48px 24px; color: rgba(255,255,255,.2); font-family: var(--font-cond); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+
+    /* ─── POST ANNOUNCEMENT BUTTON ─── */
+    .ann-post-btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 13px 28px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--pink) 0%, #c4003f 100%);
+      border: none; cursor: pointer; position: relative; overflow: hidden;
+      font-family: var(--font-cond); font-size: 13px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase; color: #fff;
+      box-shadow: 0 4px 20px rgba(255,26,94,.35);
+      transition: all .2s ease;
+    }
+    .ann-post-btn::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+      transform: translateX(-100%) skewX(-15deg); transition: transform .5s ease;
+    }
+    .ann-post-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(255,26,94,.5); }
+    .ann-post-btn:hover::before { transform: translateX(100%) skewX(-15deg); }
+    .ann-post-btn:active { transform: translateY(0); }
+    .ann-post-btn-icon { font-size: 17px; }
+
+    /* ── MESSAGES ── */
+    .msg-layout { display: grid; grid-template-columns: 240px 1fr; gap: 0; border: 1px solid rgba(255,255,255,.07); border-radius: 12px; overflow: hidden; min-height: 520px; }
+    .msg-sidebar { background: rgba(255,255,255,.02); border-right: 1px solid rgba(255,255,255,.06); display: flex; flex-direction: column; }
+    .msg-search-wrap { padding: 12px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .msg-member-list { flex: 1; overflow-y: auto; }
+    .msg-member-item {
+      display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+      cursor: pointer; transition: background .15s; border-bottom: 1px solid rgba(255,255,255,.04);
+      position: relative;
+    }
+    .msg-member-item:hover { background: rgba(255,255,255,.04); }
+    .msg-member-item.active { background: rgba(255,26,94,.08); border-left: 2px solid var(--pink); }
+    .msg-member-avatar {
+      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--pink), #a0004a);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 14px; color: white;
+      overflow: hidden;
+    }
+    .msg-member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .msg-member-info { flex: 1; min-width: 0; }
+    .msg-member-name { font-family: var(--font-cond); font-size: 12px; font-weight: 700; letter-spacing: .04em; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msg-member-preview { font-size: 10px; color: rgba(255,255,255,.3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .msg-unread-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pink); flex-shrink: 0; }
+    .msg-chat-area { display: flex; flex-direction: column; background: rgba(8,8,8,.6); }
+    .msg-chat-header { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,.06); display: flex; align-items: center; gap: 10px; min-height: 58px; }
+    .msg-chat-header-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), #a0004a); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 13px; color: white; overflow: hidden; flex-shrink: 0; }
+    .msg-chat-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .msg-chat-header-name { font-family: var(--font-cond); font-size: 14px; font-weight: 700; letter-spacing: .04em; color: #fff; }
+    .msg-chat-body { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+    .msg-empty-state { margin: auto; text-align: center; color: rgba(255,255,255,.2); font-size: 13px; font-family: var(--font-cond); letter-spacing: .06em; }
+    .msg-bubble-wrap { display: flex; flex-direction: column; max-width: 75%; }
+    .msg-bubble-wrap.from-admin  { align-self: flex-end;  align-items: flex-end; }
+    .msg-bubble-wrap.from-member { align-self: flex-start; align-items: flex-start; }
+    .msg-bubble { padding: 9px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; word-break: break-word; }
+    .msg-bubble-wrap.from-admin  .msg-bubble { background: var(--pink); color: #fff; border-bottom-right-radius: 3px; }
+    .msg-bubble-wrap.from-member .msg-bubble { background: rgba(255,255,255,.07); color: rgba(255,255,255,.85); border-bottom-left-radius: 3px; }
+    .msg-bubble-time { font-size: 9px; color: rgba(255,255,255,.25); margin-top: 3px; letter-spacing: .04em; }
+    .msg-composer { padding: 12px 14px; border-top: 1px solid rgba(255,255,255,.06); display: flex; gap: 10px; align-items: flex-end; }
+    .msg-input {
+      flex: 1; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px; padding: 10px 13px; color: #fff; font-size: 13px;
+      resize: none; outline: none; font-family: inherit; line-height: 1.4;
+      transition: border-color .2s;
+    }
+    .msg-input:focus { border-color: rgba(255,26,94,.4); }
+    .msg-send-btn {
+      background: var(--pink); border: none; border-radius: 8px; padding: 10px 16px;
+      color: white; font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: .08em; cursor: pointer; transition: background .2s; flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .msg-send-btn:hover { background: var(--pink-d); }
+    @media (max-width: 700px) {
+      .msg-layout { grid-template-columns: 1fr; }
+      .msg-sidebar { max-height: 220px; border-right: none; border-bottom: 1px solid rgba(255,255,255,.06); }
+    }
+
+    /* Progress Photos */
+    .pp-member-card {
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 12px; overflow: hidden;
+      transition: border-color .25s;
+    }
+    .pp-member-card:hover { border-color: rgba(255,26,94,.3); }
+    .pp-member-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+    .pp-member-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--pink);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 16px; color: #fff;
+      flex-shrink: 0;
+    }
+    .pp-member-name { font-family: var(--font-cond); font-size: 14px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #fff; }
+    .pp-member-meta { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 2px; }
+    .pp-photos-row { display: grid; grid-template-columns: 1fr 1fr; }
+    .pp-photo-slot { position: relative; }
+    .pp-photo-slot img { width: 100%; height: 200px; object-fit: cover; object-position: top; display: block; }
+    .pp-photo-label {
+      position: absolute; top: 8px; left: 8px;
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: .16em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 3px; color: #fff;
+    }
+    .pp-photo-label.before { background: var(--pink); }
+    .pp-photo-label.after  { background: rgba(46,213,115,1); }
+    .pp-photo-date {
+      position: absolute; bottom: 8px; right: 8px;
+      font-family: var(--font-cond); font-size: 9px;
+      letter-spacing: .08em; text-transform: uppercase;
+      background: rgba(0,0,0,.65); color: rgba(255,255,255,.7);
+      padding: 3px 8px; border-radius: 3px;
+      backdrop-filter: blur(4px);
+    }
+    .pp-no-photo {
+      height: 200px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: rgba(255,255,255,.02);
+      color: rgba(255,255,255,.18);
+      font-size: 12px; font-family: var(--font-cond);
+      letter-spacing: .08em; text-transform: uppercase; gap: 6px;
+    }
+    .pp-divider { width: 1px; background: rgba(255,255,255,.05); }
+
+    /* Empty state */
+    .adm-empty { padding: 60px 20px; text-align: center; }
+    .adm-empty-icon { font-size: 48px; margin-bottom: 16px; }
+    .adm-empty-title {
+      font-family: var(--font-cond);
+      font-size: 18px; font-weight: 700;
+      letter-spacing: 0.04em; color: rgba(255,255,255,0.3);
+      margin-bottom: 8px;
+    }
+    .adm-empty-sub { font-size: 13px; color: rgba(255,255,255,0.2); }
+
+    /* ---- ATTENDANCE LOG ---- */
+    .att-date-group { margin-bottom: 24px; }
+    .att-date-header {
+      font-family: var(--font-cond);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--pink);
+      padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .att-count-badge {
+      background: rgba(255,26,94,0.1);
+      border-radius: 4px; padding: 2px 8px;
+      font-size: 11px; color: var(--pink);
+    }
+
+    /* ---- AUTO TIMEOUT LOG ---- */
+    .timeout-row { background: rgba(255,59,48,0.04); }
+
+    /* ---- MEMBER DETAIL MODAL ---- */
+    .member-modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(12px);
+      z-index: 9000;
+      display: none; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .member-modal.show { display: flex; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .member-modal-box {
+      background: rgba(12,12,12,0.98);
+      border: 1px solid rgba(255,26,94,0.15);
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%; max-width: 560px;
+      max-height: 85vh; overflow-y: auto;
+      position: relative;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.7), 0 0 40px rgba(255,26,94,0.05);
+      animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes modalIn {
+      from { opacity:0; transform:scale(0.93) translateY(20px); }
+      to   { opacity:1; transform:scale(1) translateY(0); }
+    }
+    .mm-close {
+      position: absolute; top: 16px; right: 16px;
+      width: 32px; height: 32px;
+      background: rgba(255,255,255,0.06); border: none; border-radius: 50%;
+      color: rgba(255,255,255,0.4); font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .mm-close:hover { background: var(--pink); color: white; }
+    .mm-header { display: flex; align-items: center; gap: 20px; margin-bottom: 28px; }
+    .mm-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 30px;
+      color: white; flex-shrink: 0;
+      border: 2px solid rgba(255,26,94,0.3);
+    }
+    .mm-name { font-family: var(--font-display); font-size: 28px; letter-spacing: 0.03em; line-height: 1; margin-bottom: 4px; }
+    .mm-email { font-size: 13px; color: rgba(255,255,255,0.3); }
+    .mm-section {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--pink); margin-bottom: 12px; margin-top: 24px;
+    }
+    .mm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+    .mm-item { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 12px 14px; }
+    .mm-item-label {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3); margin-bottom: 4px;
+    }
+    .mm-item-value { font-family: var(--font-cond); font-size: 16px; font-weight: 700; letter-spacing: 0.03em; color: var(--white); }
+    .mm-att-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
+    .mm-att-row {
+      background: rgba(255,255,255,0.04); border-radius: 8px;
+      padding: 10px 14px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .mm-att-date { font-family: var(--font-cond); font-size: 12px; font-weight: 700; letter-spacing: 0.05em; color: var(--white); }
+    .mm-att-times { font-size: 12px; color: rgba(255,255,255,0.3); }
+
+    /* Responsive */
+    @media (max-width: 1024px) { .adm-stats-row { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) {
+      .adm-topbar { padding: 0 20px; }
+      .adm-nav { padding: 0 20px; }
+      .adm-content { padding: 20px; }
+      .adm-stats-row { grid-template-columns: 1fr 1fr; }
+      .adm-login-card { padding: 36px 28px; }
+    }
+    @media (max-width: 480px) { .adm-stats-row { grid-template-columns: 1fr 1fr; gap: 10px; } }
+
+    /* =====================================================
+       MEMBERSHIP STYLES
+    ===================================================== */
+    .mem-plan-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 4px;
+      font-family: var(--font-cond);
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .mem-plan-badge.active   { background: rgba(46,213,115,0.12); color: #2ed573; border: 1px solid rgba(46,213,115,0.25); }
+    .mem-plan-badge.expiring { background: rgba(253,203,110,0.12); color: #fdcb6e; border: 1px solid rgba(253,203,110,0.3); animation: expPulse 1.8s ease-in-out infinite; }
+    .mem-plan-badge.expired  { background: rgba(255,107,107,0.1);  color: #ff6b6b; border: 1px solid rgba(255,107,107,0.2); }
+    .mem-plan-badge.walkin   { background: rgba(116,185,255,0.1);  color: #74b9ff; border: 1px solid rgba(116,185,255,0.2); }
+    .mem-plan-badge.none     { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.07); }
+    @keyframes expPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+    .mem-days-bar-wrap { width: 90px; background: rgba(255,255,255,0.06); border-radius: 4px; height: 5px; overflow: hidden; }
+    .mem-days-bar      { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+
+    /* Assign Plan Modal */
+    .mem-modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(16px);
+      z-index: 9100;
+      display: none; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .mem-modal.show { display: flex; animation: fadeIn 0.2s ease; }
+    .mem-modal-box {
+      background: rgba(10,10,10,0.98);
+      border: 1px solid rgba(255,26,94,0.18);
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%; max-width: 520px;
+      max-height: 90vh; overflow-y: auto;
+      position: relative;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 40px rgba(255,26,94,0.06);
+    }
+    .mem-modal-box::before {
+      content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,26,94,0.5), transparent);
+    }
+    .mem-modal-title {
+      font-family: var(--font-display); font-size: 28px;
+      letter-spacing: 0.03em; margin-bottom: 6px;
+    }
+    .mem-modal-sub { font-size: 13px; color: rgba(255,255,255,0.35); margin-bottom: 28px; }
+
+    .mem-preset-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; margin-bottom: 20px;
+    }
+    .mem-preset-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 16px;
+      cursor: pointer; transition: all 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .mem-preset-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--pink); transform: scaleX(0); transform-origin: left;
+      transition: transform 0.3s;
+    }
+    .mem-preset-card:hover { border-color: rgba(255,26,94,0.35); background: rgba(255,26,94,0.04); transform: translateY(-2px); }
+    .mem-preset-card:hover::before { transform: scaleX(1); }
+    .mem-preset-card.selected { border-color: var(--pink); background: rgba(255,26,94,0.08); box-shadow: 0 0 16px rgba(255,26,94,0.12); }
+    .mem-preset-card.selected::before { transform: scaleX(1); }
+    .mem-preset-name { font-family: var(--font-cond); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; color: var(--white); margin-bottom: 4px; }
+    .mem-preset-price { font-family: var(--font-display); font-size: 22px; color: var(--pink); }
+    .mem-preset-dur { font-family: var(--font-cond); font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+
+    .mem-divider-label {
+      text-align: center; position: relative;
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.25); margin: 20px 0;
+    }
+    .mem-divider-label::before, .mem-divider-label::after {
+      content: ''; position: absolute; top: 50%;
+      width: 40%; height: 1px; background: rgba(255,255,255,0.07);
+    }
+    .mem-divider-label::before { left: 0; }
+    .mem-divider-label::after  { right: 0; }
+
+    .mem-custom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+    .mem-save-btn {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, var(--pink) 0%, #c4003f 100%);
+      border: none; border-radius: 12px; cursor: pointer;
+      font-family: var(--font-cond); font-size: 14px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase; color: white;
+      box-shadow: 0 4px 20px rgba(255,26,94,0.35);
+      transition: all 0.2s; margin-top: 8px;
+    }
+    .mem-save-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(255,26,94,0.5); }
+
+    .mem-close-btn {
+      position: absolute; top: 16px; right: 16px;
+      width: 32px; height: 32px;
+      background: rgba(255,255,255,0.06); border: none; border-radius: 50%;
+      color: rgba(255,255,255,0.4); font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .mem-close-btn:hover { background: var(--pink); color: white; }
+
+    /* Renewal request badge */
+    .renewal-req-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      background: rgba(253,203,110,0.12); color: #fdcb6e;
+      border: 1px solid rgba(253,203,110,0.25);
+      padding: 3px 8px; border-radius: 3px;
+      animation: expPulse 1.5s ease-in-out infinite;
+    }
+
+    /* Admin notif bell */
+    .adm-notif-btn {
+      position: relative;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: rgba(255,255,255,0.5); cursor: pointer;
+      transition: all 0.2s; font-size: 17px;
+      display: flex; align-items: center;
+    }
+    .adm-notif-btn:hover { border-color: rgba(255,26,94,0.3); color: var(--pink); }
+    .adm-notif-dot {
+      position: absolute; top: 4px; right: 4px;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #fdcb6e;
+      border: 1.5px solid #080808;
+      display: none;
+    }
+    .adm-notif-dot.show { display: block; animation: expPulse 1.2s ease-in-out infinite; }
+
+    /* Notif dropdown */
+    .adm-notif-dropdown {
+      position: absolute; top: 54px; right: 40px;
+      background: rgba(12,12,12,0.98);
+      border: 1px solid rgba(255,26,94,0.15);
+      border-radius: 14px; padding: 16px;
+      width: 320px; z-index: 200;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+      display: none;
+    }
+    .adm-notif-dropdown.show { display: block; animation: fadeIn 0.2s ease; }
+    .adm-notif-item {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .adm-notif-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .adm-notif-icon { font-size: 18px; flex-shrink: 0; }
+    .adm-notif-text { font-size: 12px; color: rgba(255,255,255,0.6); line-height: 1.5; }
+    .adm-notif-text strong { color: var(--white); font-family: var(--font-cond); font-size: 13px; }
+    .adm-notif-empty { text-align: center; color: rgba(255,255,255,0.25); font-family: var(--font-cond); font-size: 12px; letter-spacing: 0.08em; padding: 12px 0; }
+  </style>
+</head>
+<body>
+
+  <!-- CUSTOM CURSOR -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-follower" id="cursorFollower"></div>
+  <div class="noise-overlay"></div>
+  <canvas id="adminParticles"></canvas>
+  <div class="adm-scanlines"></div>
+
+  <!-- ==================== ADMIN LOGIN ==================== -->
+  <div id="adminLoginScreen" class="admin-login-screen">
+    <div class="adm-login-glow"></div>
+    <div class="adm-login-card">
+      <div class="adm-shield">🛡</div>
+      <h1 class="adm-login-title">ADMIN<br /><span style="color:var(--pink)">PORTAL</span></h1>
+      <p class="adm-login-sub">Enter your 4-digit PIN to access the owner dashboard.</p>
+
+      <!-- PIN dots -->
+      <div class="adm-pin-row" id="pinDots">
+        <div class="adm-pin-dot" id="pd0"></div>
+        <div class="adm-pin-dot" id="pd1"></div>
+        <div class="adm-pin-dot" id="pd2"></div>
+        <div class="adm-pin-dot" id="pd3"></div>
+      </div>
+
+      <div class="adm-pin-error" id="pinError"></div>
+
+      <!-- Numpad -->
+      <div class="adm-numpad">
+        <button class="adm-num-btn" onclick="pinPress('1')">1</button>
+        <button class="adm-num-btn" onclick="pinPress('2')">2</button>
+        <button class="adm-num-btn" onclick="pinPress('3')">3</button>
+        <button class="adm-num-btn" onclick="pinPress('4')">4</button>
+        <button class="adm-num-btn" onclick="pinPress('5')">5</button>
+        <button class="adm-num-btn" onclick="pinPress('6')">6</button>
+        <button class="adm-num-btn" onclick="pinPress('7')">7</button>
+        <button class="adm-num-btn" onclick="pinPress('8')">8</button>
+        <button class="adm-num-btn" onclick="pinPress('9')">9</button>
+        <button class="adm-num-btn del" onclick="pinPress('clear')">CLR</button>
+        <button class="adm-num-btn" onclick="pinPress('0')">0</button>
+        <button class="adm-num-btn del" onclick="pinPress('del')">⌫</button>
+      </div>
+
+      <p class="adm-pin-hint">Default PIN: <span>1234</span> — change in Settings</p>
+
+      <a href="login.html" class="adm-back-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back to Member Login
+      </a>
+    </div>
+  </div>
+
+  <!-- ==================== ADMIN DASHBOARD ==================== -->
+  <div id="adminDashboard">
+
+    <!-- TOP BAR -->
+    <div class="adm-topbar">
+      <div class="adm-topbar-left">
+        <div class="adm-logo">
+          <span class="logo-gud">GUD</span><span class="logo-space">SPACE</span><span class="logo-gym" style="font-size:15px;color:var(--gray-3)">GYM</span>
+        </div>
+        <div class="adm-badge">🛡 Admin</div>
+      </div>
+      <div class="adm-topbar-right">
+        <div class="adm-date" id="admDate">—</div>
+        <button class="adm-notif-btn" id="admNotifBtn" onclick="toggleNotifDropdown()" title="Membership Alerts">
+          🔔
+          <span class="adm-notif-dot" id="admNotifDot"></span>
+        </button>
+        <div class="adm-notif-dropdown" id="admNotifDropdown">
+          <div style="font-family:var(--font-cond);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--pink);margin-bottom:12px;">🔔 Membership Alerts</div>
+          <div id="admNotifList"><div class="adm-notif-empty">No alerts right now.</div></div>
+        </div>
+        <button class="adm-logout-btn" onclick="adminLogout()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Exit Admin
+        </button>
+      </div>
+    </div>
+
+    <!-- NAV TABS -->
+    <div class="adm-nav">
+      <div class="adm-nav-tab active" id="tab-overview"    onclick="switchTab('overview')">📊 Overview</div>
+      <div class="adm-nav-tab" id="tab-members"    onclick="switchTab('members')">👥 Members</div>
+      <div class="adm-nav-tab" id="tab-memberships" onclick="switchTab('memberships')">🎫 Memberships</div>
+      <div class="adm-nav-tab" id="tab-attendance" onclick="switchTab('attendance')">📅 Attendance Log</div>
+      <div class="adm-nav-tab" id="tab-progress"   onclick="switchTab('progress')">📸 Progress Photos</div>
+      <div class="adm-nav-tab" id="tab-announce"   onclick="switchTab('announce')">📢 Announce</div>
+      <div class="adm-nav-tab" id="tab-messages"   onclick="switchTab('messages')">💬 Messages</div>
+      <div class="adm-nav-tab" id="tab-timeouts"   onclick="switchTab('timeouts')">⏰ Auto Timeouts</div>
+      <div class="adm-nav-tab" id="tab-settings"   onclick="switchTab('settings')">⚙️ Settings</div>
+    </div>
+
+    <!-- ======== OVERVIEW TAB ======== -->
+    <div class="adm-content" id="view-overview">
+      <div class="adm-stats-row" id="admStatsRow"></div>
+
+      <!-- Today's Activity -->
+      <div style="margin-bottom:28px;">
+        <div class="adm-section-header">
+          <div class="adm-section-title">Today's <span>Activity</span></div>
+        </div>
+        <div class="adm-table-wrap">
+          <table class="adm-table" id="todayTable">
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th>Time In</th>
+                <th>Time Out</th>
+                <th>Duration</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="todayTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======== MEMBERSHIPS TAB ======== -->
+    <div class="adm-content" id="view-memberships" style="display:none;">
+      <div class="adm-section-header">
+        <div class="adm-section-title">Membership <span>Plans</span></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <input class="adm-search" type="text" id="memSearch" placeholder="🔍  Search members..." oninput="renderMemberships()" style="min-width:200px;" />
+          <div style="display:flex;gap:6px;">
+            <button class="adm-filter-btn active" id="memFilter-all"      onclick="setMemFilter('all',this)">All</button>
+            <button class="adm-filter-btn"        id="memFilter-active"   onclick="setMemFilter('active',this)">Active 🟢</button>
+            <button class="adm-filter-btn"        id="memFilter-expiring" onclick="setMemFilter('expiring',this)">Expiring Soon ⚠️</button>
+            <button class="adm-filter-btn"        id="memFilter-expired"  onclick="setMemFilter('expired',this)">Expired 🔴</button>
+            <button class="adm-filter-btn"        id="memFilter-none"     onclick="setMemFilter('none',this)">No Plan</button>
+          </div>
+        </div>
+      </div>
+      <div class="adm-table-wrap">
+        <table class="adm-table" style="min-width:820px;">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Plan</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Days Left</th>
+              <th>Status</th>
+              <th>Renewal</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="membershipsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======== MEMBERS TAB ======== -->
+    <div class="adm-content" id="view-members" style="display:none;">
+      <div class="adm-section-header">
+        <div class="adm-section-title">All <span>Members</span></div>
+        <input class="adm-search" type="text" id="memberSearch" placeholder="🔍  Search members..." oninput="filterMembers()" />
+      </div>
+      <div class="adm-filter-row">
+        <button class="adm-filter-btn active" onclick="filterMemberStatus('all', this)">All</button>
+        <button class="adm-filter-btn" onclick="filterMemberStatus('in', this)">Currently In 🟢</button>
+        <button class="adm-filter-btn" onclick="filterMemberStatus('out', this)">Checked Out</button>
+      </div>
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Goal</th>
+              <th>BMI</th>
+              <th>Total Visits</th>
+              <th>Last Visit</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="membersTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======== ATTENDANCE TAB ======== -->
+    <div class="adm-content" id="view-attendance" style="display:none;">
+      <div class="adm-section-header">
+        <div class="adm-section-title">Attendance <span>Log</span></div>
+        <input class="adm-search" type="date" id="attDateFilter" onchange="renderAttendance()" />
+      </div>
+      <div id="attendanceLog"></div>
+    </div>
+
+    <!-- ======== TIMEOUTS TAB ======== -->
+    <div class="adm-content" id="view-timeouts" style="display:none;">
+      <div class="adm-section-header">
+        <div class="adm-section-title">Auto <span>Timeouts</span></div>
+        <div style="font-size:13px;color:var(--gray-3);">
+          Members who were logged out automatically after 3 hours
+        </div>
+      </div>
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Auto Timeout Date</th>
+              <th>Auto Timeout Time</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody id="timeoutsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======== SETTINGS TAB ======== -->
+    <div class="adm-content" id="view-progress" style="display:none;">
+      <div class="adm-section-header">
+        <div class="adm-section-title">Member <span>Progress Photos</span></div>
+      </div>
+      <div id="progressPhotoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;"></div>
+      <div id="progressPhotoEmpty" style="display:none;text-align:center;padding:60px 24px;color:rgba(255,255,255,.25);font-family:var(--font-cond);font-size:14px;letter-spacing:.08em;text-transform:uppercase;">
+        No progress photos uploaded yet by any member.
+      </div>
+    </div>
+
+    <div class="adm-content" id="view-settings" style="display:none;">
+      <div class="adm-section-title" style="margin-bottom:28px;">Portal <span style="color:var(--pink)">Settings</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px;">
+
+        <!-- Change PIN -->
+        <div class="db-card" style="background:var(--black-3);border:1px solid var(--black-5);border-radius:var(--radius-lg);padding:28px;">
+          <div style="font-family:var(--font-cond);font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--pink);margin-bottom:14px;">🔒 Change Admin PIN</div>
+          <div class="form-group">
+            <label class="form-label">New 4-Digit PIN</label>
+            <input class="form-input" type="password" id="newPin" maxlength="4" placeholder="Enter new PIN" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm PIN</label>
+            <input class="form-input" type="password" id="confirmPin" maxlength="4" placeholder="Confirm new PIN" />
+          </div>
+          <button class="login-btn" style="margin-top:4px;width:100%;padding:14px;" onclick="changePin()">
+            Save New PIN
+          </button>
+        </div>
+
+        <!-- Gym Info -->
+        <div class="db-card" style="background:var(--black-3);border:1px solid var(--black-5);border-radius:var(--radius-lg);padding:28px;">
+          <div style="font-family:var(--font-cond);font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--pink);margin-bottom:14px;">🏋️ Gym Info</div>
+          <div class="form-group">
+            <label class="form-label">Gym Name</label>
+            <input class="form-input" type="text" value="Gud Space Gym" readonly style="opacity:0.5;" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Auto Logout Duration</label>
+            <select class="form-input" id="autoLogoutSetting" onchange="saveAutoLogout()">
+              <option value="3">3 hours (default)</option>
+              <option value="1">1 hour</option>
+              <option value="2">2 hours</option>
+              <option value="4">4 hours</option>
+              <option value="8">8 hours</option>
+            </select>
+          </div>
+          <div style="font-size:12px;color:var(--gray-3);margin-top:6px;">More settings coming in the next update.</div>
+        </div>
+
+        <!-- Data Management -->
+        <div class="db-card" style="background:var(--black-3);border:1px solid var(--black-5);border-radius:var(--radius-lg);padding:28px;">
+          <div style="font-family:var(--font-cond);font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--pink);margin-bottom:14px;">🗄️ Data Management</div>
+          <div style="font-size:13px;color:var(--gray-2);line-height:1.7;margin-bottom:20px;">
+            Export or clear member data. Be careful — some actions are irreversible.
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <button class="adm-action-btn" style="padding:12px;justify-content:center;" onclick="exportData()">
+              📥 Export All Data (JSON)
+            </button>
+            <button class="adm-action-btn danger" style="padding:12px;justify-content:center;" onclick="clearTimeouts()">
+              🗑 Clear Auto Timeout Log
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ======== ANNOUNCE TAB ======== -->
+    <div class="adm-content" id="view-announce" style="display:none;">
+      <div class="adm-section-header">
+        <div class="adm-section-title">Post <span>Announcement</span></div>
+      </div>
+
+      <!-- Compose -->
+      <div class="ann-compose db-card" style="background:var(--black-3);border:1px solid var(--black-5);border-radius:var(--radius-lg);padding:24px;margin-bottom:24px;">
+        <div style="font-family:var(--font-cond);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--pink);margin-bottom:14px;">📢 NEW ANNOUNCEMENT</div>
+        <div class="form-group" style="margin-bottom:10px;">
+          <label class="form-label">Title</label>
+          <input class="form-input" id="annTitle" type="text" placeholder="e.g. Gym closed this Sunday" maxlength="80" />
+        </div>
+        <div class="form-group" style="margin-bottom:10px;">
+          <label class="form-label">Message</label>
+          <textarea class="form-input" id="annBody" rows="4" placeholder="Write your announcement here..." maxlength="500" style="resize:vertical;min-height:90px;"></textarea>
+        </div>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div>
+            <label class="form-label" style="margin-bottom:4px;">Priority</label>
+            <select class="form-input" id="annPriority" style="padding:8px 12px;">
+              <option value="info">ℹ️ Info</option>
+              <option value="warning">⚠️ Warning</option>
+              <option value="urgent">🚨 Urgent</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" style="margin-bottom:4px;">Expires After</label>
+            <select class="form-input" id="annExpiry" style="padding:8px 12px;">
+              <option value="1">1 day</option>
+              <option value="3" selected>3 days</option>
+              <option value="7">1 week</option>
+              <option value="30">1 month</option>
+              <option value="0">Never</option>
+            </select>
+          </div>
+          </div>
+          <button class="ann-post-btn" onclick="postAnnouncement()">
+            Post Announcement
+          </button>
+        </div>
+      </div>
+
+      <!-- Posted Announcements -->
+      <div class="adm-section-header" style="margin-top:0;">
+        <div class="adm-section-title">Active <span>Announcements</span></div>
+        <button class="adm-action-btn" onclick="clearExpiredAnnouncements()" style="padding:8px 14px;font-size:11px;">🗑 Clear Expired</button>
+      </div>
+      <div id="annList"></div>
+    </div>
+
+    <!-- ======== MESSAGES TAB ======== -->
+    <div class="adm-content" id="view-messages" style="display:none;">
+      <div class="adm-section-header">
+        <div class="adm-section-title">Direct <span>Messages</span></div>
+      </div>
+      <div class="msg-layout">
+        <!-- Member list -->
+        <div class="msg-sidebar">
+          <div class="msg-search-wrap">
+            <input class="form-input" id="msgMemberSearch" type="text" placeholder="🔍 Search member..." oninput="renderMsgMemberList()" style="padding:9px 12px;font-size:12px;" />
+          </div>
+          <div id="msgMemberList" class="msg-member-list"></div>
+        </div>
+        <!-- Chat area -->
+        <div class="msg-chat-area">
+          <div class="msg-chat-header" id="msgChatHeader">
+            <span style="color:rgba(255,255,255,.25);font-family:var(--font-cond);font-size:12px;letter-spacing:.1em;">SELECT A MEMBER TO START</span>
+          </div>
+          <div class="msg-chat-body" id="msgChatBody">
+            <div class="msg-empty-state">
+              <div style="font-size:32px;margin-bottom:12px;">💬</div>
+              <div>Select a member from the list to view or send messages</div>
+            </div>
+          </div>
+          <div class="msg-composer" id="msgComposer" style="display:none;">
+            <textarea class="msg-input" id="msgInput" placeholder="Type a message..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAdminMsg();}"></textarea>
+            <button class="msg-send-btn" onclick="sendAdminMsg()">Send ➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end adminDashboard -->
+
+  <!-- ASSIGN PLAN MODAL -->
+  <div class="mem-modal" id="memPlanModal">
+    <div class="mem-modal-box">
+      <button class="mem-close-btn" onclick="closeMemModal()">✕</button>
+      <div class="mem-modal-title">Assign <span style="color:var(--pink)">Plan</span></div>
+      <div class="mem-modal-sub" id="memModalSub">Select a preset or set a custom plan.</div>
+
+      <!-- Preset Plans -->
+      <div style="font-family:var(--font-cond);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--pink);margin-bottom:12px;">Preset Plans</div>
+      <div class="mem-preset-grid" id="memPresetGrid">
+        <div class="mem-preset-card" onclick="selectPreset(this,'Walk-in Rate','100',0)">
+          <div class="mem-preset-name">Walk-in Rate</div>
+          <div class="mem-preset-price">₱100</div>
+          <div class="mem-preset-dur">Per day (1 day)</div>
+        </div>
+        <div class="mem-preset-card" onclick="selectPreset(this,'Monthly Membership','900',30)">
+          <div class="mem-preset-name">Monthly Membership</div>
+          <div class="mem-preset-price">₱900</div>
+          <div class="mem-preset-dur">1 month (30 days)</div>
+        </div>
+        <div class="mem-preset-card" onclick="selectPreset(this,'4-Month','3400',120)">
+          <div class="mem-preset-name">4-Month</div>
+          <div class="mem-preset-price">₱3,400</div>
+          <div class="mem-preset-dur">4 months (120 days)</div>
+        </div>
+        <div class="mem-preset-card" onclick="selectPreset(this,'6-Month','5400',180)">
+          <div class="mem-preset-name">6-Month</div>
+          <div class="mem-preset-price">₱5,400</div>
+          <div class="mem-preset-dur">6 months (180 days)</div>
+        </div>
+        <div class="mem-preset-card" onclick="selectPreset(this,'1-Year','10500',365)" style="grid-column:span 2;">
+          <div class="mem-preset-name">1-Year</div>
+          <div class="mem-preset-price">₱10,500</div>
+          <div class="mem-preset-dur">12 months (365 days)</div>
+        </div>
+      </div>
+
+      <div class="mem-divider-label">or set a custom plan</div>
+
+      <!-- Custom Plan -->
+      <div class="mem-custom-grid">
+        <div>
+          <label class="form-label">Plan Name</label>
+          <input class="form-input" id="memCustomName" type="text" placeholder="e.g. Student Plan" oninput="clearPresetSelection()" />
+        </div>
+        <div>
+          <label class="form-label">Price (₱)</label>
+          <input class="form-input" id="memCustomPrice" type="number" placeholder="e.g. 750" oninput="clearPresetSelection()" />
+        </div>
+        <div>
+          <label class="form-label">Start Date</label>
+          <input class="form-input" id="memStartDate" type="date" />
+        </div>
+        <div>
+          <label class="form-label">End Date</label>
+          <input class="form-input" id="memEndDate" type="date" />
+        </div>
+      </div>
+
+      <button class="mem-save-btn" onclick="saveMemberPlan()">💾 Save Plan</button>
+    </div>
+  </div>
+
+  <!-- MEMBER DETAIL MODAL -->
+  <div class="member-modal" id="memberModal">
+    <div class="member-modal-box">
+      <button class="mm-close" onclick="closeMemberModal()">✕</button>
+      <div id="memberModalContent"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+  /* =====================================================
+     ADMIN PORTAL LOGIC
+  ===================================================== */
+
+  const ADMIN_PIN_KEY = 'adminPin';
+  const DEFAULT_PIN   = '1234';
+
+  let pinBuffer  = '';
+  let activeTab  = 'overview';
+  let memberFilter = 'all';
+  let memberSearch = '';
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAYS_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const GOAL_LABELS = {
+    'build-strength':'Build Strength','lose-weight':'Lose Weight','get-lean':'Get Lean',
+    'get-in-shape':'Get in Shape','build-muscle':'Build Muscle','overall-fitness':'Overall Fitness'
+  };
+  const AVATAR_COLORS = ['#FF1A5E','#a29bfe','#74b9ff','#fd79a8','#fdcb6e','#6c5ce7','#2ed573','#e17055'];
+
+  /* ---- Check saved admin session ---- */
+  document.addEventListener('DOMContentLoaded', () => {
+    const admSession = sessionStorage.getItem('gudspace_admin');
+    if (admSession === 'true') showAdminDashboard();
+    updateAdmDate();
+
+    // Set auto logout setting
+    const saved = window.GudSpace.storage.get('autoLogoutHours');
+    if (saved) {
+      const sel = document.getElementById('autoLogoutSetting');
+      if (sel) sel.value = saved;
+    }
+  });
+
+  /* ---- PIN ENTRY ---- */
+  function pinPress(val) {
+    const errEl = document.getElementById('pinError');
+    errEl.textContent = '';
+
+    if (val === 'clear') {
+      pinBuffer = '';
+    } else if (val === 'del') {
+      pinBuffer = pinBuffer.slice(0, -1);
+    } else if (pinBuffer.length < 4) {
+      pinBuffer += val;
+    }
+
+    updatePinDots();
+
+    if (pinBuffer.length === 4) {
+      setTimeout(() => checkPin(), 120);
+    }
+  }
+
+  // Keyboard support
+  document.addEventListener('keydown', (e) => {
+    if (document.getElementById('adminDashboard').style.display !== 'none') return;
+    if (e.key >= '0' && e.key <= '9') pinPress(e.key);
+    if (e.key === 'Backspace') pinPress('del');
+    if (e.key === 'Escape') pinPress('clear');
+  });
+
+  function updatePinDots() {
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById('pd' + i);
+      dot.className = 'adm-pin-dot' + (i < pinBuffer.length ? ' filled' : '');
+    }
+  }
+
+  function checkPin() {
+    const stored = window.GudSpace.storage.get(ADMIN_PIN_KEY) || DEFAULT_PIN;
+    if (pinBuffer === stored) {
+      sessionStorage.setItem('gudspace_admin', 'true');
+      showAdminDashboard();
+    } else {
+      // Error — shake row + red dots
+      const pinRow = document.getElementById('pinDots');
+      for (let i = 0; i < 4; i++) {
+        document.getElementById('pd' + i).className = 'adm-pin-dot error';
+      }
+      pinRow.classList.remove('shake');
+      void pinRow.offsetWidth; // reflow to restart
+      pinRow.classList.add('shake');
+      document.getElementById('pinError').textContent = 'Incorrect PIN. Try again.';
+      setTimeout(() => {
+        pinBuffer = '';
+        updatePinDots();
+        pinRow.classList.remove('shake');
+      }, 700);
+    }
+  }
+
+  function showAdminDashboard() {
+    document.getElementById('adminLoginScreen').style.display = 'none';
+    document.getElementById('adminDashboard').style.display   = 'block';
+    renderOverview();
+    renderMembers();
+    renderAttendance();
+    renderTimeouts();
+    renderAdminNotifications();
+  }
+
+  function adminLogout() {
+    sessionStorage.removeItem('gudspace_admin');
+    pinBuffer = '';
+    updatePinDots();
+    document.getElementById('adminDashboard').style.display   = 'none';
+    document.getElementById('adminLoginScreen').style.display = 'flex';
+  }
+
+  /* ---- TABS ---- */
+  function switchTab(tab) {
+    activeTab = tab;
+    ['overview','members','memberships','attendance','progress','announce','messages','timeouts','settings'].forEach(t => {
+      document.getElementById('view-' + t).style.display = t === tab ? 'block' : 'none';
+      document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    });
+    if (tab === 'progress')    renderProgressPhotos();
+    if (tab === 'announce')    renderAnnouncements();
+    if (tab === 'messages')    renderMsgMemberList();
+    if (tab === 'memberships') renderMemberships();
+  }
+
+  /* ---- PROGRESS PHOTOS ---- */
+  function renderProgressPhotos() {
+    const users   = window.GudSpace.storage.get('users') || [];
+    const grid    = document.getElementById('progressPhotoGrid');
+    const empty   = document.getElementById('progressPhotoEmpty');
+    const members = users.filter(u => !u.isAdmin);
+
+    const withPhotos = members.filter(u => u.progressPhotos && (u.progressPhotos.before || u.progressPhotos.after));
+
+    if (!withPhotos.length) {
+      grid.style.display  = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+
+    grid.style.display  = 'grid';
+    empty.style.display = 'none';
+
+    const COLORS = ['#FF1A5E','#a29bfe','#74b9ff','#fd79a8','#fdcb6e','#6c5ce7'];
+
+    grid.innerHTML = withPhotos.map(u => {
+      const name    = ((u.firstName || '') + ' ' + (u.lastName || '')).trim() || u.name || 'Member';
+      const initial = name.charAt(0).toUpperCase();
+      const color   = COLORS[(u.id?.charCodeAt(4) || 0) % COLORS.length];
+      const p       = u.profile || {};
+      const photos  = u.progressPhotos || {};
+
+      const beforeSlot = photos.before
+        ? `<div class="pp-photo-slot">
+             <img src="${photos.before.url}" alt="Before" />
+             <div class="pp-photo-label before">Before</div>
+             <div class="pp-photo-date">${photos.before.date || ''}</div>
+           </div>`
+        : `<div class="pp-no-photo"><span>📷</span><span>No Before Photo</span></div>`;
+
+      const afterSlot = photos.after
+        ? `<div class="pp-photo-slot">
+             <img src="${photos.after.url}" alt="After" />
+             <div class="pp-photo-label after">After</div>
+             <div class="pp-photo-date">${photos.after.date || ''}</div>
+           </div>`
+        : `<div class="pp-no-photo"><span>💪</span><span>No After Photo</span></div>`;
+
+      return `
+        <div class="pp-member-card">
+          <div class="pp-member-header">
+            <div class="pp-member-avatar" style="background:${color};">${initial}</div>
+            <div>
+              <div class="pp-member-name">${name}</div>
+              <div class="pp-member-meta">${p.goal ? p.goal.replace(/-/g,' ') : '—'} · ${p.weightKg || '--'} kg · ${p.heightCm || '--'} cm</div>
+            </div>
+          </div>
+          <div class="pp-photos-row">
+            ${beforeSlot}
+            <div class="pp-divider"></div>
+            ${afterSlot}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  /* ---- HELPER: format time ---- */
+  function fmt12(isoStr) {
+    if (!isoStr) return '--';
+    const d = new Date(isoStr);
+    let h = d.getHours();
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${String(h).padStart(2,'0')}:${m} ${ap}`;
+  }
+  function fmtDate(isoStr) {
+    if (!isoStr) return '--';
+    const d = new Date(isoStr);
+    return `${DAYS_FULL[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  }
+  function fmtDuration(mins) {
+    if (!mins) return '--';
+    if (mins < 60) return `${mins}m`;
+    return `${Math.floor(mins/60)}h ${mins%60}m`;
+  }
+  function avatarColor(id) {
+    return AVATAR_COLORS[(id?.charCodeAt(4) || 0) % AVATAR_COLORS.length];
+  }
+
+  function updateAdmDate() {
+    const n = new Date();
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    document.getElementById('admDate').textContent =
+      days[n.getDay()].toUpperCase() + ', ' + MONTHS[n.getMonth()].toUpperCase() + ' ' + n.getDate() + ' ' + n.getFullYear();
+  }
+
+  /* ---- OVERVIEW ---- */
+  function renderOverview() {
+    const users    = window.GudSpace.storage.get('users') || [];
+    const today    = new Date().toDateString();
+    const todayAtt = users.flatMap(u =>
+      (u.attendance || [])
+        .filter(s => new Date(s.date).toDateString() === today)
+        .map(s => ({ ...s, user: u }))
+    );
+    const currentlyIn = todayAtt.filter(s => s.timeIn && !s.timeOut);
+    const timeouts = window.GudSpace.storage.get('autoTimeouts') || [];
+
+    // Stats
+    document.getElementById('admStatsRow').innerHTML = `
+      <div class="adm-stat-card">
+        <div class="asc-icon">👥</div>
+        <div class="asc-value">${users.length}</div>
+        <div class="asc-label">Total Members</div>
+        <div class="asc-change neutral">All time registrations</div>
+      </div>
+      <div class="adm-stat-card">
+        <div class="asc-icon">📅</div>
+        <div class="asc-value">${todayAtt.length}</div>
+        <div class="asc-label">Visited Today</div>
+        <div class="asc-change up">↑ ${todayAtt.length} sessions logged</div>
+      </div>
+      <div class="adm-stat-card">
+        <div class="asc-icon" style="background:rgba(46,213,115,0.1);">🟢</div>
+        <div class="asc-value" style="color:#2ed573;">${currentlyIn.length}</div>
+        <div class="asc-label">Currently In Gym</div>
+        <div class="asc-change up" style="${currentlyIn.length?'':'color:var(--gray-3);'}">Live presence</div>
+      </div>
+      <div class="adm-stat-card">
+        <div class="asc-icon" style="background:rgba(255,59,48,0.08);">⏰</div>
+        <div class="asc-value" style="color:#ff6b6b;">${timeouts.length}</div>
+        <div class="asc-label">Auto Timeouts</div>
+        <div class="asc-change neutral">Total recorded</div>
+      </div>
+    `;
+
+    // Today's table
+    const tbody = document.getElementById('todayTbody');
+    if (!todayAtt.length) {
+      tbody.innerHTML = `<tr><td colspan="5"><div class="adm-empty">
+        <div class="adm-empty-icon">📋</div>
+        <div class="adm-empty-title">No Sessions Today</div>
+        <div class="adm-empty-sub">No members have checked in yet today.</div>
+      </div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = todayAtt.sort((a,b) => new Date(b.date) - new Date(a.date)).map(s => {
+      const u = s.user;
+      const name = (u.firstName || '') + ' ' + (u.lastName || '');
+      const initial = (u.firstName || u.name || '?').charAt(0).toUpperCase();
+      const color = avatarColor(u.id);
+      const isIn = s.timeIn && !s.timeOut;
+      const isAuto = s.autoTimeout;
+      return `
+        <tr>
+          <td>
+            <div class="member-cell">
+              <div class="member-av" style="background:${color}">${initial}</div>
+              <div>
+                <div class="member-name">${name.toUpperCase()}</div>
+                <div class="member-email">${u.email}</div>
+              </div>
+            </div>
+          </td>
+          <td style="color:var(--white);font-family:var(--font-cond);font-size:15px;font-weight:700;">${fmt12(s.timeIn)}</td>
+          <td style="font-family:var(--font-cond);font-size:15px;font-weight:700;color:${isIn?'var(--gray-4)':'var(--white)'};">${isIn ? '—' : fmt12(s.timeOut)}</td>
+          <td>${fmtDuration(s.duration)}</td>
+          <td>
+            ${isIn
+              ? `<span class="status-badge in"><div class="status-dot"></div>In Gym</span>`
+              : isAuto
+              ? `<span class="status-badge auto"><div class="status-dot"></div>Auto Out</span>`
+              : `<span class="status-badge out"><div class="status-dot"></div>Checked Out</span>`
+            }
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  /* ---- MEMBERS ---- */
+  function renderMembers() {
+    const users = window.GudSpace.storage.get('users') || [];
+    const today = new Date().toDateString();
+    const tbody = document.getElementById('membersTbody');
+    const search = (document.getElementById('memberSearch')?.value || '').toLowerCase();
+
+    let filtered = users.filter(u => {
+      const name = ((u.firstName || '') + ' ' + (u.lastName || '') + ' ' + (u.email || '')).toLowerCase();
+      return name.includes(search);
+    });
+
+    if (memberFilter === 'in') {
+      filtered = filtered.filter(u =>
+        (u.attendance || []).some(s => new Date(s.date).toDateString() === today && s.timeIn && !s.timeOut)
+      );
+    } else if (memberFilter === 'out') {
+      filtered = filtered.filter(u =>
+        !(u.attendance || []).some(s => new Date(s.date).toDateString() === today && s.timeIn && !s.timeOut)
+      );
+    }
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="adm-empty">
+        <div class="adm-empty-icon">👥</div>
+        <div class="adm-empty-title">No Members Found</div>
+        <div class="adm-empty-sub">Try a different search or filter.</div>
+      </div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(u => {
+      const isIn = (u.attendance || []).some(s => new Date(s.date).toDateString() === today && s.timeIn && !s.timeOut);
+      const visits = (u.attendance || []).length;
+      const lastAtt = (u.attendance || []).sort((a,b) => new Date(b.date)-new Date(a.date))[0];
+      const lastVisit = lastAtt ? fmtDate(lastAtt.date) : 'Never';
+      const p = u.profile || {};
+      const name = (u.firstName || '') + ' ' + (u.lastName || '');
+      const initial = (u.firstName || u.name || '?').charAt(0).toUpperCase();
+      const color = avatarColor(u.id);
+      const bmiClass = (p.bmiClass || '').toLowerCase();
+      const bmiColor = bmiClass.includes('normal') ? '#2ed573' : bmiClass.includes('over') ? '#fdcb6e' : bmiClass.includes('obese') ? '#ff6b6b' : '#74b9ff';
+
+      return `
+        <tr>
+          <td>
+            <div class="member-cell">
+              <div class="member-av" style="background:${color}">${initial}</div>
+              <div>
+                <div class="member-name">${name.trim().toUpperCase() || 'N/A'}</div>
+                <div class="member-email">${u.email}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="goal-tag">${GOAL_LABELS[p.goal] || '—'}</span></td>
+          <td style="color:${bmiColor};font-family:var(--font-cond);font-weight:700;">${p.bmi || '—'}</td>
+          <td style="font-family:var(--font-cond);font-weight:700;color:var(--white);">${visits}</td>
+          <td style="font-size:12px;">${lastVisit}</td>
+          <td>
+            ${isIn
+              ? `<span class="status-badge in"><div class="status-dot"></div>In Gym</span>`
+              : `<span class="status-badge out"><div class="status-dot"></div>Out</span>`
+            }
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="adm-action-btn" onclick="openMemberModal('${u.id}')">👁 View</button>
+              <button class="adm-action-btn danger" onclick="deleteMember('${u.id}', '${name.trim()}')">🗑</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function filterMembers() {
+    memberSearch = document.getElementById('memberSearch')?.value || '';
+    renderMembers();
+  }
+
+  function filterMemberStatus(status, el) {
+    memberFilter = status;
+    document.querySelectorAll('.adm-filter-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    renderMembers();
+  }
+
+  /* ---- ATTENDANCE LOG ---- */
+  function renderAttendance() {
+    const container = document.getElementById('attendanceLog');
+    const users = window.GudSpace.storage.get('users') || [];
+    const dateFilter = document.getElementById('attDateFilter')?.value;
+
+    // Collect all attendance
+    let all = [];
+    users.forEach(u => {
+      (u.attendance || []).forEach(s => {
+        all.push({ ...s, user: u });
+      });
+    });
+
+    // Filter by date if selected
+    if (dateFilter) {
+      all = all.filter(s => {
+        const d = new Date(s.date);
+        return d.toISOString().slice(0, 10) === dateFilter;
+      });
+    }
+
+    // Sort newest first
+    all.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (!all.length) {
+      container.innerHTML = `<div class="adm-empty">
+        <div class="adm-empty-icon">📅</div>
+        <div class="adm-empty-title">No Attendance Records</div>
+        <div class="adm-empty-sub">No sessions found${dateFilter ? ' for this date' : ''}.
+        </div>
+      </div>`;
+      return;
+    }
+
+    // Group by date
+    const groups = {};
+    all.forEach(s => {
+      const key = new Date(s.date).toDateString();
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(s);
+    });
+
+    container.innerHTML = Object.entries(groups).map(([dateStr, sessions]) => {
+      const d = new Date(dateStr);
+      const label = DAYS_FULL[d.getDay()] + ', ' + MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+      const rows = sessions.map(s => {
+        const u = s.user;
+        const name = (u.firstName || '') + ' ' + (u.lastName || '');
+        const initial = (u.firstName || '?').charAt(0).toUpperCase();
+        const color = avatarColor(u.id);
+        const isIn = s.timeIn && !s.timeOut;
+        const isAuto = s.autoTimeout;
+        return `
+          <tr ${isAuto ? 'class="timeout-row"' : ''}>
+            <td>
+              <div class="member-cell">
+                <div class="member-av" style="background:${color};width:32px;height:32px;font-size:13px;">${initial}</div>
+                <div class="member-name">${name.trim().toUpperCase()}</div>
+              </div>
+            </td>
+            <td style="font-family:var(--font-cond);font-weight:700;color:var(--white);">${fmt12(s.timeIn)}</td>
+            <td style="font-family:var(--font-cond);font-weight:700;${isIn?'color:var(--gray-4)':'color:var(--white)'};">${isIn ? 'Still In' : fmt12(s.timeOut)}</td>
+            <td>${fmtDuration(s.duration)}</td>
+            <td>
+              ${isIn
+                ? `<span class="status-badge in"><div class="status-dot"></div>In Gym</span>`
+                : isAuto
+                ? `<span class="status-badge auto"><div class="status-dot"></div>Auto Timeout</span>`
+                : `<span class="status-badge out"><div class="status-dot"></div>Checked Out</span>`
+              }
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      return `
+        <div class="att-date-group">
+          <div class="att-date-header">
+            ${label}
+            <span class="att-count-badge">${sessions.length} session${sessions.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div class="adm-table-wrap">
+            <table class="adm-table">
+              <thead><tr><th>Member</th><th>Time In</th><th>Time Out</th><th>Duration</th><th>Status</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  /* ---- AUTO TIMEOUTS LOG ---- */
+  function renderTimeouts() {
+    const timeouts = window.GudSpace.storage.get('autoTimeouts') || [];
+    const tbody = document.getElementById('timeoutsTbody');
+
+    if (!timeouts.length) {
+      tbody.innerHTML = `<tr><td colspan="4"><div class="adm-empty">
+        <div class="adm-empty-icon">✅</div>
+        <div class="adm-empty-title">No Auto Timeouts</div>
+        <div class="adm-empty-sub">No members have been automatically logged out yet.</div>
+      </div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = [...timeouts].reverse().map(t => {
+      const d = new Date(t.timeoutAt);
+      return `
+        <tr class="timeout-row">
+          <td>
+            <div class="member-cell">
+              <div class="member-av" style="background:#ff6b6b;width:32px;height:32px;font-size:13px;">
+                ${(t.name || '?').charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div class="member-name">${(t.name || 'Unknown').toUpperCase()}</div>
+                <div class="member-email">${t.userId || ''}</div>
+              </div>
+            </div>
+          </td>
+          <td>${fmtDate(t.timeoutAt)}</td>
+          <td style="font-family:var(--font-cond);font-weight:700;color:#ff6b6b;">${fmt12(t.timeoutAt)}</td>
+          <td><span class="status-badge auto">⏰ Auto Timeout (3h)</span></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  /* ---- MEMBER DETAIL MODAL ---- */
+  function openMemberModal(userId) {
+    const users = window.GudSpace.storage.get('users') || [];
+    const u = users.find(u => u.id === userId);
+    if (!u) return;
+
+    const p = u.profile || {};
+    const name = ((u.firstName || '') + ' ' + (u.lastName || '')).trim();
+    const initial = (u.firstName || '?').charAt(0).toUpperCase();
+    const color = avatarColor(u.id);
+    const attendance = (u.attendance || []).sort((a,b) => new Date(b.date)-new Date(a.date));
+    const bmiClass = (p.bmiClass || '').toLowerCase();
+    const bmiColor = bmiClass.includes('normal') ? '#2ed573' : bmiClass.includes('over') ? '#fdcb6e' : bmiClass.includes('obese') ? '#ff6b6b' : '#74b9ff';
+
+    const attRows = attendance.slice(0, 10).map(s => `
+      <div class="mm-att-row">
+        <div class="mm-att-date">${fmtDate(s.date)}</div>
+        <div class="mm-att-times">${fmt12(s.timeIn)} → ${s.timeOut ? fmt12(s.timeOut) : '<span style="color:#2ed573">In Gym</span>'}</div>
+        ${s.autoTimeout ? '<span style="font-size:10px;color:#ff6b6b;background:rgba(255,59,48,0.1);padding:2px 6px;border-radius:3px;">AUTO</span>' : ''}
+      </div>
+    `).join('') || '<div style="font-size:13px;color:var(--gray-3);padding:8px 0;">No attendance records yet.</div>';
+
+    document.getElementById('memberModalContent').innerHTML = `
+      <div class="mm-header">
+        <div class="mm-avatar" style="background:${color}">${initial}</div>
+        <div>
+          <div class="mm-name">${name.toUpperCase() || 'N/A'}</div>
+          <div class="mm-email">${u.email}</div>
+          <span class="goal-tag" style="margin-top:6px;display:inline-block;">${GOAL_LABELS[p.goal] || '—'}</span>
+        </div>
+      </div>
+
+      <div class="mm-section">Body Stats</div>
+      <div class="mm-grid">
+        <div class="mm-item"><div class="mm-item-label">Weight</div><div class="mm-item-value">${p.weightKg || '--'} kg</div></div>
+        <div class="mm-item"><div class="mm-item-label">Height</div><div class="mm-item-value">${p.heightCm || '--'} cm</div></div>
+        <div class="mm-item"><div class="mm-item-label">Age</div><div class="mm-item-value">${p.age || '--'} yrs</div></div>
+        <div class="mm-item"><div class="mm-item-label">BMI</div><div class="mm-item-value" style="color:${bmiColor}">${p.bmi || '--'} <span style="font-size:12px;">${p.bmiClass || ''}</span></div></div>
+      </div>
+
+      <div class="mm-section">Daily Nutrition Targets</div>
+      <div class="mm-grid">
+        <div class="mm-item"><div class="mm-item-label">Calories</div><div class="mm-item-value">${(p.calories||'--').toLocaleString()} kcal</div></div>
+        <div class="mm-item"><div class="mm-item-label">Protein</div><div class="mm-item-value">${p.protein || '--'} g</div></div>
+        <div class="mm-item"><div class="mm-item-label">Carbs</div><div class="mm-item-value">${p.carbs || '--'} g</div></div>
+        <div class="mm-item"><div class="mm-item-label">Total Visits</div><div class="mm-item-value" style="color:var(--pink)">${attendance.length}</div></div>
+      </div>
+
+      <div class="mm-section">Attendance History (Last 10)</div>
+      <div class="mm-att-list">${attRows}</div>
+    `;
+
+    document.getElementById('memberModal').classList.add('show');
+  }
+
+  function closeMemberModal() {
+    document.getElementById('memberModal').classList.remove('show');
+  }
+  document.getElementById('memberModal').addEventListener('click', function(e) {
+    if (e.target === this) closeMemberModal();
+  });
+
+  /* ---- DELETE MEMBER ---- */
+  function deleteMember(userId, name) {
+    if (!confirm(`Delete member "${name}"? This cannot be undone.`)) return;
+    const users = window.GudSpace.storage.get('users') || [];
+    const updated = users.filter(u => u.id !== userId);
+    window.GudSpace.storage.set('users', updated);
+    renderOverview();
+    renderMembers();
+    window.GudSpace.showToast(`Member "${name}" removed.`, '🗑');
+  }
+
+  /* ---- CHANGE PIN ---- */
+  function changePin() {
+    const newPin     = document.getElementById('newPin').value;
+    const confirmPin = document.getElementById('confirmPin').value;
+    if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+      window.GudSpace.showToast('PIN must be exactly 4 digits.', '⚠️'); return;
+    }
+    if (newPin !== confirmPin) {
+      window.GudSpace.showToast('PINs do not match.', '⚠️'); return;
+    }
+    window.GudSpace.storage.set(ADMIN_PIN_KEY, newPin);
+    document.getElementById('newPin').value     = '';
+    document.getElementById('confirmPin').value = '';
+    window.GudSpace.showToast('Admin PIN changed successfully! 🔒', '✅');
+  }
+
+  /* ---- AUTO LOGOUT SETTING ---- */
+  function saveAutoLogout() {
+    const val = document.getElementById('autoLogoutSetting').value;
+    window.GudSpace.storage.set('autoLogoutHours', val);
+    window.GudSpace.showToast(`Auto logout set to ${val} hour${val>1?'s':''}.`, '⏱');
+  }
+
+  /* ============================================================
+     ANNOUNCEMENTS
+  ============================================================ */
+  const ANN_KEY = 'announcements';
+
+  function postAnnouncement() {
+    const title    = document.getElementById('annTitle').value.trim();
+    const body     = document.getElementById('annBody').value.trim();
+    const priority = document.getElementById('annPriority').value;
+    const expDays  = parseInt(document.getElementById('annExpiry').value);
+
+    if (!title || !body) {
+      window.GudSpace.showToast('Please fill in both Title and Message.', '⚠️'); return;
+    }
+
+    const ann = {
+      id:       Date.now(),
+      title,
+      body,
+      priority,
+      postedAt:  new Date().toISOString(),
+      expiresAt: expDays > 0 ? new Date(Date.now() + expDays * 86400000).toISOString() : null,
+    };
+
+    const list = window.GudSpace.storage.get(ANN_KEY) || [];
+    list.unshift(ann);
+    window.GudSpace.storage.set(ANN_KEY, list);
+
+    document.getElementById('annTitle').value = '';
+    document.getElementById('annBody').value  = '';
+    window.GudSpace.showToast('Announcement posted!', '📢');
+    renderAnnouncements();
+  }
+
+  function deleteAnnouncement(id) {
+    const list = (window.GudSpace.storage.get(ANN_KEY) || []).filter(a => a.id !== id);
+    window.GudSpace.storage.set(ANN_KEY, list);
+    renderAnnouncements();
+  }
+
+  function clearExpiredAnnouncements() {
+    const now  = Date.now();
+    const list = (window.GudSpace.storage.get(ANN_KEY) || []).filter(a => !a.expiresAt || new Date(a.expiresAt).getTime() > now);
+    window.GudSpace.storage.set(ANN_KEY, list);
+    window.GudSpace.showToast('Expired announcements cleared.', '🗑');
+    renderAnnouncements();
+  }
+
+  function renderAnnouncements() {
+    const list    = window.GudSpace.storage.get(ANN_KEY) || [];
+    const el      = document.getElementById('annList');
+    if (!el) return;
+    const now     = Date.now();
+    const ICONS   = { urgent:'🚨', warning:'⚠️', info:'ℹ️' };
+
+    if (!list.length) {
+      el.innerHTML = '<div class="ann-empty">No announcements posted yet.</div>';
+      return;
+    }
+
+    el.innerHTML = list.map(a => {
+      const isExpired = a.expiresAt && new Date(a.expiresAt).getTime() <= now;
+      const expiryStr = a.expiresAt
+        ? (isExpired ? 'Expired' : 'Expires ' + new Date(a.expiresAt).toLocaleDateString('en-PH', { month:'short', day:'numeric' }))
+        : 'Never expires';
+      const postedStr = new Date(a.postedAt).toLocaleDateString('en-PH', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      return `
+        <div class="ann-item priority-${a.priority}${isExpired ? ' style="opacity:.5"' : ''}">
+          <div class="ann-priority-badge">${ICONS[a.priority] || 'ℹ️'}</div>
+          <div class="ann-content">
+            <div class="ann-title">${a.title}</div>
+            <div class="ann-body">${a.body}</div>
+            <div class="ann-meta">
+              <span class="ann-meta-tag">📅 ${postedStr}</span>
+              <span class="ann-meta-tag ${isExpired ? 'expired' : 'expiry'}">${expiryStr}</span>
+              <span class="ann-meta-tag" style="text-transform:capitalize;">${a.priority}</span>
+            </div>
+          </div>
+          <button class="ann-delete-btn" onclick="deleteAnnouncement(${a.id})" title="Delete">✕</button>
+        </div>`;
+    }).join('');
+  }
+
+  /* ============================================================
+     DIRECT MESSAGES
+  ============================================================ */
+  const MSG_KEY   = 'dm_messages';
+  let activeMsgId = null;
+
+  function getMsgs() { return window.GudSpace.storage.get(MSG_KEY) || {}; }
+  function saveMsgs(msgs) { window.GudSpace.storage.set(MSG_KEY, msgs); }
+
+  function renderMsgMemberList() {
+    const users  = (window.GudSpace.storage.get('users') || []).filter(u => !u.isAdmin);
+    const msgs   = getMsgs();
+    const query  = (document.getElementById('msgMemberSearch')?.value || '').toLowerCase();
+    const el     = document.getElementById('msgMemberList');
+    if (!el) return;
+
+    const filtered = users.filter(u => (u.name || u.email || '').toLowerCase().includes(query));
+    if (!filtered.length) {
+      el.innerHTML = '<div style="padding:20px;text-align:center;color:rgba(255,255,255,.2);font-size:12px;">No members found</div>';
+      return;
+    }
+
+    el.innerHTML = filtered.map(u => {
+      const thread   = msgs[u.id] || [];
+      const last     = thread[thread.length - 1];
+      const preview  = last ? last.text.substring(0, 36) + (last.text.length > 36 ? '…' : '') : 'No messages yet';
+      const unread   = thread.some(m => m.from === 'member' && !m.read);
+      const initials = (u.name || u.email || '?').charAt(0).toUpperCase();
+      const avatar   = u.photoURL
+        ? `<img src="${u.photoURL}" alt="" />`
+        : initials;
+      return `
+        <div class="msg-member-item${activeMsgId === u.id ? ' active' : ''}" onclick="openMsgThread('${u.id}')">
+          <div class="msg-member-avatar">${avatar}</div>
+          <div class="msg-member-info">
+            <div class="msg-member-name">${u.name || u.email}</div>
+            <div class="msg-member-preview">${preview}</div>
+          </div>
+          ${unread ? '<div class="msg-unread-dot"></div>' : ''}
+        </div>`;
+    }).join('');
+  }
+
+  function openMsgThread(userId) {
+    activeMsgId = userId;
+    const users  = window.GudSpace.storage.get('users') || [];
+    const user   = users.find(u => u.id === userId);
+    const msgs   = getMsgs();
+    const thread = msgs[userId] || [];
+
+    // Mark all member messages as read
+    thread.forEach(m => { if (m.from === 'member') m.read = true; });
+    msgs[userId] = thread;
+    saveMsgs(msgs);
+    renderMsgMemberList();
+
+    // Header
+    const header = document.getElementById('msgChatHeader');
+    const initials = (user?.name || user?.email || '?').charAt(0).toUpperCase();
+    const avatarHTML = user?.photoURL
+      ? `<img src="${user.photoURL}" alt="" style="width:100%;height:100%;object-fit:cover;">`
+      : initials;
+    header.innerHTML = `
+      <div class="msg-chat-header-avatar">${avatarHTML}</div>
+      <div class="msg-chat-header-name">${user?.name || user?.email || 'Unknown'}</div>`;
+
+    // Messages
+    const body = document.getElementById('msgChatBody');
+    if (!thread.length) {
+      body.innerHTML = '<div class="msg-empty-state"><div style="font-size:28px;margin-bottom:10px;">💬</div><div>No messages yet. Say hi!</div></div>';
+    } else {
+      body.innerHTML = thread.map(m => {
+        const side = m.from === 'admin' ? 'from-admin' : 'from-member';
+        const time = new Date(m.at).toLocaleTimeString('en-PH', { hour:'2-digit', minute:'2-digit', hour12:true });
+        return `<div class="msg-bubble-wrap ${side}">
+          <div class="msg-bubble">${m.text}</div>
+          <div class="msg-bubble-time">${time}</div>
+        </div>`;
+      }).join('');
+      body.scrollTop = body.scrollHeight;
+    }
+
+    document.getElementById('msgComposer').style.display = 'flex';
+  }
+
+  function sendAdminMsg() {
+    if (!activeMsgId) return;
+    const input = document.getElementById('msgInput');
+    const text  = input.value.trim();
+    if (!text) return;
+
+    const msgs   = getMsgs();
+    if (!msgs[activeMsgId]) msgs[activeMsgId] = [];
+    msgs[activeMsgId].push({ from:'admin', text, at: new Date().toISOString(), read: false });
+    saveMsgs(msgs);
+
+    input.value = '';
+    openMsgThread(activeMsgId);
+    renderMsgMemberList();
+  }
+
+  /* ---- EXPORT DATA ---- */
+  function exportData() {
+    const data = {
+      users:    window.GudSpace.storage.get('users') || [],
+      timeouts: window.GudSpace.storage.get('autoTimeouts') || [],
+      exported: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `GudSpaceGym_Data_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    window.GudSpace.showToast('Data exported successfully! 📥', '✅');
+  }
+
+  /* ---- CLEAR TIMEOUTS ---- */
+  function clearTimeouts() {
+    if (!confirm('Clear all auto timeout records? This cannot be undone.')) return;
+    window.GudSpace.storage.set('autoTimeouts', []);
+    renderTimeouts();
+    renderOverview();
+    window.GudSpace.showToast('Auto timeout log cleared.', '🗑');
+  }
+
+  /* ---- KEYBOARD ESC ---- */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeMemberModal(); closeMemModal(); }
+  });
+
+  /* ============================================================
+     MEMBERSHIPS
+  ============================================================ */
+  const PRESET_PLANS = [
+    { name: 'Walk-in Rate',        price: 100,   days: 1   },
+    { name: 'Monthly Membership',  price: 900,   days: 30  },
+    { name: '4-Month',             price: 3400,  days: 120 },
+    { name: '6-Month',             price: 5400,  days: 180 },
+    { name: '1-Year',              price: 10500, days: 365 },
+  ];
+
+  let memFilterState    = 'all';
+  let assigningUserId   = null;
+  let selectedPreset    = null;
+
+  /* ---- helpers ---- */
+  function getMembershipStatus(plan) {
+    if (!plan || !plan.endDate) return 'none';
+    const now      = Date.now();
+    const end      = new Date(plan.endDate).getTime();
+    const daysLeft = Math.ceil((end - now) / 86400000);
+    if (daysLeft < 0)  return 'expired';
+    if (daysLeft <= 10) return 'expiring';
+    return 'active';
+  }
+
+  function getDaysLeft(plan) {
+    if (!plan || !plan.endDate) return null;
+    const end = new Date(plan.endDate).getTime();
+    return Math.ceil((end - Date.now()) / 86400000);
+  }
+
+  function getTotalDays(plan) {
+    if (!plan || !plan.startDate || !plan.endDate) return 1;
+    const s = new Date(plan.startDate).getTime();
+    const e = new Date(plan.endDate).getTime();
+    return Math.max(1, Math.ceil((e - s) / 86400000));
+  }
+
+  function fmtShortDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+  }
+
+  /* ---- filter ---- */
+  function setMemFilter(f, el) {
+    memFilterState = f;
+    document.querySelectorAll('[id^="memFilter-"]').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    renderMemberships();
+  }
+
+  /* ---- render table ---- */
+  function renderMemberships() {
+    const users  = (window.GudSpace.storage.get('users') || []).filter(u => !u.isAdmin);
+    const query  = (document.getElementById('memSearch')?.value || '').toLowerCase();
+    const tbody  = document.getElementById('membershipsTbody');
+    if (!tbody) return;
+
+    let filtered = users.filter(u => {
+      const name = ((u.firstName||'') + ' ' + (u.lastName||'') + ' ' + (u.email||'')).toLowerCase();
+      return name.includes(query);
+    });
+
+    if (memFilterState !== 'all') {
+      filtered = filtered.filter(u => {
+        const status = getMembershipStatus(u.membership);
+        if (memFilterState === 'none') return !u.membership || status === 'none';
+        return status === memFilterState;
+      });
+    }
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="adm-empty">
+        <div class="adm-empty-icon">🎫</div>
+        <div class="adm-empty-title">No Members Found</div>
+        <div class="adm-empty-sub">Try a different filter or search.</div>
+      </div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(u => {
+      const plan     = u.membership;
+      const status   = getMembershipStatus(plan);
+      const daysLeft = getDaysLeft(plan);
+      const total    = getTotalDays(plan);
+      const color    = avatarColor(u.id);
+      const name     = ((u.firstName||'') + ' ' + (u.lastName||'')).trim();
+      const initial  = (u.firstName || u.name || '?').charAt(0).toUpperCase();
+      const hasRenewalReq = u.renewalRequest === true;
+
+      const statusHTML = {
+        active:   `<span class="mem-plan-badge active"><span class="status-dot"></span>Active</span>`,
+        expiring: `<span class="mem-plan-badge expiring">⚠️ Expiring Soon</span>`,
+        expired:  `<span class="mem-plan-badge expired">🔴 Expired</span>`,
+        none:     `<span class="mem-plan-badge none">— No Plan</span>`,
+      }[status] || `<span class="mem-plan-badge none">— No Plan</span>`;
+
+      /* Progress bar */
+      let barHTML = '—';
+      if (plan && daysLeft !== null && status !== 'none') {
+        const pct = status === 'expired' ? 0 : Math.min(100, Math.round((daysLeft / total) * 100));
+        const barColor = status === 'expiring' ? '#fdcb6e' : status === 'expired' ? '#ff6b6b' : '#2ed573';
+        barHTML = `
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-family:var(--font-cond);font-weight:700;font-size:14px;color:${status==='expired'?'#ff6b6b':status==='expiring'?'#fdcb6e':'var(--white)'};">
+              ${status === 'expired' ? 'Expired' : daysLeft + 'd'}
+            </span>
+            <div class="mem-days-bar-wrap">
+              <div class="mem-days-bar" style="width:${pct}%;background:${barColor};"></div>
+            </div>
+          </div>`;
+      }
+
+      const renewalHTML = hasRenewalReq
+        ? `<span class="renewal-req-badge">🔄 Requested</span>`
+        : `<span style="color:rgba(255,255,255,.2);font-size:12px;">—</span>`;
+
+      return `
+        <tr>
+          <td>
+            <div class="member-cell">
+              <div class="member-av" style="background:${color}">${initial}</div>
+              <div>
+                <div class="member-name">${name.toUpperCase() || 'N/A'}</div>
+                <div class="member-email">${u.email}</div>
+              </div>
+            </div>
+          </td>
+          <td style="font-family:var(--font-cond);font-weight:700;color:var(--white);font-size:13px;">
+            ${plan ? plan.name : '<span style="color:rgba(255,255,255,.25);">—</span>'}
+            ${plan ? `<div style="font-size:11px;color:var(--pink);margin-top:2px;">₱${Number(plan.price).toLocaleString()}</div>` : ''}
+          </td>
+          <td style="font-size:12px;color:rgba(255,255,255,.5);">${fmtShortDate(plan?.startDate)}</td>
+          <td style="font-size:12px;color:rgba(255,255,255,.5);">${fmtShortDate(plan?.endDate)}</td>
+          <td>${barHTML}</td>
+          <td>${statusHTML}</td>
+          <td>${renewalHTML}</td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="adm-action-btn" onclick="openMemModal('${u.id}')">
+                ${plan ? '✏️ Edit' : '➕ Assign'}
+              </button>
+              ${plan ? `<button class="adm-action-btn danger" onclick="clearMemberPlan('${u.id}','${name}')">🗑</button>` : ''}
+              ${hasRenewalReq ? `<button class="adm-action-btn" style="border-color:rgba(253,203,110,.3);color:#fdcb6e;" onclick="dismissRenewal('${u.id}')">✓ Dismiss</button>` : ''}
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  /* ---- open modal ---- */
+  function openMemModal(userId) {
+    assigningUserId = userId;
+    selectedPreset  = null;
+
+    const users = window.GudSpace.storage.get('users') || [];
+    const u     = users.find(x => x.id === userId);
+    if (!u) return;
+
+    const name = ((u.firstName||'') + ' ' + (u.lastName||'')).trim() || u.email;
+    document.getElementById('memModalSub').textContent = 'Assigning plan for: ' + name;
+
+    /* Clear selections */
+    document.querySelectorAll('.mem-preset-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('memCustomName').value  = '';
+    document.getElementById('memCustomPrice').value = '';
+
+    /* Pre-fill dates — default start = today */
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById('memStartDate').value = u.membership?.startDate || today;
+    document.getElementById('memEndDate').value   = u.membership?.endDate   || '';
+
+    /* Pre-select current plan if it matches a preset */
+    if (u.membership) {
+      const match = PRESET_PLANS.find(p => p.name === u.membership.name);
+      if (match) {
+        const cards = document.querySelectorAll('.mem-preset-card');
+        cards.forEach(c => {
+          if (c.querySelector('.mem-preset-name')?.textContent === match.name) {
+            c.classList.add('selected');
+            selectedPreset = match;
+          }
+        });
+      } else {
+        document.getElementById('memCustomName').value  = u.membership.name  || '';
+        document.getElementById('memCustomPrice').value = u.membership.price || '';
+      }
+    }
+
+    document.getElementById('memPlanModal').classList.add('show');
+  }
+
+  function closeMemModal() {
+    document.getElementById('memPlanModal').classList.remove('show');
+    assigningUserId = null;
+    selectedPreset  = null;
+  }
+  document.getElementById('memPlanModal').addEventListener('click', function(e) {
+    if (e.target === this) closeMemModal();
+  });
+
+  /* ---- preset selection ---- */
+  function selectPreset(cardEl, name, price, days) {
+    document.querySelectorAll('.mem-preset-card').forEach(c => c.classList.remove('selected'));
+    cardEl.classList.add('selected');
+    selectedPreset = { name, price: parseInt(price), days };
+
+    /* Auto-fill dates */
+    const startVal = document.getElementById('memStartDate').value || new Date().toISOString().slice(0,10);
+    const start    = new Date(startVal);
+    const end      = new Date(start);
+    end.setDate(end.getDate() + days);
+    document.getElementById('memStartDate').value = start.toISOString().slice(0,10);
+    document.getElementById('memEndDate').value   = end.toISOString().slice(0,10);
+
+    /* Clear custom fields */
+    document.getElementById('memCustomName').value  = '';
+    document.getElementById('memCustomPrice').value = '';
+  }
+
+  function clearPresetSelection() {
+    document.querySelectorAll('.mem-preset-card').forEach(c => c.classList.remove('selected'));
+    selectedPreset = null;
+  }
+
+  /* ---- save plan ---- */
+  function saveMemberPlan() {
+    if (!assigningUserId) return;
+
+    const startDate = document.getElementById('memStartDate').value;
+    const endDate   = document.getElementById('memEndDate').value;
+
+    if (!startDate || !endDate) {
+      window.GudSpace.showToast('Please set both Start and End dates.', '⚠️'); return;
+    }
+    if (new Date(endDate) <= new Date(startDate)) {
+      window.GudSpace.showToast('End date must be after Start date.', '⚠️'); return;
+    }
+
+    let planName, planPrice;
+    if (selectedPreset) {
+      planName  = selectedPreset.name;
+      planPrice = selectedPreset.price;
+    } else {
+      planName  = document.getElementById('memCustomName').value.trim();
+      planPrice = document.getElementById('memCustomPrice').value;
+      if (!planName) { window.GudSpace.showToast('Please enter a plan name.', '⚠️'); return; }
+      if (!planPrice || isNaN(planPrice)) { window.GudSpace.showToast('Please enter a valid price.', '⚠️'); return; }
+    }
+
+    const users   = window.GudSpace.storage.get('users') || [];
+    const idx     = users.findIndex(u => u.id === assigningUserId);
+    if (idx === -1) return;
+
+    users[idx].membership = {
+      name:      planName,
+      price:     parseInt(planPrice),
+      startDate,
+      endDate,
+      assignedAt: new Date().toISOString(),
+    };
+    /* Clear renewal request if re-assigning */
+    users[idx].renewalRequest = false;
+
+    window.GudSpace.storage.set('users', users);
+    closeMemModal();
+    renderMemberships();
+    renderAdminNotifications();
+    window.GudSpace.showToast(`Plan "${planName}" assigned successfully! 🎫`, '✅');
+  }
+
+  /* ---- clear plan ---- */
+  function clearMemberPlan(userId, name) {
+    if (!confirm(`Remove membership plan for "${name}"?`)) return;
+    const users = window.GudSpace.storage.get('users') || [];
+    const idx   = users.findIndex(u => u.id === userId);
+    if (idx === -1) return;
+    delete users[idx].membership;
+    users[idx].renewalRequest = false;
+    window.GudSpace.storage.set('users', users);
+    renderMemberships();
+    renderAdminNotifications();
+    window.GudSpace.showToast(`Plan removed for "${name}".`, '🗑');
+  }
+
+  /* ---- dismiss renewal request ---- */
+  function dismissRenewal(userId) {
+    const users = window.GudSpace.storage.get('users') || [];
+    const idx   = users.findIndex(u => u.id === userId);
+    if (idx === -1) return;
+    users[idx].renewalRequest = false;
+    window.GudSpace.storage.set('users', users);
+    renderMemberships();
+    renderAdminNotifications();
+    window.GudSpace.showToast('Renewal request dismissed.', '✅');
+  }
+
+  /* ---- admin notification bell ---- */
+  function renderAdminNotifications() {
+    const users   = (window.GudSpace.storage.get('users') || []).filter(u => !u.isAdmin);
+    const listEl  = document.getElementById('admNotifList');
+    const dotEl   = document.getElementById('admNotifDot');
+    if (!listEl) return;
+
+    const alerts = [];
+
+    users.forEach(u => {
+      const name   = ((u.firstName||'') + ' ' + (u.lastName||'')).trim() || u.email;
+      const status = getMembershipStatus(u.membership);
+      const days   = getDaysLeft(u.membership);
+
+      if (status === 'expiring') {
+        alerts.push({ icon: '⚠️', text: `<strong>${name}</strong> — plan expiring in <strong style="color:#fdcb6e;">${days} day${days!==1?'s':''}</strong>`, type: 'expiring' });
+      } else if (status === 'expired') {
+        alerts.push({ icon: '🔴', text: `<strong>${name}</strong> — membership has <strong style="color:#ff6b6b;">expired</strong>`, type: 'expired' });
+      }
+
+      if (u.renewalRequest) {
+        alerts.push({ icon: '🔄', text: `<strong>${name}</strong> sent a <strong style="color:#fdcb6e;">renewal request</strong>`, type: 'renewal' });
+      }
+    });
+
+    if (alerts.length) {
+      dotEl.classList.add('show');
+      listEl.innerHTML = alerts.map(a => `
+        <div class="adm-notif-item">
+          <div class="adm-notif-icon">${a.icon}</div>
+          <div class="adm-notif-text">${a.text}</div>
+        </div>`).join('');
+    } else {
+      dotEl.classList.remove('show');
+      listEl.innerHTML = '<div class="adm-notif-empty">No alerts right now. ✅</div>';
+    }
+  }
+
+  function toggleNotifDropdown() {
+    document.getElementById('admNotifDropdown').classList.toggle('show');
+  }
+  /* Close notif dropdown on outside click */
+  document.addEventListener('click', e => {
+    const btn      = document.getElementById('admNotifBtn');
+    const dropdown = document.getElementById('admNotifDropdown');
+    if (dropdown && !btn?.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.remove('show');
+    }
+  });
+  </script>
+  <!-- PARTICLES -->
+  <script>
+  (function() {
+    const canvas = document.getElementById('adminParticles');
+    const ctx    = canvas.getContext('2d');
+    let W, H, particles = [];
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function rand(min, max) { return Math.random() * (max - min) + min; }
+
+    function createParticle() {
+      return {
+        x: rand(0, W), y: rand(0, H),
+        r: rand(0.8, 2.2),
+        vx: rand(-0.25, 0.25),
+        vy: rand(-0.4, -0.1),
+        alpha: rand(0.2, 0.7),
+        fadeDir: Math.random() > 0.5 ? 1 : -1,
+        fadeSpeed: rand(0.003, 0.008),
+        color: Math.random() > 0.6
+          ? `rgba(255,26,94,`
+          : Math.random() > 0.5
+            ? `rgba(255,100,140,`
+            : `rgba(200,200,200,`
+      };
+    }
+
+    for (let i = 0; i < 90; i++) particles.push(createParticle());
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      particles.forEach((p, i) => {
+        p.x  += p.vx;
+        p.y  += p.vy;
+        p.alpha += p.fadeDir * p.fadeSpeed;
+        if (p.alpha <= 0.05 || p.alpha >= 0.75) p.fadeDir *= -1;
+        if (p.y < -10 || p.x < -10 || p.x > W + 10) {
+          particles[i] = createParticle();
+          particles[i].y = H + 5;
+        }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + p.alpha + ')';
+        ctx.fill();
+      });
+      requestAnimationFrame(draw);
+    }
+    draw();
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,2174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — GUD SPACE GYM</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pink:       #FF1A5E;
+      --pink-d:     #CC1049;
+      --pink-glow:  rgba(255,26,94,.18);
+      --black:      #080808;
+      --surface:    rgba(255,255,255,.035);
+      --surface-h:  rgba(255,255,255,.055);
+      --border:     rgba(255,255,255,.07);
+      --border-h:   rgba(255,26,94,.3);
+      --text-dim:   rgba(255,255,255,.35);
+      --text-muted: rgba(255,255,255,.18);
+      --green:      #2ed573;
+      --font-display: 'Bebas Neue', Impact, sans-serif;
+      --font-cond:    'Barlow Condensed', sans-serif;
+      --font-body:    'Barlow', sans-serif;
+      --sb-width: 240px;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    html { scroll-behavior: auto; }
+
+    body {
+      background: var(--black);
+      color: #fff;
+      font-family: var(--font-body);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* ─── AMBIENT BACKGROUND ─── */
+    .ambient {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    }
+    .ambient-blob {
+      position: absolute; border-radius: 50%;
+      filter: blur(120px); opacity: 0; animation: blobPulse 8s ease-in-out infinite;
+    }
+    .ambient-blob-1 {
+      width: 600px; height: 600px;
+      top: -200px; right: -100px;
+      background: radial-gradient(circle, rgba(255,26,94,.12), transparent 70%);
+      animation-delay: 0s;
+    }
+    .ambient-blob-2 {
+      width: 400px; height: 400px;
+      bottom: 10%; left: 20%;
+      background: radial-gradient(circle, rgba(108,92,231,.08), transparent 70%);
+      animation-delay: 3s;
+    }
+    @keyframes blobPulse {
+      0%,100% { opacity:.6; transform: scale(1); }
+      50%      { opacity:1;  transform: scale(1.08); }
+    }
+
+    /* Fine grid */
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,26,94,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,26,94,.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      animation: gridDrift 50s linear infinite;
+    }
+    @keyframes gridDrift { 0%{background-position:0 0} 100%{background-position:48px 48px} }
+
+    /* ─── CURSOR ─── */
+    .cursor {
+      position: fixed; width: 10px; height: 10px;
+      background: var(--pink); border-radius: 50%;
+      pointer-events: none; z-index: 99999;
+      transform: translate(-50%,-50%);
+      transition: width .2s, height .2s;
+      will-change: left, top;
+    }
+    .cursor-follower {
+      position: fixed; width: 32px; height: 32px;
+      border: 1.5px solid rgba(255,26,94,.4); border-radius: 50%;
+      pointer-events: none; z-index: 99998;
+      transform: translate(-50%,-50%);
+      will-change: left, top;
+    }
+    .cursor.hov { width: 16px; height: 16px; }
+    .cursor-follower.hov { width: 48px; height: 48px; border-color: rgba(255,26,94,.2); }
+    .noise-overlay {
+      position: fixed; inset: 0; z-index: 9990; pointer-events: none; opacity: .02;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 160px;
+    }
+
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      width: var(--sb-width);
+      min-height: 100vh;
+      background: rgba(10,10,10,0.97);
+      border-right: 1px solid rgba(255,255,255,0.05);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      z-index: 200;
+      transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+      overflow-y: auto;
+      backdrop-filter: blur(20px);
+    }
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 300px;
+      background: linear-gradient(180deg, rgba(255,26,94,0.06) 0%, transparent 100%);
+      pointer-events: none;
+    }
+    .sidebar::-webkit-scrollbar { width: 0; }
+    /* Sidebar scroll is position-locked via JS — no jump on nav */
+
+    .sb-logo { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; position: relative; z-index: 1; }
+    .sb-logo-text { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.04em; display: flex; align-items: baseline; gap: 2px; }
+    .logo-space { color: var(--pink); }
+    .logo-gym   { font-size: 14px; color: rgba(255,255,255,.25); }
+
+    .sb-profile { padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; position: relative; z-index: 1; }
+    .sb-avatar-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 14px; }
+    .sb-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink), #a0004a);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 30px; color: white;
+      border: 2px solid rgba(255,26,94,0.4);
+      position: relative; overflow: hidden; cursor: pointer;
+      box-shadow: 0 0 30px rgba(255,26,94,0.25);
+    }
+    .sb-avatar img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+    .sb-avatar-ring { position: absolute; inset: -5px; border-radius: 50%; border: 1.5px solid rgba(255,26,94,0.4); animation: ringPulse 3s ease-in-out infinite; }
+    @keyframes ringPulse { 0%,100%{opacity:.3;transform:scale(1)} 50%{opacity:.8;transform:scale(1.05)} }
+    .sb-cam-btn {
+      position: absolute; bottom: 0; right: 0;
+      width: 22px; height: 22px;
+      background: #1a1a1a; border: 1.5px solid rgba(255,255,255,.1);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; cursor: pointer; transition: all .2s;
+    }
+    .sb-cam-btn:hover { background: var(--pink); }
+
+    .sb-name { font-family: var(--font-cond); font-size: 18px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--white); }
+    .sb-meta { font-size: 12px; color: var(--gray-3); margin-top: 3px; }
+    .sb-goal-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,26,94,0.1); border: 1px solid rgba(255,26,94,0.2);
+      border-radius: 4px; padding: 4px 10px;
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--pink); margin-top: 10px;
+    }
+
+    .sb-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; position: relative; z-index: 1; }
+    .sb-nav-section { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray-4); padding: 12px 12px 6px; }
+    .sb-nav-link {
+      display: flex; align-items: center; gap: 12px; padding: 11px 14px;
+      border-radius: var(--radius-sm); font-family: var(--font-cond); font-size: 14px;
+      font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--gray-3); cursor: pointer; transition: all 0.2s ease;
+      text-decoration: none; border: none; background: none; width: 100%; text-align: left;
+      position: relative; overflow: hidden;
+    }
+    .sb-nav-link::before {
+      content: ''; position: absolute; inset: 0;
+      background: var(--pink); opacity: 0;
+      transition: opacity 0.2s;
+      border-radius: var(--radius-sm);
+    }
+    .sb-nav-link:hover { color: var(--white); }
+    .sb-nav-link:hover::before { opacity: 0.08; }
+    .sb-nav-link.active { background: rgba(255,26,94,0.1); color: var(--pink); border-left: 3px solid var(--pink); }
+    .sb-nav-icon { font-size: 18px; flex-shrink: 0; width: 22px; text-align: center; position: relative; z-index: 1; }
+    .sb-nav-link span:last-child { position: relative; z-index: 1; }
+
+    .sb-logout-wrap { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; position: relative; z-index: 1; }
+    .sb-logout-btn {
+      display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px;
+      border-radius: var(--radius-sm); background: rgba(255,59,48,0.08);
+      border: 1px solid rgba(255,59,48,0.15); color: #ff6b6b;
+      font-family: var(--font-cond); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+    }
+    .sb-logout-btn:hover { background: rgba(255,59,48,0.18); border-color: rgba(255,59,48,0.35); }
+
+    /* ─── MAIN AREA ─── */
+    .db-main {
+      margin-left: var(--sb-width);
+      flex: 1; min-height: 100vh;
+      display: flex; flex-direction: column;
+      position: relative; z-index: 1;
+    }
+
+    /* ─── HERO TOPBAR ─── */
+    .db-topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(8,8,8,.85);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 68px;
+    }
+    .db-topbar-left { display: flex; flex-direction: column; justify-content: center; }
+    .db-date-line {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: .28em; text-transform: uppercase;
+      color: var(--pink); margin-bottom: 1px;
+    }
+    .db-greeting {
+      font-family: var(--font-display); font-size: 22px;
+      letter-spacing: .03em; line-height: 1; color: #fff;
+    }
+    .db-greeting span { color: var(--pink); }
+
+    .db-topbar-right { display: flex; align-items: center; gap: 12px; }
+    .db-streak-pill {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,26,94,.08); border: 1px solid rgba(255,26,94,.2);
+      border-radius: 100px; padding: 6px 14px;
+      transition: background .2s;
+    }
+    .db-streak-pill:hover { background: rgba(255,26,94,.14); }
+    .db-streak-num { font-family: var(--font-display); font-size: 22px; color: var(--pink); line-height: 1; }
+    .db-streak-label { font-family: var(--font-cond); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-dim); }
+    .db-menu-btn { display: none; background: none; border: none; color: #fff; cursor: pointer; padding: 4px; }
+
+    /* Membership Bell */
+    .db-mem-bell {
+      position: relative;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 8px 11px;
+      color: rgba(255,255,255,0.5); cursor: pointer;
+      font-size: 16px; display: flex; align-items: center;
+      transition: all 0.2s;
+    }
+    .db-mem-bell:hover { border-color: rgba(255,26,94,0.35); color: var(--pink); }
+    .db-mem-bell-dot {
+      position: absolute; top: 4px; right: 4px;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #fdcb6e; border: 1.5px solid #0d0d0d;
+      display: none;
+    }
+    .db-mem-bell-dot.show { display: block; animation: bellPulse 1.5s ease-in-out infinite; }
+    @keyframes bellPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(1.2)} }
+
+    /* Membership Status Card on Dashboard */
+    .mem-status-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 22px 24px;
+      margin-bottom: 20px;
+      position: relative; overflow: hidden;
+      transition: border-color 0.25s;
+    }
+    .mem-status-card.expiring { border-color: rgba(253,203,110,0.3); background: rgba(253,203,110,0.04); }
+    .mem-status-card.expired  { border-color: rgba(255,107,107,0.3); background: rgba(255,107,107,0.04); }
+    .mem-status-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--pink); transform: scaleX(0); transform-origin: left;
+      transition: transform 0.4s;
+    }
+    .mem-status-card.active::before   { transform: scaleX(1); background: #2ed573; }
+    .mem-status-card.expiring::before { transform: scaleX(1); background: #fdcb6e; }
+    .mem-status-card.expired::before  { transform: scaleX(1); background: #ff6b6b; }
+    .mem-status-card.walkin::before   { transform: scaleX(1); background: #74b9ff; }
+    .mem-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .mem-card-label { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 4px; }
+    .mem-card-plan-name { font-family: var(--font-display); font-size: 24px; letter-spacing: 0.03em; color: var(--white); line-height: 1; }
+    .mem-card-price { font-family: var(--font-cond); font-size: 14px; font-weight: 700; color: var(--pink); margin-top: 4px; }
+    .mem-card-badge { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 5px 12px; border-radius: 4px; }
+    .mem-card-dates { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 14px; }
+    .mem-date-item { }
+    .mem-date-val { font-family: var(--font-cond); font-size: 14px; font-weight: 700; color: var(--white); }
+    .mem-progress-wrap { background: rgba(255,255,255,0.06); border-radius: 6px; height: 6px; overflow: hidden; margin-bottom: 8px; }
+    .mem-progress-bar { height: 100%; border-radius: 6px; transition: width 0.6s ease; }
+    .mem-days-remaining { font-family: var(--font-cond); font-size: 12px; color: rgba(255,255,255,0.4); letter-spacing: 0.06em; }
+    .mem-renew-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 14px; padding: 9px 20px; border-radius: 8px;
+      background: rgba(253,203,110,0.1); border: 1px solid rgba(253,203,110,0.25);
+      color: #fdcb6e; font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mem-renew-btn:hover { background: rgba(253,203,110,0.18); border-color: rgba(253,203,110,0.4); }
+    .mem-renew-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .mem-no-plan {
+      text-align: center; padding: 28px 20px;
+      color: rgba(255,255,255,0.25); font-family: var(--font-cond);
+      font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+
+    /* Membership Popup Modal */
+    .mem-popup-overlay {
+      position: fixed; inset: 0; z-index: 9900;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(16px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px; animation: fadeIn 0.3s ease;
+    }
+    .mem-popup-box {
+      background: rgba(10,10,10,0.99);
+      border-radius: 24px; padding: 48px 40px;
+      width: 100%; max-width: 420px; text-align: center;
+      position: relative;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,26,94,0.12);
+      animation: popupIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes popupIn { from{opacity:0;transform:scale(0.88) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
+    .mem-popup-icon { font-size: 52px; margin-bottom: 16px; line-height: 1; }
+    .mem-popup-title { font-family: var(--font-display); font-size: 34px; letter-spacing: 0.03em; margin-bottom: 8px; }
+    .mem-popup-sub { font-size: 14px; color: rgba(255,255,255,0.45); line-height: 1.7; margin-bottom: 28px; }
+    .mem-popup-days { font-family: var(--font-display); font-size: 72px; color: #fdcb6e; line-height: 1; margin-bottom: 4px; }
+    .mem-popup-days-label { font-family: var(--font-cond); font-size: 11px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 28px; }
+    .mem-popup-close {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 32px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--pink) 0%, #c4003f 100%);
+      border: none; cursor: pointer;
+      font-family: var(--font-cond); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase; color: white;
+      box-shadow: 0 4px 20px rgba(255,26,94,0.35); transition: all 0.2s;
+    }
+    .mem-popup-close:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(255,26,94,0.5); }
+
+    /* ─── CONTENT GRID ─── */
+    .db-content {
+      padding: 24px 28px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 260px;
+      grid-template-rows: auto;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    /* ─── ANNOUNCEMENT BANNER ─── */
+    #annBannerArea { grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px; }
+    #annBannerArea.has-banners { display: flex; }
+    .ann-banner {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px; border-radius: 10px;
+      border-left: 4px solid;
+      animation: annSlideIn .4s cubic-bezier(0.22,1,0.36,1);
+      position: relative;
+      min-height: 0;
+    }
+    @keyframes annSlideIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+    .ann-banner.priority-info    { background: rgba(116,185,255,.08); border-color: #74b9ff; }
+    .ann-banner.priority-warning { background: rgba(253,203,110,.08); border-color: #fdcb6e; }
+    .ann-banner.priority-urgent  { background: rgba(255,107,107,.10); border-color: #ff6b6b; }
+    .ann-banner-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .ann-banner-body { flex: 1; }
+    .ann-banner-title { font-family: var(--font-cond); font-size: 13px; font-weight: 700; letter-spacing: .04em; color: #fff; margin-bottom: 2px; }
+    .ann-banner-text  { font-size: 12px; color: rgba(255,255,255,.55); line-height: 1.5; }
+    .ann-banner-dismiss {
+      background: none; border: none; color: rgba(255,255,255,.2); font-size: 14px;
+      cursor: pointer; padding: 2px 4px; border-radius: 4px; transition: color .2s; flex-shrink: 0;
+    }
+    .ann-banner-dismiss:hover { color: rgba(255,255,255,.6); }
+
+    /* ─── INBOX BUTTON (topbar) ─── */
+    .db-inbox-btn {
+      position: relative;
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+      border-radius: 100px; padding: 6px 14px;
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: .14em; text-transform: uppercase;
+      color: var(--text-dim); cursor: pointer;
+      transition: background .2s, border-color .2s, color .2s, box-shadow .2s;
+    }
+    .db-inbox-btn:hover { background: rgba(255,26,94,.08); border-color: rgba(255,26,94,.2); color: var(--pink); }
+
+    /* Unread state — pink glow pulse */
+    .db-inbox-btn.has-unread {
+      border-color: rgba(255,26,94,.5);
+      color: var(--pink);
+      background: rgba(255,26,94,.08);
+      animation: inboxGlowPulse 2s ease-in-out infinite;
+    }
+    @keyframes inboxGlowPulse {
+      0%,100% { box-shadow: 0 0 0px rgba(255,26,94,0); }
+      50%      { box-shadow: 0 0 14px rgba(255,26,94,.55), 0 0 28px rgba(255,26,94,.2); }
+    }
+
+    .db-inbox-btn-icon { font-size: 15px; line-height: 1; }
+    .db-inbox-label { line-height: 1; }
+
+    .db-inbox-unread {
+      min-width: 18px; height: 18px; border-radius: 100px;
+      background: var(--pink); font-size: 10px; font-weight: 700;
+      color: #fff; display: none; align-items: center; justify-content: center;
+      padding: 0 5px;
+      box-shadow: 0 0 8px rgba(255,26,94,.6);
+    }
+    /* Badge bounce-in when it appears */
+    .db-inbox-unread.pop {
+      animation: badgePop .45s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes badgePop {
+      0%   { transform: scale(0); opacity: 0; }
+      60%  { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ─── INBOX MODAL ─── */
+    .inbox-modal {
+      display: none; position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,.7); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center;
+    }
+    .inbox-modal.show { display: flex; }
+    .inbox-box {
+      background: #111; border: 1px solid rgba(255,255,255,.1);
+      border-radius: 16px; width: 100%; max-width: 480px; max-height: 75vh;
+      display: flex; flex-direction: column; overflow: hidden;
+      animation: annSlideIn .3s ease;
+    }
+    .inbox-header {
+      padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,.07);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .inbox-title { font-family: var(--font-cond); font-size: 15px; font-weight: 700; letter-spacing: .06em; color: #fff; }
+    .inbox-close { background: none; border: none; color: rgba(255,255,255,.3); font-size: 18px; cursor: pointer; transition: color .2s; }
+    .inbox-close:hover { color: #fff; }
+    .inbox-body { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .inbox-msg-wrap { display: flex; flex-direction: column; max-width: 85%; }
+    .inbox-msg-wrap.from-admin { align-self: flex-start; align-items: flex-start; }
+    .inbox-msg-wrap.from-me    { align-self: flex-end; align-items: flex-end; }
+    .inbox-bubble {
+      padding: 9px 13px; border-radius: 12px; font-size: 13px; line-height: 1.5; word-break: break-word;
+    }
+    .inbox-msg-wrap.from-admin .inbox-bubble { background: rgba(255,255,255,.08); color: rgba(255,255,255,.85); border-bottom-left-radius: 3px; }
+    .inbox-msg-wrap.from-me    .inbox-bubble { background: var(--pink); color: #fff; border-bottom-right-radius: 3px; }
+    .inbox-bubble-time { font-size: 9px; color: rgba(255,255,255,.25); margin-top: 3px; }
+    .inbox-composer { padding: 10px 12px; border-top: 1px solid rgba(255,255,255,.06); display: flex; gap: 8px; }
+    .inbox-input {
+      flex: 1; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px; padding: 9px 12px; color: #fff; font-size: 13px; outline: none;
+      font-family: inherit; transition: border-color .2s;
+    }
+    .inbox-input:focus { border-color: rgba(255,26,94,.4); }
+    .inbox-send-btn {
+      background: var(--pink); border: none; border-radius: 8px; padding: 9px 14px;
+      color: #fff; font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: .07em; cursor: pointer; transition: background .2s;
+    }
+    .inbox-send-btn:hover { background: var(--pink-d); }
+    .inbox-empty { text-align: center; padding: 40px 20px; color: rgba(255,255,255,.2); font-family: var(--font-cond); font-size: 12px; letter-spacing: .08em; }
+
+    /* ─── BASE CARD ─── */
+    .db-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      position: relative; overflow: hidden;
+      transition: border-color .25s, background .25s;
+    }
+    .db-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+    }
+    .db-card:hover { border-color: rgba(255,26,94,.18); background: var(--surface-h); }
+
+    .card-label {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: .22em; text-transform: uppercase;
+      color: var(--text-dim); margin-bottom: 14px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .card-label-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--pink); box-shadow: 0 0 5px var(--pink);
+    }
+
+    /* ─── SESSION CARD ─── */
+    .session-card { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; }
+
+    /* Active pulse border */
+    .session-card.active-session {
+      border-color: rgba(46,213,115,.3);
+      box-shadow: 0 0 0 1px rgba(46,213,115,.1), inset 0 0 40px rgba(46,213,115,.03);
+    }
+
+    .session-active-badge {
+      display: none; align-items: center; gap: 8px;
+      background: rgba(46,213,115,.08); border: 1px solid rgba(46,213,115,.2);
+      border-radius: var(--radius-sm); padding: 9px 13px;
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--green); margin-bottom: 12px;
+    }
+    .session-active-badge.show { display: flex; }
+    .sab-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 8px var(--green);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.7)} }
+    .session-timer { font-family: var(--font-display); font-size: 18px; color: var(--green); margin-left: auto; letter-spacing: .04em; }
+
+    .session-times { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .session-time-block {
+      background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+      border-radius: var(--radius-sm); padding: 12px 14px;
+      transition: border-color .2s;
+    }
+    .session-time-block:hover { border-color: rgba(255,26,94,.2); }
+    .stime-label {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: .2em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 5px;
+    }
+    .stime-value {
+      font-family: var(--font-display); font-size: 24px;
+      letter-spacing: .04em; color: rgba(255,255,255,.4); line-height: 1;
+    }
+    .stime-value .has-time { color: var(--pink); text-shadow: 0 0 16px rgba(255,26,94,.35); }
+    .stime-placeholder { color: rgba(255,255,255,.12); }
+
+    .session-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 8px; }
+    .session-in-btn, .session-out-btn {
+      padding: 12px; border-radius: var(--radius-sm); border: none;
+      font-family: var(--font-cond); font-size: 12px; font-weight: 800;
+      letter-spacing: .12em; text-transform: uppercase;
+      cursor: pointer; transition: all .2s ease;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    .session-in-btn {
+      background: linear-gradient(135deg, var(--pink), #ff4d82);
+      color: white; box-shadow: 0 4px 20px rgba(255,26,94,.3);
+    }
+    .session-in-btn:hover:not(:disabled) {
+      transform: translateY(-2px); box-shadow: 0 8px 28px rgba(255,26,94,.45);
+    }
+    .session-out-btn {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.1);
+      color: rgba(255,255,255,.4);
+    }
+    .session-out-btn:hover:not(:disabled) {
+      border-color: rgba(255,59,48,.5); color: #ff6b6b;
+      background: rgba(255,59,48,.08);
+    }
+    .session-in-btn:disabled, .session-out-btn:disabled {
+      opacity: .28; cursor: not-allowed; transform: none; box-shadow: none;
+    }
+
+    /* Quick stats row inside session card */
+    .quick-stats {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 7px; margin-top: 12px;
+    }
+    .qs-item {
+      background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.05);
+      border-radius: var(--radius-sm); padding: 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center;
+      transition: border-color .2s;
+    }
+    .qs-item:hover { border-color: rgba(255,26,94,.2); }
+    .qs-icon {
+      font-size: 16px; width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 7px; background: rgba(255,255,255,.04);
+      transition: background .2s;
+    }
+    .qs-icon.checked { background: var(--pink); box-shadow: 0 0 10px rgba(255,26,94,.3); }
+    .qs-value { font-family: var(--font-display); font-size: 20px; color: #fff; line-height: 1; }
+    .qs-label { font-family: var(--font-cond); font-size: 8px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text-muted); }
+
+    /* ─── WORKOUT CARD ─── */
+    .workout-card { grid-column: 2; grid-row: 2; }
+
+    .workout-day-tabs { display: flex; gap: 4px; margin-bottom: 14px; flex-wrap: wrap; }
+    .wday-tab {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: .07em; text-transform: uppercase;
+      padding: 4px 9px; border-radius: 6px;
+      border: 1px solid rgba(255,255,255,.07);
+      background: rgba(255,255,255,.03);
+      color: rgba(255,255,255,.28); cursor: pointer; transition: all .2s;
+    }
+    .wday-tab:hover { border-color: rgba(255,26,94,.3); color: rgba(255,255,255,.6); }
+    .wday-tab.active { background: var(--pink); border-color: var(--pink); color: white; box-shadow: 0 2px 10px rgba(255,26,94,.3); }
+
+    .workout-plan-box {
+      background: rgba(255,26,94,.06); border: 1px solid rgba(255,26,94,.15);
+      border-radius: 10px; padding: 16px; position: relative; overflow: hidden;
+    }
+    .workout-plan-box::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: linear-gradient(to bottom, var(--pink), transparent);
+    }
+    .workout-plan-box::after {
+      content: attr(data-day); position: absolute;
+      bottom: -10px; right: -8px;
+      font-family: var(--font-display); font-size: 80px; line-height: 1;
+      color: rgba(255,26,94,.06); pointer-events: none; user-select: none;
+    }
+    .wplan-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--pink); color: white;
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: .14em; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 4px; margin-bottom: 8px;
+    }
+    .wplan-title {
+      font-family: var(--font-display); font-size: 26px;
+      letter-spacing: .03em; text-transform: uppercase;
+      color: #fff; line-height: 1.05; margin-bottom: 5px;
+    }
+    .wplan-muscles {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 600;
+      color: rgba(255,255,255,.32); letter-spacing: .1em;
+      text-transform: uppercase; margin-bottom: 12px;
+    }
+    .open-workout-btn {
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: .14em; text-transform: uppercase;
+      color: var(--pink); background: none; border: none; cursor: pointer;
+      padding: 0; display: flex; align-items: center; gap: 5px;
+      transition: gap .2s;
+    }
+    .open-workout-btn:hover { gap: 9px; }
+
+    .rest-day-box {
+      background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+      border-radius: 10px; padding: 22px; text-align: center; display: none;
+    }
+    .rest-emoji { font-size: 32px; margin-bottom: 7px; }
+    .rest-title { font-family: var(--font-cond); font-size: 16px; font-weight: 700; letter-spacing: .05em; color: rgba(255,255,255,.45); }
+    .rest-sub { font-size: 11px; color: rgba(255,255,255,.22); margin-top: 5px; }
+
+    /* ─── RIGHT COLUMN ─── */
+    .right-col {
+      grid-column: 3;
+      grid-row: 2 / 5;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+
+    /* BMI Ring Card */
+    .stats-card { }
+
+    .bmi-hero {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 14px;
+    }
+    .bmi-ring-wrap { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+    .bmi-ring-wrap svg { transform: rotate(-90deg); }
+    .bmi-ring-bg { fill: none; stroke: rgba(255,255,255,.06); stroke-width: 6; }
+    .bmi-ring-fill {
+      fill: none; stroke-width: 6; stroke-linecap: round;
+      stroke-dasharray: 220;
+      stroke-dashoffset: 220;
+      transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1), stroke .4s;
+    }
+    .bmi-ring-text {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .bmi-ring-num {
+      font-family: var(--font-display); font-size: 20px; line-height: 1; color: #fff;
+    }
+    .bmi-ring-label {
+      font-family: var(--font-cond); font-size: 7px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim);
+    }
+    .bmi-info { flex: 1; }
+    .bmi-class-badge {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 4px;
+      display: inline-block; margin-bottom: 8px;
+    }
+    .bmi-class-badge.normal      { background: rgba(46,213,115,.12); color: var(--green); border: 1px solid rgba(46,213,115,.2); }
+    .bmi-class-badge.underweight { background: rgba(116,185,255,.12); color: #74b9ff; border: 1px solid rgba(116,185,255,.2); }
+    .bmi-class-badge.overweight  { background: rgba(253,203,110,.12); color: #fdcb6e; border: 1px solid rgba(253,203,110,.2); }
+    .bmi-class-badge.obese       { background: rgba(255,107,107,.12); color: #ff6b6b; border: 1px solid rgba(255,107,107,.2); }
+
+    .bmi-stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .bmi-stat-item {
+      background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.05);
+      border-radius: 7px; padding: 8px 10px; transition: border-color .2s;
+    }
+    .bmi-stat-item:hover { border-color: rgba(255,26,94,.2); }
+    .bsi-label { font-family: var(--font-cond); font-size: 8px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; }
+    .bsi-value { font-family: var(--font-cond); font-size: 14px; font-weight: 800; letter-spacing: .03em; color: #fff; }
+
+    /* Macro Rings Card */
+    .macro-rings-card { }
+    .macro-rings-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .macro-ring-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .macro-ring-wrap { position: relative; width: 64px; height: 64px; }
+    .macro-ring-wrap svg { transform: rotate(-90deg); }
+    .macro-ring-bg   { fill: none; stroke-width: 5; }
+    .macro-ring-fill {
+      fill: none; stroke-width: 5; stroke-linecap: round;
+      stroke-dasharray: 170;
+      stroke-dashoffset: 170;
+      transition: stroke-dashoffset 1s cubic-bezier(.4,0,.2,1);
+    }
+    .macro-ring-center {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .macro-ring-val {
+      font-family: var(--font-display); font-size: 14px; line-height: 1; color: #fff;
+    }
+    .macro-ring-unit {
+      font-family: var(--font-cond); font-size: 7px; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--text-muted);
+    }
+    .macro-ring-label {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim);
+    }
+
+    /* ─── PRE-WORKOUT ─── */
+    /* ─── PRE-WORKOUT REDESIGN ─── */
+    .preworkout-card { grid-column: 1; grid-row: 3; }
+    .pw-header { margin-bottom: 14px; }
+    .pw-q {
+      font-family: var(--font-cond); font-size: 14px; font-weight: 700;
+      color: #fff; letter-spacing: .03em; margin-bottom: 3px;
+    }
+    .pw-sub { font-size: 10px; color: rgba(255,255,255,.3); letter-spacing: .05em; text-transform: uppercase; }
+    .pw-multi-hint { font-size: 10px; color: var(--pink); opacity: .7; letter-spacing: .04em; margin-top: 2px; }
+    .preworkout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
+    .pw-option {
+      background: rgba(255,255,255,.04); border-radius: var(--radius-sm);
+      padding: 11px 12px; position: relative; overflow: hidden;
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: .07em; text-transform: uppercase;
+      color: rgba(255,255,255,.35); cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; gap: 7px;
+      border: 1px solid rgba(255,255,255,.06);
+    }
+    .pw-option::after {
+      content: ''; position: absolute; top: 6px; right: 7px;
+      width: 7px; height: 7px; border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,.15);
+      transition: all .2s;
+    }
+    .pw-option:hover { background: rgba(255,255,255,.07); color: rgba(255,255,255,.75); }
+    .pw-option.selected {
+      background: rgba(255,26,94,.12); border-color: rgba(255,26,94,.35);
+      color: var(--pink); box-shadow: 0 0 12px rgba(255,26,94,.1);
+    }
+    .pw-option.selected::after { background: var(--pink); border-color: var(--pink); box-shadow: 0 0 6px rgba(255,26,94,.6); }
+    .pw-option-icon { font-size: 16px; }
+    .pw-option-text { display: flex; flex-direction: column; gap: 1px; }
+    .pw-option-name { font-size: 11px; font-weight: 700; letter-spacing: .07em; }
+    .pw-option-time { font-size: 9px; opacity: .6; text-transform: none; letter-spacing: .02em; font-weight: 400; font-family: var(--font-body); }
+
+    /* Supplement timing panel */
+    .pw-supp-panel {
+      background: rgba(255,26,94,.04); border: 1px solid rgba(255,26,94,.12);
+      border-radius: var(--radius-sm); padding: 10px 12px;
+      display: none; animation: fadeSlideIn .3s ease;
+    }
+    .pw-supp-panel.show { display: block; }
+    @keyframes fadeSlideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+    .pw-supp-title {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: .18em; text-transform: uppercase; color: var(--pink);
+      margin-bottom: 7px; display: flex; align-items: center; gap: 5px;
+    }
+    .pw-supp-row {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.04);
+    }
+    .pw-supp-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .pw-supp-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .pw-supp-info { flex: 1; }
+    .pw-supp-name { font-family: var(--font-cond); font-size: 11px; font-weight: 700; letter-spacing: .05em; color: #fff; }
+    .pw-supp-desc { font-size: 10px; color: rgba(255,255,255,.4); margin-top: 1px; line-height: 1.4; }
+    .pw-supp-timing {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+      background: rgba(255,26,94,.15); color: var(--pink);
+      border-radius: 3px; padding: 2px 6px; flex-shrink: 0; margin-top: 2px; align-self: flex-start;
+    }
+    .pw-summary {
+      margin-top: 10px; padding: 7px 10px;
+      background: rgba(255,255,255,.03); border-radius: var(--radius-sm);
+      font-size: 10px; color: rgba(255,255,255,.4); display: none;
+    }
+    .pw-summary.show { display: block; }
+    .pw-summary strong { color: var(--pink); }
+
+    /* ─── WATER TRACKER ─── */
+    .water-card { grid-column: 2; grid-row: 3; }
+
+    .water-bottle-wrap {
+      display: flex; justify-content: center; margin-bottom: 16px;
+    }
+    .water-bottle-svg { width: 56px; height: 90px; }
+
+    .water-progress-bar-wrap {
+      width: 100%; background: rgba(255,255,255,.06); border-radius: 100px;
+      height: 8px; margin-bottom: 14px; overflow: hidden;
+    }
+    .water-progress-bar {
+      height: 100%; border-radius: 100px;
+      background: linear-gradient(90deg, #74b9ff, #0984e3);
+      transition: width .4s cubic-bezier(.34,1.56,.64,1);
+      box-shadow: 0 0 10px rgba(116,185,255,.4);
+    }
+
+    .water-drops { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; justify-content: center; }
+    .water-drop {
+      font-size: 20px; opacity: .12; transition: all .25s ease;
+      filter: grayscale(1); cursor: pointer;
+      transform: scale(0.85);
+    }
+    .water-drop.filled {
+      opacity: 1; filter: none;
+      animation: dropFill .35s cubic-bezier(.34,1.56,.64,1);
+      transform: scale(1);
+    }
+    @keyframes dropFill { from{transform:scale(.2);opacity:0} to{transform:scale(1);opacity:1} }
+
+    .water-counter {
+      display: flex; align-items: center; gap: 20px;
+      justify-content: center; margin-bottom: 10px;
+    }
+    .water-btn {
+      width: 38px; height: 38px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.1); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; color: rgba(255,255,255,.35);
+      cursor: pointer; transition: all .2s; flex-shrink: 0;
+    }
+    .water-btn:hover:not(:disabled) { border-color: #74b9ff; color: #74b9ff; background: rgba(116,185,255,.08); }
+    .water-btn:disabled { opacity: .2; cursor: not-allowed; }
+    .water-value-wrap { text-align: center; }
+    .water-value { font-family: var(--font-display); font-size: 52px; color: #fff; line-height: 1; }
+    .water-unit  { font-family: var(--font-cond); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
+
+    .water-status {
+      text-align: center; font-size: 12px; line-height: 1.5;
+      padding: 8px 12px; border-radius: var(--radius-sm);
+      background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.05);
+      color: rgba(255,255,255,.4); transition: all .3s;
+    }
+    .water-status.great { background: rgba(116,185,255,.07); border-color: rgba(116,185,255,.2); color: #74b9ff; }
+    .water-status.done  { background: rgba(46,213,115,.07);  border-color: rgba(46,213,115,.2);  color: var(--green); }
+
+    .water-reminder-note {
+      display: flex; align-items: flex-start; gap: 9px;
+      margin-top: 10px; padding: 9px 12px;
+      background: rgba(255,26,94,.04);
+      border: 1px dashed rgba(255,26,94,.18);
+      border-radius: var(--radius-sm);
+    }
+    .wrn-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .wrn-text {
+      font-size: 11px; color: rgba(255,255,255,.35);
+      line-height: 1.55; font-style: italic;
+    }
+    .wrn-text strong { color: rgba(255,26,94,.7); font-style: normal; }
+
+    /* ─── TODAY'S WORD ─── */
+    .word-card { grid-column: 1 / 3; grid-row: 4; }
+    .word-inner {
+      display: flex; gap: 20px; align-items: flex-start;
+    }
+    .word-quote-mark { font-family: var(--font-display); font-size: 48px; color: var(--pink); opacity: .25; line-height: .6; flex-shrink: 0; margin-top: 4px; }
+    .word-quote { font-size: 14px; color: rgba(255,255,255,.55); line-height: 1.75; font-style: italic; margin-bottom: 10px; }
+    .word-author { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--pink); }
+
+    /* ─── PRESENCE ─── */
+    .presence-card { flex: 1; overflow-y: auto; }
+    .presence-list { display: flex; flex-wrap: wrap; gap: 7px; }
+    .presence-item {
+      background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+      border-radius: var(--radius-sm); padding: 8px 12px;
+      display: flex; align-items: center; gap: 9px; transition: border-color .2s;
+    }
+    .presence-item:hover { border-color: rgba(255,26,94,.2); }
+    .presence-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(255,255,255,.1);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 12px; color: white; flex-shrink: 0;
+    }
+    .presence-name  { font-family: var(--font-cond); font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: rgba(255,255,255,.75); }
+    .presence-time  { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+    .presence-dot   { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 5px var(--green); }
+    .you-badge {
+      background: rgba(255,26,94,.12); border-radius: 3px; padding: 2px 6px;
+      font-family: var(--font-cond); font-size: 8px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase; color: var(--pink);
+    }
+
+    /* ─── AUTO LOGOUT BAR ─── */
+    .auto-logout-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+      background: rgba(255,59,48,.9); backdrop-filter: blur(10px);
+      padding: 10px 24px; display: none;
+      align-items: center; justify-content: space-between; gap: 16px;
+      font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase; color: white;
+    }
+    .auto-logout-bar.show { display: flex; animation: slideDown .3s ease; }
+    @keyframes slideDown { from{transform:translateY(-100%)} to{transform:translateY(0)} }
+    .alb-stay-btn {
+      background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.3);
+      border-radius: 6px; padding: 5px 16px; color: white;
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: background .2s;
+    }
+    .alb-stay-btn:hover { background: rgba(255,255,255,.3); }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 199; }
+    .sidebar-overlay.show { display: block; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 1200px) {
+      .db-content { grid-template-columns: 1fr 1fr; }
+      .right-col  { grid-column: 1 / 3; grid-row: auto; display: grid; grid-template-columns: 1fr 1fr; }
+      .word-card  { grid-column: 1 / 3; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); box-shadow: 20px 0 60px rgba(0,0,0,.7); }
+      .db-main { margin-left: 0; }
+      .db-menu-btn { display: flex; }
+      .db-content { grid-template-columns: 1fr; padding: 14px; gap: 10px; }
+      .session-card, .workout-card, .preworkout-card, .water-card, .word-card { grid-column: 1 / 2; grid-row: auto; }
+      .right-col { grid-column: 1 / 2; grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor"          id="cursor"></div>
+  <div class="cursor-follower" id="cursorFollower"></div>
+  <div class="noise-overlay"></div>
+
+  <!-- Ambient blobs -->
+  <div class="ambient">
+    <div class="ambient-blob ambient-blob-1"></div>
+    <div class="ambient-blob ambient-blob-2"></div>
+  </div>
+
+  <!-- AUTO LOGOUT BAR -->
+  <div class="auto-logout-bar" id="autoLogoutBar">
+    <span>⚠️ Auto logout in <strong id="alb-countdown">10:00</strong></span>
+    <button class="alb-stay-btn" onclick="extendSession()">Stay Logged In</button>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-text">
+        <span class="logo-gud">GUD</span><span class="logo-space">SPACE</span>
+        <span class="logo-gym">GYM</span>
+      </div>
+    </div>
+
+    <div class="sb-profile">
+      <div class="sb-avatar-wrap">
+        <div class="sb-avatar" id="sbAvatar">
+          <span id="sbAvatarLetter">?</span>
+          <img id="sbAvatarImg" src="" alt="" style="display:none;" />
+        </div>
+        <div class="sb-avatar-ring"></div>
+        <div class="sb-cam-btn" onclick="triggerPhotoUpload()" title="Change photo">📷</div>
+        <input type="file" id="photoInput" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)" />
+      </div>
+      <div class="sb-name"      id="sbName">Loading...</div>
+      <div class="sb-meta"      id="sbMeta">— · — kg · — cm</div>
+      <div class="sb-goal-badge" id="sbGoalBadge">🎯 —</div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-nav-section">Main</div>
+      <a class="sb-nav-link active" href="dashboard.html"><span class="sb-nav-icon">🏠</span> Home</a>
+      <a class="sb-nav-link" href="workout.html"><span class="sb-nav-icon">🏋️</span> Workout</a>
+      <a class="sb-nav-link" href="nutrition.html"><span class="sb-nav-icon">🍎</span> Nutrition</a>
+
+      <div class="sb-nav-section" style="margin-top:6px;">Fitness</div>
+      <a class="sb-nav-link" href="progress.html"><span class="sb-nav-icon">📈</span> My Progress</a>
+      <a class="sb-nav-link" href="attendance.html"><span class="sb-nav-icon">📅</span> Attendance</a>
+      <a class="sb-nav-link" href="musclemap.html"><span class="sb-nav-icon">💪</span> Muscle Map</a>
+
+      <div class="sb-nav-section" style="margin-top:6px;">Settings</div>
+      <a class="sb-nav-link" href="profile.html"><span class="sb-nav-icon">👤</span> Edit Profile</a>
+    </nav>
+
+    <div class="sb-logout-wrap">
+      <button class="sb-logout-btn" onclick="confirmLogout()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Log Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- ═══════════ MAIN ═══════════ -->
+  <div class="db-main">
+
+    <!-- Ambient pink top-right -->
+    <div style="position:fixed;top:-100px;right:-80px;width:460px;height:460px;background:radial-gradient(circle,rgba(255,26,94,.07) 0%,transparent 65%);pointer-events:none;z-index:0;"></div>
+
+    <!-- ── TOPBAR ── -->
+    <div class="db-topbar">
+      <div class="db-topbar-left">
+        <div class="db-date-line" id="topDate">—</div>
+        <div class="db-greeting">
+          <span id="topGreeting">Good Morning</span>, <span id="topName">—</span>
+        </div>
+      </div>
+      <div class="db-topbar-right">
+        <div class="db-streak-pill">
+          <span style="font-size:15px;">🔥</span>
+          <span class="db-streak-num" id="topStreakNum">0</span>
+          <span class="db-streak-label">Day Streak</span>
+        </div>
+        <button class="db-mem-bell" id="memBellBtn" onclick="toggleMemBell()" title="Membership Status">
+          🎫
+          <span class="db-mem-bell-dot" id="memBellDot"></span>
+        </button>
+        <button class="db-inbox-btn" id="inboxBtn" onclick="openInbox()">
+          <span class="db-inbox-btn-icon">💬</span>
+          <span class="db-inbox-label">INBOX</span>
+          <span class="db-inbox-unread" id="inboxUnreadDot"></span>
+        </button>
+        <button class="db-menu-btn" onclick="openSidebar()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── MEMBERSHIP EXPIRY POPUP ── -->
+    <div class="mem-popup-overlay" id="memExpiryPopup" style="display:none;">
+      <div class="mem-popup-box">
+        <div class="mem-popup-icon" id="memPopupIcon">⚠️</div>
+        <div class="mem-popup-title" id="memPopupTitle">Membership Expiring</div>
+        <div class="mem-popup-days" id="memPopupDays">—</div>
+        <div class="mem-popup-days-label">DAYS REMAINING</div>
+        <div class="mem-popup-sub" id="memPopupSub">Your membership is expiring soon. Contact the gym to renew.</div>
+        <button class="mem-popup-close" onclick="closeMemPopup()">Got it — Close</button>
+      </div>
+    </div>
+
+    <!-- ── MEMBERSHIP BELL PANEL ── -->
+    <div class="inbox-modal" id="memBellPanel" style="display:none;" onclick="if(event.target===this)closeMemBell()">
+      <div class="inbox-box" style="max-width:400px;">
+        <div class="inbox-header">
+          <div class="inbox-title">🎫 My Membership</div>
+          <button class="inbox-close-btn" onclick="closeMemBell()">✕</button>
+        </div>
+        <div style="padding:20px;" id="memBellContent">
+          <div class="mem-no-plan">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── INBOX MODAL ── -->
+    <div class="inbox-modal" id="inboxModal" onclick="if(event.target===this)closeInbox()">
+      <div class="inbox-box">
+        <div class="inbox-header">
+          <div class="inbox-title">💬 Messages from Admin</div>
+          <button class="inbox-close" onclick="closeInbox()">✕</button>
+        </div>
+        <div class="inbox-body" id="inboxBody">
+          <div class="inbox-empty">No messages yet.</div>
+        </div>
+        <div class="inbox-composer">
+          <input class="inbox-input" id="inboxInput" type="text" placeholder="Reply to admin..." maxlength="300"
+            onkeydown="if(event.key==='Enter')sendMemberMsg()" />
+          <button class="inbox-send-btn" onclick="sendMemberMsg()">Send ➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CONTENT GRID ── -->
+    <div class="db-content">
+
+      <!-- ── ANNOUNCEMENT BANNER ── -->
+      <div id="annBannerArea"></div>
+
+      <!-- ── MEMBERSHIP STATUS CARD ── -->
+      <div id="memStatusCardWrap" style="grid-column:1/-1;display:none;">
+        <div id="memStatusCard"></div>
+      </div>
+
+      <!-- ── SESSION CARD ── -->
+      <div class="db-card session-card" id="sessionCard">
+        <div class="card-label"><div class="card-label-dot"></div> SESSION</div>
+
+        <div class="session-active-badge" id="sessionActiveBadge">
+          <div class="sab-dot"></div>
+          <span id="sessionActiveMsg">You're timed in</span>
+          <span class="session-timer" id="sessionTimer">00:00</span>
+        </div>
+
+        <div class="session-times">
+          <div class="session-time-block">
+            <div class="stime-label">Time In</div>
+            <div class="stime-value" id="timeInDisplay"><span class="stime-placeholder">--:-- --</span></div>
+          </div>
+          <div class="session-time-block">
+            <div class="stime-label">Time Out</div>
+            <div class="stime-value" id="timeOutDisplay"><span class="stime-placeholder">--:-- --</span></div>
+          </div>
+        </div>
+
+        <div class="session-btns">
+          <button class="session-in-btn" id="timeInBtn" onclick="doTimeIn()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Time In
+          </button>
+          <button class="session-out-btn" id="timeOutBtn" onclick="doTimeOut()" disabled>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Time Out
+          </button>
+        </div>
+
+
+      </div>
+
+      <!-- ── TODAY'S WORKOUT ── -->
+      <div class="db-card workout-card">
+        <div class="card-label"><div class="card-label-dot"></div> TODAY'S WORKOUT</div>
+        <div class="workout-day-tabs" id="workoutDayTabs"></div>
+        <div class="workout-plan-box" id="workoutPlanBox">
+          <div class="wplan-tag">💪 Day Plan</div>
+          <div class="wplan-title"   id="wplanTitle">Loading...</div>
+          <div class="wplan-muscles" id="wplanMuscles">—</div>
+          <button class="open-workout-btn" onclick="window.location.href='workout.html'">Open Workout →</button>
+        </div>
+        <div class="rest-day-box" id="restDayBox">
+          <div class="rest-emoji">😴</div>
+          <div class="rest-title">Rest Day</div>
+          <div class="rest-sub">Recovery is part of the process.</div>
+        </div>
+      </div>
+
+      <!-- ── RIGHT COLUMN ── -->
+      <div class="right-col">
+
+        <!-- GYM PRESENCE -->
+        <div class="db-card presence-card">
+          <div class="card-label"><div class="card-label-dot"></div> AT THE GYM NOW</div>
+          <div class="presence-list" id="presenceList">
+            <div style="font-size:12px;color:var(--text-dim);">No one checked in yet. Be the first! 💪</div>
+          </div>
+        </div>
+
+      </div><!-- end right-col -->
+
+      <!-- ── PRE-WORKOUT ── -->
+      <div class="db-card preworkout-card">
+        <div class="card-label"><div class="card-label-dot"></div> PRE-WORKOUT</div>
+        <div class="pw-header">
+          <div class="pw-q">What did you take before training?</div>
+          <div class="pw-sub">Track your supplements &amp; nutrition</div>
+          <div class="pw-multi-hint">✦ Multiple selections allowed</div>
+        </div>
+        <div class="preworkout-grid">
+          <button class="pw-option" data-val="ate" onclick="togglePreworkout(this)">
+            <span class="pw-option-icon">🍽️</span>
+            <div class="pw-option-text">
+              <span class="pw-option-name">Pre-Meal</span>
+              <span class="pw-option-time">Ate before session</span>
+            </div>
+          </button>
+          <button class="pw-option" data-val="fasted" onclick="togglePreworkout(this)">
+            <span class="pw-option-icon">⚡</span>
+            <div class="pw-option-text">
+              <span class="pw-option-name">Fasted</span>
+              <span class="pw-option-time">Empty stomach</span>
+            </div>
+          </button>
+          <button class="pw-option" data-val="creatine" onclick="togglePreworkout(this)">
+            <span class="pw-option-icon">🧪</span>
+            <div class="pw-option-text">
+              <span class="pw-option-name">Creatine</span>
+              <span class="pw-option-time">3–5g daily, any time</span>
+            </div>
+          </button>
+          <button class="pw-option" data-val="whey" onclick="togglePreworkout(this)">
+            <span class="pw-option-icon">🥛</span>
+            <div class="pw-option-text">
+              <span class="pw-option-name">Whey Protein</span>
+              <span class="pw-option-time">Within 30–45 min post</span>
+            </div>
+          </button>
+          <button class="pw-option" data-val="preworkout" onclick="togglePreworkout(this)">
+            <span class="pw-option-icon">🔥</span>
+            <div class="pw-option-text">
+              <span class="pw-option-name">Pre-Workout</span>
+              <span class="pw-option-time">20–30 min before</span>
+            </div>
+          </button>
+          <button class="pw-option" data-val="bcaa" onclick="togglePreworkout(this)">
+            <span class="pw-option-icon">💊</span>
+            <div class="pw-option-text">
+              <span class="pw-option-name">BCAA</span>
+              <span class="pw-option-time">During or pre-workout</span>
+            </div>
+          </button>
+        </div>
+        <div class="pw-supp-panel" id="pwSuppPanel">
+          <div class="pw-supp-title">⏱ SUPPLEMENT TIMING GUIDE</div>
+          <div id="pwSuppRows"></div>
+        </div>
+        <div class="pw-summary" id="pwSummary">
+          Today: <strong id="pwSummaryText">—</strong>
+        </div>
+      </div>
+
+      <!-- ── WATER TRACKER ── -->
+      <div class="db-card water-card">
+        <div class="card-label"><div class="card-label-dot"></div> WATER TRACKER</div>
+
+        <div class="water-drops" id="waterDrops"></div>
+
+        <div class="water-progress-bar-wrap">
+          <div class="water-progress-bar" id="waterProgressBar" style="width:0%"></div>
+        </div>
+
+        <div class="water-counter">
+          <button class="water-btn" id="waterMinus" onclick="changeWater(-1)">−</button>
+          <div class="water-value-wrap">
+            <div class="water-value" id="waterValue">0</div>
+            <div class="water-unit">/ 8 glasses</div>
+          </div>
+          <button class="water-btn" id="waterPlus" onclick="changeWater(1)">+</button>
+        </div>
+
+        <div class="water-status" id="waterStatus">Stay hydrated. Aim for 8 glasses a day. 💧</div>
+
+        <div class="water-reminder-note">
+          <span class="wrn-icon">💉</span>
+          <span class="wrn-text">Mas okay nang pabalik-balik sa CR kaysa pabalik-balik sa <strong>dialysis center.</strong></span>
+        </div>
+      </div>
+
+      <!-- ── TODAY'S WORD ── -->
+      <div class="db-card word-card">
+        <div class="card-label"><div class="card-label-dot"></div> TODAY'S WORD</div>
+        <div class="word-inner">
+          <div class="word-quote-mark">"</div>
+          <div>
+            <div class="word-quote"  id="todayQuote">Loading your motivation...</div>
+            <div class="word-author" id="todayAuthor">— GUD SPACE GYM</div>
+          </div>
+        </div>
+      </div>
+
+
+
+    </div><!-- end db-content -->
+  </div><!-- end db-main -->
+
+  <!-- Sidebar scroll persistence — keeps sidebar stable on nav clicks -->
+  <script>
+    (function() {
+      const SB_KEY = 'gudspace_sb_scroll';
+      // Restore sidebar scroll immediately (before DOMContentLoaded to avoid flash)
+      const saved = sessionStorage.getItem(SB_KEY);
+      if (saved) {
+        document.addEventListener('DOMContentLoaded', function() {
+          const sb = document.getElementById('sidebar');
+          if (sb) sb.scrollTop = parseInt(saved, 10) || 0;
+        });
+      }
+      // Save sidebar scroll on every nav link click
+      document.addEventListener('DOMContentLoaded', function() {
+        const sb = document.getElementById('sidebar');
+        if (!sb) return;
+        sb.querySelectorAll('.sb-nav-link').forEach(function(link) {
+          link.addEventListener('click', function() {
+            sessionStorage.setItem(SB_KEY, sb.scrollTop);
+          });
+        });
+      });
+    })();
+  </script>
+
+  <script src="script.js"></script>
+  <script>
+    'use strict';
+
+    /* ---- DATA ---- */
+    const QUOTES = [
+      { q: "Hindi mo kailangang maging motivated araw-araw. Kailangan mo lang magpakita at magsimula.", a: "— TONED" },
+      { q: "The only bad workout is the one that didn't happen.", a: "— Unknown" },
+      { q: "Your body can stand almost anything. It's your mind you have to convince.", a: "— Unknown" },
+      { q: "Ang tagumpay ay hindi nanggagaling sa kung ano ang ginagawa mo paminsan-minsan — kundi kung ano ang ginagawa mo nang tuluy-tuloy.", a: "— Unknown" },
+      { q: "Small daily improvements are the key to staggering long-term results.", a: "— Unknown" },
+      { q: "Don't wish for it. Work for it.", a: "— Unknown" },
+      { q: "Push yourself because no one else is going to do it for you.", a: "— Unknown" },
+      { q: "Consistency over perfection, always.", a: "— GUD SPACE GYM" },
+      { q: "Mahal ang magkasakit. Mas mura pa ring mag-ehersisyo.", a: "— GUD SPACE GYM" },
+      { q: "Every rep is a step closer to who you want to be.", a: "— GUD SPACE GYM" },
+    ];
+
+    const WORKOUT_PLANS = {
+      'build-muscle':    ['CHEST & TRICEPS','BACK & BICEPS','LEGS','SHOULDERS & ARMS','REST','FULL BODY','REST'],
+      'lose-weight':     ['CARDIO + CORE','FULL BODY HIIT','REST','CARDIO + LOWER','UPPER BODY','HIIT','REST'],
+      'get-lean':        ['UPPER BODY','LOWER BODY','CARDIO','PUSH DAY','PULL DAY','LEGS','REST'],
+      'build-strength':  ['SQUAT DAY','BENCH DAY','DEADLIFT DAY','REST','OVERHEAD PRESS','REST','REST'],
+      'get-in-shape':    ['FULL BODY A','CARDIO','FULL BODY B','REST','FULL BODY C','CARDIO','REST'],
+      'overall-fitness': ['PUSH DAY','PULL DAY','LEG DAY','REST','UPPER BODY','LOWER BODY','REST'],
+    };
+    const WORKOUT_MUSCLES = {
+      'CHEST & TRICEPS':'CHEST · TRICEPS · SHOULDERS','BACK & BICEPS':'BACK · BICEPS · CORE',
+      'LEGS':'QUADS · HAMS · GLUTES · CALVES','SHOULDERS & ARMS':'SHOULDERS · BICEPS · TRICEPS',
+      'FULL BODY':'CHEST · BACK · LEGS · CORE','CARDIO + CORE':'CARDIO · ABS · OBLIQUES',
+      'FULL BODY HIIT':'FULL BODY · CARDIO','CARDIO + LOWER':'QUADS · HAMS · CALVES · CARDIO',
+      'UPPER BODY':'CHEST · BACK · SHOULDERS · ARMS','LOWER BODY':'QUADS · HAMS · GLUTES · CALVES',
+      'HIIT':'CARDIO · CORE · FULL BODY','CARDIO':'CARDIOVASCULAR · CORE',
+      'PUSH DAY':'CHEST · SHOULDERS · TRICEPS','PULL DAY':'BACK · BICEPS · REAR DELTS',
+      'LEG DAY':'QUADS · HAMS · GLUTES · CORE · CARDIO','SQUAT DAY':'QUADS · HAMS · GLUTES · CORE',
+      'BENCH DAY':'CHEST · TRICEPS · FRONT DELTS','DEADLIFT DAY':'BACK · HAMS · GLUTES · CORE',
+      'OVERHEAD PRESS':'SHOULDERS · TRICEPS · UPPER BACK','FULL BODY A':'CHEST · BACK · LEGS · CORE',
+      'FULL BODY B':'SHOULDERS · ARMS · LEGS · CARDIO','FULL BODY C':'GLUTES · BACK · CHEST · CORE',
+    };
+
+    const DAYS   = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    /* ---- STATE ---- */
+    let currentUser          = null;
+    let sessionStart         = null;
+    let sessionTimerInterval = null;
+    let waterGlasses         = 0;
+    let autoLogoutTimer      = null;
+    let autoLogoutCountdown  = null;
+    const MAX_GLASSES        = 10;
+
+    /* ---- INIT ---- */
+    document.addEventListener('DOMContentLoaded', () => {
+      currentUser = window.GudSpace.storage.get('currentUser');
+      if (!currentUser) { window.location.href = 'login.html'; return; }
+      initDashboard();
+    });
+
+    function initDashboard() {
+      loadUserProfile();
+      loadDateAndGreeting();
+      loadWorkoutPlan();
+      loadWaterTracker();
+      loadTodayQuote();
+      loadPresence();
+      loadPreworkout();
+      loadAnnouncementBanners();
+      loadInboxUnread();
+      checkTodaySession();
+      recalcStreakOnLoad();
+      startAutoLogoutTimer();
+      initMembership();
+      setInterval(loadDateAndGreeting, 60000);
+      setInterval(loadInboxUnread, 5000);       // poll for new messages every 5s
+      setInterval(loadAnnouncementBanners, 10000); // poll announcements every 10s
+    }
+
+    function recalcStreakOnLoad() {
+      const attended = new Set(
+        (currentUser.attendance || [])
+          .filter(s => s.timeIn)
+          .map(s => new Date(s.date).toDateString())
+      );
+      const today = new Date();
+      let streak = 0;
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        if (attended.has(d.toDateString())) streak++;
+        else break;
+      }
+      if (streak !== (currentUser.streak || 0)) {
+        currentUser.streak = streak;
+        saveUser();
+      }
+      document.getElementById('topStreakNum').textContent = streak;
+    }
+
+    /* ---- USER PROFILE ---- */
+    function loadUserProfile() {
+      const u = currentUser;
+      const p = u.profile || {};
+      const name = u.firstName || u.name || 'Champ';
+
+      document.getElementById('sbAvatarLetter').textContent = name.charAt(0).toUpperCase();
+      document.getElementById('sbName').textContent = ((u.firstName || '') + ' ' + (u.lastName || '')).trim().toUpperCase();
+
+      const genderLabel = { male:'Male', female:'Female', 'non-binary':'Non-Binary', 'prefer-not-to-say':'—' };
+      document.getElementById('sbMeta').textContent =
+        `${genderLabel[p.gender] || '—'} · ${p.weightKg || '--'} kg · ${p.heightCm || '--'} cm`;
+
+      const goalMap = {
+        'build-strength':'Build Strength','lose-weight':'Lose Weight','get-lean':'Get Lean',
+        'get-in-shape':'Get in Shape','build-muscle':'Build Muscle','overall-fitness':'Overall Fitness'
+      };
+      document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalMap[p.goal] || 'Set Goal');
+      document.getElementById('topName').textContent     = name;
+
+      // BMI and macro refs removed (cards moved to other pages)
+
+      if (u.photoUrl) {
+        const img = document.getElementById('sbAvatarImg');
+        img.src = u.photoUrl; img.style.display = 'block';
+      }
+    }
+
+    /* ---- DATE & GREETING ---- */
+    function loadDateAndGreeting() {
+      const now = new Date();
+      document.getElementById('topDate').textContent     = (DAYS[now.getDay()] + ', ' + MONTHS[now.getMonth()] + ' ' + now.getDate()).toUpperCase();
+      document.getElementById('topGreeting').textContent = window.GudSpace.getGreeting();
+    }
+
+    /* ---- WORKOUT PLAN ---- */
+    function loadWorkoutPlan() {
+      const freshUser = window.GudSpace.storage.get('currentUser');
+      if (freshUser) currentUser = freshUser;
+      const goal  = currentUser?.profile?.goal || 'overall-fitness';
+      const plan  = WORKOUT_PLANS[goal] || WORKOUT_PLANS['overall-fitness'];
+      const today = new Date().getDay();
+
+      const tabsEl = document.getElementById('workoutDayTabs');
+      tabsEl.innerHTML = '';
+      DAYS.forEach((day, i) => {
+        const tab = document.createElement('div');
+        tab.className = 'wday-tab' + (i === today ? ' active' : '');
+        tab.textContent = day;
+        tab.onclick = (e) => {
+          e.preventDefault();
+          const savedScroll = window.scrollY;
+          document.querySelectorAll('.wday-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          showDayPlan(plan[i]);
+          requestAnimationFrame(() => {
+            window.scrollTo({ top: savedScroll, behavior: 'instant' });
+          });
+        };
+        tabsEl.appendChild(tab);
+      });
+      showDayPlan(plan[today]);
+    }
+
+    function showDayPlan(planName) {
+      const planBox = document.getElementById('workoutPlanBox');
+      const restBox = document.getElementById('restDayBox');
+      if (!planName || planName === 'REST') {
+        planBox.style.display = 'none';
+        restBox.style.display = 'block';
+      } else {
+        planBox.style.display = 'block';
+        restBox.style.display = 'none';
+        document.getElementById('wplanTitle').textContent   = planName;
+        document.getElementById('wplanMuscles').textContent = WORKOUT_MUSCLES[planName] || '—';
+      }
+    }
+
+    /* ---- SESSION: TIME IN / OUT ---- */
+    function checkTodaySession() {
+      const today     = new Date().toDateString();
+      const sessions  = currentUser.attendance || [];
+      const todaySess = sessions.find(s => new Date(s.date).toDateString() === today);
+
+      if (todaySess?.timeIn && !todaySess?.timeOut) {
+        sessionStart = new Date(todaySess.timeIn);
+        setTimeInUI(sessionStart);
+        startSessionTimer(sessionStart);
+        document.getElementById('timeInBtn').disabled  = true;
+        document.getElementById('timeOutBtn').disabled = false;
+        document.getElementById('sessionCard').classList.add('active-session');
+      } else if (todaySess?.timeIn && todaySess?.timeOut) {
+        setTimeInUI(new Date(todaySess.timeIn));
+        setTimeOutUI(new Date(todaySess.timeOut));
+        document.getElementById('timeInBtn').disabled  = true;
+        document.getElementById('timeOutBtn').disabled = true;
+      }
+    }
+
+    function doTimeIn() {
+      const now = new Date();
+      sessionStart = now;
+      const todayStr = now.toDateString();
+      currentUser.attendance = currentUser.attendance || [];
+      currentUser.attendance = currentUser.attendance.filter(s => new Date(s.date).toDateString() !== todayStr);
+      currentUser.attendance.push({ date: now.toISOString(), timeIn: now.toISOString(), timeOut: null });
+      saveUser();
+      setTimeInUI(now);
+      startSessionTimer(now);
+      document.getElementById('timeInBtn').disabled  = true;
+      document.getElementById('timeOutBtn').disabled = false;
+      document.getElementById('sessionCard').classList.add('active-session');
+      loadPresence();
+      window.GudSpace.showToast(`Timed in at ${formatTime12(now)} 💪`, '✅');
+    }
+
+    function doTimeOut() {
+      const now      = new Date();
+      const todayStr = now.toDateString();
+      const sessions = currentUser.attendance || [];
+      const idx      = sessions.findIndex(s => new Date(s.date).toDateString() === todayStr && !s.timeOut);
+      if (idx >= 0) {
+        sessions[idx].timeOut  = now.toISOString();
+        sessions[idx].duration = Math.round((now - new Date(sessions[idx].timeIn)) / 60000);
+        saveUser();
+      }
+      updateStreak();
+      setTimeOutUI(now);
+      clearInterval(sessionTimerInterval);
+      document.getElementById('sessionActiveBadge').classList.remove('show');
+      document.getElementById('sessionCard').classList.remove('active-session');
+      document.getElementById('timeOutBtn').disabled = true;
+      window.GudSpace.showToast(`Timed out at ${formatTime12(now)}. Great session! 🔥`, '✅');
+    }
+
+    function updateStreak() {
+      const attended = new Set(
+        (currentUser.attendance || [])
+          .filter(s => s.timeIn)
+          .map(s => new Date(s.date).toDateString())
+      );
+      const today = new Date();
+      let streak = 0;
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        if (attended.has(d.toDateString())) streak++;
+        else break;
+      }
+      currentUser.streak = streak;
+      saveUser();
+      document.getElementById('topStreakNum').textContent = streak;
+    }
+
+    function setTimeInUI(date) {
+      document.getElementById('timeInDisplay').innerHTML = `<span class="has-time">${formatTime12(date)}</span>`;
+      document.getElementById('sessionActiveBadge').classList.add('show');
+      document.getElementById('sessionActiveMsg').textContent = `You're timed in at ${formatTime12(date)}`;
+    }
+    function setTimeOutUI(date) {
+      document.getElementById('timeOutDisplay').innerHTML = `<span class="has-time">${formatTime12(date)}</span>`;
+    }
+    function startSessionTimer(startTime) {
+      clearInterval(sessionTimerInterval);
+      sessionTimerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const h = Math.floor(elapsed / 3600).toString().padStart(2,'0');
+        const m = Math.floor((elapsed % 3600) / 60).toString().padStart(2,'0');
+        document.getElementById('sessionTimer').textContent = `${h}:${m}`;
+      }, 1000);
+    }
+
+    /* ---- WATER TRACKER ---- */
+    function loadWaterTracker() {
+      const today = new Date().toDateString();
+      waterGlasses = window.GudSpace.storage.get('water_' + currentUser.id + '_' + today) || 0;
+      renderWaterDrops();
+    }
+    function renderWaterDrops() {
+      const el = document.getElementById('waterDrops');
+      el.innerHTML = '';
+      for (let i = 0; i < MAX_GLASSES; i++) {
+        const drop = document.createElement('span');
+        drop.className   = 'water-drop' + (i < waterGlasses ? ' filled' : '');
+        drop.textContent = '💧';
+        drop.onclick = () => changeWater(i < waterGlasses ? -1 : 1);
+        el.appendChild(drop);
+      }
+      document.getElementById('waterValue').textContent = waterGlasses;
+
+      // Progress bar
+      const pct = (waterGlasses / MAX_GLASSES) * 100;
+      const bar = document.getElementById('waterProgressBar');
+      if (bar) bar.style.width = pct + '%';
+
+      // Status message
+      const statusEl = document.getElementById('waterStatus');
+      if (statusEl) {
+        if (waterGlasses === 0) {
+          statusEl.textContent = 'Stay hydrated. Aim for 8 glasses a day. 💧';
+          statusEl.className = 'water-status';
+        } else if (waterGlasses < 4) {
+          statusEl.textContent = `${waterGlasses}/8 glasses — Keep going! You need more water. 💦`;
+          statusEl.className = 'water-status';
+        } else if (waterGlasses < 8) {
+          statusEl.textContent = `${waterGlasses}/8 glasses — Good progress! Almost there. 🌊`;
+          statusEl.className = 'water-status great';
+        } else {
+          statusEl.textContent = `${waterGlasses}/8 glasses — Hydration goal reached! Amazing! 🎉`;
+          statusEl.className = 'water-status done';
+        }
+      }
+
+      document.getElementById('waterMinus').disabled = waterGlasses <= 0;
+      document.getElementById('waterPlus').disabled  = waterGlasses >= MAX_GLASSES;
+    }
+    function changeWater(delta) {
+      waterGlasses = Math.min(MAX_GLASSES, Math.max(0, waterGlasses + delta));
+      renderWaterDrops();
+      const today = new Date().toDateString();
+      window.GudSpace.storage.set('water_' + currentUser.id + '_' + today, waterGlasses);
+      if (waterGlasses === MAX_GLASSES) window.GudSpace.showToast('Hydration goal reached! 💧', '🎉');
+    }
+
+    /* ---- PRE-WORKOUT ---- */
+    /* ---- PRE-WORKOUT MULTI-SELECT ---- */
+    const SUPP_INFO = {
+      ate:        { icon:'🍽️', name:'Pre-Meal',      timing:'30–60 min before',  desc:'Eat a balanced meal with carbs + protein for sustained energy during training.' },
+      fasted:     { icon:'⚡', name:'Fasted',         timing:'Morning sessions',   desc:'Train on an empty stomach. Best for fat burning. Take BCAAs to protect muscle.' },
+      creatine:   { icon:'🧪', name:'Creatine',       timing:'Any time daily',     desc:'3–5g creatine monohydrate daily. Timing doesn\'t matter — consistency does.' },
+      whey:       { icon:'🥛', name:'Whey Protein',   timing:'0–45 min post',      desc:'Take 25–40g within the anabolic window after training to kickstart muscle repair.' },
+      preworkout: { icon:'🔥', name:'Pre-Workout',    timing:'20–30 min before',   desc:'Caffeine + beta-alanine blend. Avoid within 6 hours of sleep to prevent insomnia.' },
+      bcaa:       { icon:'💊', name:'BCAA',           timing:'During / pre-workout',desc:'Sip intra-workout to reduce muscle breakdown. Especially useful when training fasted.' },
+    };
+
+    function togglePreworkout(el) {
+      el.classList.toggle('selected');
+      const today = new Date().toDateString();
+      const key   = 'preworkout_' + currentUser.id + '_' + today;
+      const selected = [...document.querySelectorAll('.pw-option.selected')].map(b => b.dataset.val);
+      window.GudSpace.storage.set(key, selected);
+      renderPwPanel(selected);
+    }
+
+    function renderPwPanel(selected) {
+      const panel   = document.getElementById('pwSuppPanel');
+      const rows    = document.getElementById('pwSuppRows');
+      const summary = document.getElementById('pwSummary');
+      const sumText = document.getElementById('pwSummaryText');
+      if (!panel || !rows) return;
+
+      if (!selected || selected.length === 0) {
+        panel.classList.remove('show');
+        summary.classList.remove('show');
+        return;
+      }
+
+      rows.innerHTML = selected.map(val => {
+        const s = SUPP_INFO[val];
+        if (!s) return '';
+        return `<div class="pw-supp-row">
+          <span class="pw-supp-icon">${s.icon}</span>
+          <div class="pw-supp-info">
+            <div class="pw-supp-name">${s.name}</div>
+            <div class="pw-supp-desc">${s.desc}</div>
+          </div>
+          <div class="pw-supp-timing">${s.timing}</div>
+        </div>`;
+      }).join('');
+
+      panel.classList.add('show');
+      sumText.textContent = selected.map(v => SUPP_INFO[v]?.name || v).join(', ');
+      summary.classList.add('show');
+    }
+
+    function loadPreworkout() {
+      const today    = new Date().toDateString();
+      const key      = 'preworkout_' + currentUser.id + '_' + today;
+      const saved    = window.GudSpace.storage.get(key) || [];
+      const selected = Array.isArray(saved) ? saved : [saved]; // backwards compat
+      document.querySelectorAll('.pw-option').forEach(b => {
+        b.classList.toggle('selected', selected.includes(b.dataset.val));
+      });
+      renderPwPanel(selected);
+    }
+
+    /* ---- ANNOUNCEMENTS BANNER ---- */
+    function loadAnnouncementBanners() {
+      const area = document.getElementById('annBannerArea');
+      if (!area) return;
+      const all  = window.GudSpace.storage.get('announcements') || [];
+      const now  = Date.now();
+      const dismissed = (window.GudSpace.storage.get('ann_dismissed_' + currentUser.id) || []).map(String);
+      const active = all.filter(a => {
+        if (dismissed.includes(String(a.id))) return false;
+        if (a.expiresAt && new Date(a.expiresAt).getTime() <= now) return false;
+        return true;
+      });
+      const ICONS = { urgent:'🚨', warning:'⚠️', info:'ℹ️' };
+
+      if (!active.length) {
+        area.innerHTML = '';
+        area.classList.remove('has-banners');
+        return;
+      }
+
+      area.innerHTML = active.map(a => `
+        <div class="ann-banner priority-${a.priority}" id="annBanner_${a.id}">
+          <span class="ann-banner-icon">${ICONS[a.priority] || 'ℹ️'}</span>
+          <div class="ann-banner-body">
+            <div class="ann-banner-title">${a.title}</div>
+            <div class="ann-banner-text">${a.body}</div>
+          </div>
+          <button class="ann-banner-dismiss" onclick="dismissBanner(${a.id})" title="Dismiss">✕</button>
+        </div>`).join('');
+      area.classList.add('has-banners');
+    }
+
+    function dismissBanner(id) {
+      const key = 'ann_dismissed_' + currentUser.id;
+      const dismissed = (window.GudSpace.storage.get(key) || []).map(String);
+      if (!dismissed.includes(String(id))) dismissed.push(String(id));
+      window.GudSpace.storage.set(key, dismissed);
+      const el = document.getElementById('annBanner_' + id);
+      if (el) { el.style.opacity = '0'; el.style.transform = 'translateY(-6px)'; el.style.transition = 'all .3s'; setTimeout(() => { el.remove(); const area = document.getElementById('annBannerArea'); if (area && !area.children.length) area.classList.remove('has-banners'); }, 300); }
+    }
+
+    /* ---- INBOX (member side) ---- */
+    const MSG_KEY = 'dm_messages';
+
+    function loadInboxUnread() {
+      const msgs   = window.GudSpace.storage.get(MSG_KEY) || {};
+      const thread = msgs[currentUser.id] || [];
+      const unread = thread.filter(m => m.from === 'admin' && !m.read).length;
+      const dot    = document.getElementById('inboxUnreadDot');
+      const btn    = document.getElementById('inboxBtn');
+      if (!dot) return;
+      if (unread > 0) {
+        const wasHidden = dot.style.display !== 'flex';
+        dot.textContent = unread > 9 ? '9+' : unread;
+        dot.style.display = 'flex';
+        if (wasHidden) {
+          dot.classList.remove('pop');
+          void dot.offsetWidth; // reflow to restart animation
+          dot.classList.add('pop');
+        }
+        if (btn) btn.classList.add('has-unread');
+      } else {
+        dot.style.display = 'none';
+        dot.classList.remove('pop');
+        if (btn) btn.classList.remove('has-unread');
+      }
+    }
+
+    function openInbox() {
+      const msgs   = window.GudSpace.storage.get(MSG_KEY) || {};
+      const thread = msgs[currentUser.id] || [];
+      // Mark admin messages as read
+      thread.forEach(m => { if (m.from === 'admin') m.read = true; });
+      msgs[currentUser.id] = thread;
+      window.GudSpace.storage.set(MSG_KEY, msgs);
+      loadInboxUnread();
+
+      const body = document.getElementById('inboxBody');
+      if (!thread.length) {
+        body.innerHTML = '<div class="inbox-empty">💬<br><br>No messages from admin yet.</div>';
+      } else {
+        body.innerHTML = thread.map(m => {
+          const side = m.from === 'admin' ? 'from-admin' : 'from-me';
+          const time = new Date(m.at).toLocaleTimeString('en-PH', { hour:'2-digit', minute:'2-digit', hour12:true });
+          return `<div class="inbox-msg-wrap ${side}">
+            <div class="inbox-bubble">${m.text}</div>
+            <div class="inbox-bubble-time">${time}</div>
+          </div>`;
+        }).join('');
+        body.scrollTop = body.scrollHeight;
+      }
+      document.getElementById('inboxModal').classList.add('show');
+    }
+
+    function closeInbox() {
+      document.getElementById('inboxModal').classList.remove('show');
+    }
+
+    function sendMemberMsg() {
+      const input = document.getElementById('inboxInput');
+      const text  = input.value.trim();
+      if (!text) return;
+      const msgs   = window.GudSpace.storage.get(MSG_KEY) || {};
+      if (!msgs[currentUser.id]) msgs[currentUser.id] = [];
+      msgs[currentUser.id].push({ from:'member', text, at: new Date().toISOString(), read: false });
+      window.GudSpace.storage.set(MSG_KEY, msgs);
+      input.value = '';
+      openInbox();
+    }
+
+    function loadTodayQuote() {
+      const q = QUOTES[new Date().getDate() % QUOTES.length];
+      document.getElementById('todayQuote').textContent  = q.q;
+      document.getElementById('todayAuthor').textContent = q.a;
+    }
+
+    /* ---- GYM PRESENCE ---- */
+    function loadPresence() {
+      const today = new Date().toDateString();
+      const users = window.GudSpace.storage.get('users') || [];
+      const present = users.filter(u => {
+        const att = (u.attendance || []).find(s => new Date(s.date).toDateString() === today);
+        return att?.timeIn && !att?.timeOut;
+      });
+      const el = document.getElementById('presenceList');
+      if (!present.length) {
+        el.innerHTML = '<div style="font-size:12px;color:var(--text-dim);">No one checked in yet. Be the first! 💪</div>';
+        return;
+      }
+      const colors = ['#FF1A5E','#a29bfe','#74b9ff','#fd79a8','#fdcb6e','#6c5ce7'];
+      el.innerHTML = present.map(u => {
+        const isYou   = u.id === currentUser.id;
+        const att     = (u.attendance || []).find(s => new Date(s.date).toDateString() === today);
+        const timeIn  = att ? formatTime12(new Date(att.timeIn)) : '--';
+        const initial = (u.firstName || u.name || '?').charAt(0).toUpperCase();
+        const color   = colors[u.id?.charCodeAt(4) % colors.length] || '#FF1A5E';
+        return `
+          <div class="presence-item">
+            <div class="presence-avatar" style="background:${color}">${initial}</div>
+            <div>
+              <div class="presence-name">${u.firstName || u.name}</div>
+              <div class="presence-time">Timed in at ${timeIn}</div>
+            </div>
+            ${isYou ? '<span class="you-badge">YOU</span>' : '<div class="presence-dot"></div>'}
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ---- AUTO LOGOUT ---- */
+    function startAutoLogoutTimer() {
+      const loginTime = window.GudSpace.storage.get('loginTime');
+      if (!loginTime) return;
+      const SESSION   = 3 * 60 * 60 * 1000;
+      const remaining = SESSION - (Date.now() - loginTime);
+      if (remaining <= 0) { doAutoLogout(); return; }
+      const warnAt = remaining - 10 * 60 * 1000;
+      if (warnAt > 0) setTimeout(() => showAutoLogoutWarning(10 * 60), warnAt);
+      else showAutoLogoutWarning(Math.floor(remaining / 1000));
+      autoLogoutTimer = setTimeout(doAutoLogout, remaining);
+    }
+    function showAutoLogoutWarning(secs) {
+      document.getElementById('autoLogoutBar').classList.add('show');
+      let s = secs;
+      autoLogoutCountdown = setInterval(() => {
+        s--;
+        if (s <= 0) { clearInterval(autoLogoutCountdown); return; }
+        document.getElementById('alb-countdown').textContent =
+          Math.floor(s / 60).toString().padStart(2,'0') + ':' + (s % 60).toString().padStart(2,'0');
+      }, 1000);
+    }
+    function extendSession() {
+      clearTimeout(autoLogoutTimer);
+      clearInterval(autoLogoutCountdown);
+      window.GudSpace.storage.set('loginTime', Date.now());
+      document.getElementById('autoLogoutBar').classList.remove('show');
+      window.GudSpace.showToast('Session extended by 3 hours ✅', '⏱');
+      startAutoLogoutTimer();
+    }
+    function doAutoLogout() {
+      const timeouts = window.GudSpace.storage.get('autoTimeouts') || [];
+      timeouts.push({ userId: currentUser.id, name: currentUser.firstName || currentUser.name, timeoutAt: new Date().toISOString(), reason: 'auto_timeout_3h' });
+      window.GudSpace.storage.set('autoTimeouts', timeouts);
+      const today = new Date().toDateString();
+      const sessions = currentUser.attendance || [];
+      const idx = sessions.findIndex(s => new Date(s.date).toDateString() === today && !s.timeOut);
+      if (idx >= 0) { sessions[idx].timeOut = new Date().toISOString(); sessions[idx].autoTimeout = true; saveUser(); }
+      window.GudSpace.storage.remove('currentUser');
+      window.GudSpace.storage.remove('loginTime');
+      window.location.href = 'login.html?reason=timeout';
+    }
+
+    /* ---- SIDEBAR MOBILE ---- */
+    function openSidebar()  { document.getElementById('sidebar').classList.add('open');    document.getElementById('sidebarOverlay').classList.add('show'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); }
+
+    /* ---- PHOTO UPLOAD ---- */
+    function triggerPhotoUpload() { document.getElementById('photoInput').click(); }
+    function handlePhotoUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = document.getElementById('sbAvatarImg');
+        img.src = ev.target.result; img.style.display = 'block';
+        currentUser.photoUrl = ev.target.result;
+        saveUser();
+        window.GudSpace.showToast('Profile photo updated! 📸', '✅');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /* ---- LOGOUT ---- */
+    function confirmLogout() {
+      if (confirm('Are you sure you want to log out?')) {
+        const today = new Date().toDateString();
+        const sessions = currentUser.attendance || [];
+        const idx = sessions.findIndex(s => new Date(s.date).toDateString() === today && !s.timeOut);
+        if (idx >= 0) { sessions[idx].timeOut = new Date().toISOString(); sessions[idx].manualLogout = true; saveUser(); }
+        window.GudSpace.logout();
+      }
+    }
+
+    /* ---- HELPERS ---- */
+    function saveUser() {
+      const users = window.GudSpace.storage.get('users') || [];
+      const idx   = users.findIndex(u => u.id === currentUser.id);
+      if (idx >= 0) users[idx] = currentUser;
+      window.GudSpace.storage.set('users', users);
+      window.GudSpace.storage.set('currentUser', currentUser);
+    }
+
+    function formatTime12(date) {
+      let h      = date.getHours();
+      const m    = String(date.getMinutes()).padStart(2,'0');
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return `${String(h).padStart(2,'0')}:${m} ${ampm}`;
+    }
+
+    /* ============================================================
+       MEMBERSHIP FEATURE
+    ============================================================ */
+    const MEM_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    function fmtMemDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return MEM_MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+    }
+
+    function getMemStatus(plan) {
+      if (!plan || !plan.endDate) return 'none';
+      const daysLeft = Math.ceil((new Date(plan.endDate).getTime() - Date.now()) / 86400000);
+      if (daysLeft < 0)   return 'expired';
+      if (daysLeft <= 10) return 'expiring';
+      return 'active';
+    }
+
+    function getMemDaysLeft(plan) {
+      if (!plan || !plan.endDate) return null;
+      return Math.ceil((new Date(plan.endDate).getTime() - Date.now()) / 86400000);
+    }
+
+    function getMemTotalDays(plan) {
+      if (!plan || !plan.startDate || !plan.endDate) return 1;
+      return Math.max(1, Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / 86400000));
+    }
+
+    function initMembership() {
+      /* Always read fresh from users array — admin may have assigned/changed plan */
+      const users     = window.GudSpace.storage.get('users') || [];
+      const freshUser = users.find(u => u.id === currentUser.id);
+      if (freshUser) {
+        currentUser.membership     = freshUser.membership;
+        currentUser.renewalRequest = freshUser.renewalRequest;
+      }
+
+      const plan   = currentUser.membership;
+      const status = getMemStatus(plan);
+      const days   = getMemDaysLeft(plan);
+
+      /* --- Bell dot --- */
+      const bellDot = document.getElementById('memBellDot');
+      if (bellDot) {
+        if (status === 'expiring' || status === 'expired') {
+          bellDot.classList.add('show');
+        } else {
+          bellDot.classList.remove('show');
+        }
+      }
+
+      /* --- Status card --- */
+      renderMemStatusCard(plan, status, days);
+
+      /* --- Login popup (show once per session if expiring/expired) --- */
+      const popupKey = 'memPopupShown_' + currentUser.id + '_' + new Date().toDateString();
+      const alreadyShown = sessionStorage.getItem(popupKey);
+      if (!alreadyShown && (status === 'expiring' || status === 'expired')) {
+        sessionStorage.setItem(popupKey, '1');
+        setTimeout(() => showMemPopup(plan, status, days), 800);
+      }
+    }
+
+    function renderMemStatusCard(plan, status, days) {
+      const wrap = document.getElementById('memStatusCardWrap');
+      const card = document.getElementById('memStatusCard');
+      if (!wrap || !card) return;
+
+      if (!plan || status === 'none') {
+        wrap.style.display = 'none';
+        return;
+      }
+
+      wrap.style.display = 'block';
+
+      const total   = getMemTotalDays(plan);
+      const pct     = status === 'expired' ? 0 : Math.min(100, Math.round((days / total) * 100));
+      const barColor = { active: '#2ed573', expiring: '#fdcb6e', expired: '#ff6b6b' }[status] || '#2ed573';
+      const badgeHTML = {
+        active:   `<span class="mem-card-badge" style="background:rgba(46,213,115,0.12);color:#2ed573;border:1px solid rgba(46,213,115,0.25);">✅ Active</span>`,
+        expiring: `<span class="mem-card-badge" style="background:rgba(253,203,110,0.12);color:#fdcb6e;border:1px solid rgba(253,203,110,0.3);">⚠️ Expiring Soon</span>`,
+        expired:  `<span class="mem-card-badge" style="background:rgba(255,107,107,0.1);color:#ff6b6b;border:1px solid rgba(255,107,107,0.2);">🔴 Expired</span>`,
+      }[status];
+
+      const daysText = status === 'expired'
+        ? `<span style="color:#ff6b6b;">Expired on ${fmtMemDate(plan.endDate)}</span>`
+        : `<span style="color:${barColor};">${days} day${days !== 1 ? 's' : ''} remaining</span>`;
+
+      const hasReq = currentUser.renewalRequest === true;
+      const renewBtn = (status === 'expiring' || status === 'expired')
+        ? `<button class="mem-renew-btn" onclick="requestRenewal()" id="renewBtn" ${hasReq ? 'disabled' : ''}>
+             ${hasReq ? '✅ Renewal Requested' : '🔄 Request Renewal'}
+           </button>`
+        : '';
+
+      card.className = `mem-status-card ${status}`;
+      card.innerHTML = `
+        <div class="mem-card-top">
+          <div>
+            <div class="mem-card-label">🎫 My Membership Plan</div>
+            <div class="mem-card-plan-name">${plan.name}</div>
+            <div class="mem-card-price">₱${Number(plan.price).toLocaleString()}</div>
+          </div>
+          ${badgeHTML}
+        </div>
+        <div class="mem-card-dates">
+          <div class="mem-date-item">
+            <div class="mem-card-label">Start Date</div>
+            <div class="mem-date-val">${fmtMemDate(plan.startDate)}</div>
+          </div>
+          <div class="mem-date-item">
+            <div class="mem-card-label">End Date</div>
+            <div class="mem-date-val">${fmtMemDate(plan.endDate)}</div>
+          </div>
+        </div>
+        <div class="mem-progress-wrap">
+          <div class="mem-progress-bar" style="width:${pct}%;background:${barColor};"></div>
+        </div>
+        <div class="mem-days-remaining">${daysText}</div>
+        ${renewBtn}
+      `;
+    }
+
+    function showMemPopup(plan, status, days) {
+      const overlay = document.getElementById('memExpiryPopup');
+      if (!overlay) return;
+
+      if (status === 'expiring') {
+        document.getElementById('memPopupIcon').textContent  = '⚠️';
+        document.getElementById('memPopupTitle').textContent = 'Membership Expiring Soon';
+        document.getElementById('memPopupDays').textContent  = days;
+        document.getElementById('memPopupSub').textContent   =
+          `Your "${plan.name}" plan expires on ${fmtMemDate(plan.endDate)}. Please contact the gym to renew before it runs out!`;
+      } else {
+        document.getElementById('memPopupIcon').textContent  = '🔴';
+        document.getElementById('memPopupTitle').textContent = 'Membership Expired';
+        document.getElementById('memPopupDays').textContent  = '0';
+        document.getElementById('memPopupSub').textContent   =
+          `Your "${plan.name}" plan expired on ${fmtMemDate(plan.endDate)}. Please visit the gym or contact admin to renew your membership.`;
+        document.getElementById('memPopupDays').style.color  = '#ff6b6b';
+      }
+
+      overlay.style.display = 'flex';
+    }
+
+    function closeMemPopup() {
+      const overlay = document.getElementById('memExpiryPopup');
+      if (overlay) overlay.style.display = 'none';
+    }
+
+    function toggleMemBell() {
+      const panel = document.getElementById('memBellPanel');
+      if (!panel) return;
+
+      if (panel.style.display === 'none' || !panel.style.display) {
+        /* Always read fresh from users array so admin changes reflect immediately */
+        const users     = window.GudSpace.storage.get('users') || [];
+        const freshUser = users.find(u => u.id === currentUser.id);
+        if (freshUser) {
+          currentUser.membership     = freshUser.membership;
+          currentUser.renewalRequest = freshUser.renewalRequest;
+        }
+        const plan   = currentUser.membership;
+        const status = getMemStatus(plan);
+        const days   = getMemDaysLeft(plan);
+        const content = document.getElementById('memBellContent');
+
+        if (!plan || status === 'none') {
+          content.innerHTML = `<div class="mem-no-plan">📋 No membership plan assigned yet.<br><br>Visit the gym front desk to get started!</div>`;
+        } else {
+          const total    = getMemTotalDays(plan);
+          const pct      = status === 'expired' ? 0 : Math.min(100, Math.round((days / total) * 100));
+          const barColor = { active:'#2ed573', expiring:'#fdcb6e', expired:'#ff6b6b' }[status] || '#2ed573';
+          const daysText = status === 'expired'
+            ? `<span style="color:#ff6b6b;">Expired</span>`
+            : `<span style="color:${barColor};">${days} day${days!==1?'s':''} left</span>`;
+
+          const hasReq = currentUser.renewalRequest === true;
+
+          content.innerHTML = `
+            <div style="margin-bottom:16px;">
+              <div style="font-family:var(--font-cond);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:4px;">Plan</div>
+              <div style="font-family:var(--font-display);font-size:22px;color:var(--white);">${plan.name}</div>
+              <div style="font-family:var(--font-cond);font-size:13px;color:var(--pink);font-weight:700;">₱${Number(plan.price).toLocaleString()}</div>
+            </div>
+            <div style="display:flex;gap:20px;margin-bottom:14px;flex-wrap:wrap;">
+              <div>
+                <div style="font-family:var(--font-cond);font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:2px;">Start</div>
+                <div style="font-family:var(--font-cond);font-weight:700;font-size:13px;color:var(--white);">${fmtMemDate(plan.startDate)}</div>
+              </div>
+              <div>
+                <div style="font-family:var(--font-cond);font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:2px;">End</div>
+                <div style="font-family:var(--font-cond);font-weight:700;font-size:13px;color:var(--white);">${fmtMemDate(plan.endDate)}</div>
+              </div>
+            </div>
+            <div class="mem-progress-wrap" style="margin-bottom:6px;">
+              <div class="mem-progress-bar" style="width:${pct}%;background:${barColor};"></div>
+            </div>
+            <div style="font-family:var(--font-cond);font-size:12px;color:rgba(255,255,255,.4);margin-bottom:${(status==='expiring'||status==='expired')?'14px':'0'};">${daysText}</div>
+            ${(status==='expiring'||status==='expired') ? `
+              <button class="mem-renew-btn" onclick="requestRenewal()" id="renewBtnBell" ${hasReq?'disabled':''}>
+                ${hasReq ? '✅ Renewal Requested' : '🔄 Request Renewal'}
+              </button>` : ''}
+          `;
+        }
+
+        panel.style.display = 'flex';
+      } else {
+        panel.style.display = 'none';
+      }
+    }
+
+    function closeMemBell() {
+      const panel = document.getElementById('memBellPanel');
+      if (panel) panel.style.display = 'none';
+    }
+
+    function requestRenewal() {
+      /* Save renewal request flag on user */
+      currentUser.renewalRequest = true;
+      saveUser();
+
+      /* Update all buttons */
+      ['renewBtn','renewBtnBell'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) { btn.disabled = true; btn.textContent = '✅ Renewal Requested'; }
+      });
+
+      window.GudSpace.showToast('Renewal request sent to admin! 🔄', '✅');
+    }
+
+  </script>
+</body>
+</html>

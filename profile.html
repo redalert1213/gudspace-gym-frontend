@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Profile — GUD SPACE GYM</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: var(--font-body);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* =================== SIDEBAR =================== */
+    .sidebar {
+      width: 260px; min-height: 100vh;
+      background: rgba(10,10,10,0.97);
+      border-right: 1px solid rgba(255,255,255,0.05);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      z-index: 200;
+      transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+      overflow-y: auto;
+      backdrop-filter: blur(20px);
+    }
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 300px;
+      background: linear-gradient(180deg, rgba(255,26,94,0.06) 0%, transparent 100%);
+      pointer-events: none;
+    }
+    .sidebar::-webkit-scrollbar { width: 0; }
+    .sb-logo { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; position: relative; z-index: 1; }
+    .sb-logo-text { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.04em; display: flex; align-items: baseline; gap: 2px; }
+    .sb-profile { padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; position: relative; z-index: 1; }
+    .sb-avatar-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 14px; }
+    .sb-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink), #a0004a);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 30px; color: white;
+      border: 2px solid rgba(255,26,94,0.4);
+      position: relative; overflow: hidden; cursor: pointer;
+      box-shadow: 0 0 30px rgba(255,26,94,0.25);
+    }
+    .sb-avatar img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+    .sb-avatar-ring { position: absolute; inset: -5px; border-radius: 50%; border: 1.5px solid rgba(255,26,94,0.4); animation: ringPulse 3s ease-in-out infinite; }
+    @keyframes ringPulse {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50%       { opacity: 0.8; transform: scale(1.05); }
+    }
+    .sb-cam-btn {
+      position: absolute; bottom: 0; right: 0;
+      width: 24px; height: 24px;
+      background: var(--black-4); border: 2px solid var(--black-5);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; cursor: pointer; transition: background 0.2s;
+    }
+    .sb-cam-btn:hover { background: var(--pink); }
+    .sb-name { font-family: var(--font-cond); font-size: 18px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--white); }
+    .sb-meta { font-size: 12px; color: var(--gray-3); margin-top: 3px; }
+    .sb-goal-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,26,94,0.1); border: 1px solid rgba(255,26,94,0.2);
+      border-radius: 4px; padding: 4px 10px;
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--pink); margin-top: 10px;
+    }
+    .sb-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; position: relative; z-index: 1; }
+    .sb-nav-section { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray-4); padding: 12px 12px 6px; }
+    .sb-nav-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 14px; border-radius: var(--radius-sm);
+      font-family: var(--font-cond); font-size: 14px; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--gray-3); cursor: pointer;
+      transition: all 0.2s ease; text-decoration: none;
+      position: relative; overflow: hidden;
+    }
+    .sb-nav-link::before {
+      content: ''; position: absolute; inset: 0;
+      background: var(--pink); opacity: 0;
+      transition: opacity 0.2s; border-radius: var(--radius-sm);
+    }
+    .sb-nav-link:hover { color: var(--white); }
+    .sb-nav-link:hover::before { opacity: 0.08; }
+    .sb-nav-link.active { background: rgba(255,26,94,0.1); color: var(--pink); border-left: 3px solid var(--pink); }
+    .sb-nav-icon { font-size: 18px; flex-shrink: 0; width: 22px; text-align: center; position: relative; z-index: 1; }
+    .sb-nav-link span:last-child { position: relative; z-index: 1; }
+    .sb-logout-wrap { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; position: relative; z-index: 1; }
+    .sb-logout-btn {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 12px 14px; border-radius: var(--radius-sm);
+      background: rgba(255,59,48,0.08); border: 1px solid rgba(255,59,48,0.15);
+      color: #ff6b6b; font-family: var(--font-cond);
+      font-size: 13px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .sb-logout-btn:hover { background: rgba(255,59,48,0.2); border-color: rgba(255,59,48,0.4); }
+
+    /* =================== LAYOUT =================== */
+    .page-main { margin-left: 260px; flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
+    .db-topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(8,8,8,0.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--black-5);
+      padding: 16px 32px; display: flex; align-items: center;
+      justify-content: space-between; gap: 16px;
+    }
+    .db-date-line {
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-3);
+    }
+    .db-greeting { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.03em; line-height: 1.1; }
+    .db-greeting span { color: var(--pink); }
+    .db-topbar-right { display: flex; align-items: center; gap: 16px; }
+    .db-menu-btn { display: none; background: none; border: none; color: var(--white); cursor: pointer; padding: 4px; }
+    .page-content { padding: 28px 32px; }
+
+    /* =================== CARDS =================== */
+    .db-card {
+      background: var(--black-3); border: 1px solid var(--black-5);
+      border-radius: var(--radius-lg); padding: 24px; transition: border-color 0.2s;
+    }
+    .db-card:hover { border-color: rgba(255,255,255,0.08); }
+    .card-label {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--gray-3); margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-label-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pink); }
+    .view-section-title {
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--gray-3); margin: 28px 0 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .view-section-title:first-child { margin-top: 0; }
+    .vst-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--pink); flex-shrink: 0; }
+
+    /* =================== PROFILE LAYOUT =================== */
+    .profile-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    /* =================== PHOTO CARD =================== */
+    .photo-card { text-align: center; }
+    .photo-avatar-wrap {
+      position: relative;
+      width: 120px; height: 120px;
+      margin: 0 auto 16px;
+    }
+    .photo-avatar {
+      width: 120px; height: 120px; border-radius: 50%;
+      background: var(--pink);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 52px; color: white;
+      border: 4px solid var(--black-5);
+      position: relative; overflow: hidden;
+    }
+    .photo-avatar img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+    .photo-avatar-ring {
+      position: absolute; inset: -6px; border-radius: 50%;
+      border: 2px solid var(--pink); opacity: 0.4;
+      animation: ringPulse 3s ease-in-out infinite;
+    }
+    .photo-change-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--black-4); border: 1.5px solid var(--black-5);
+      border-radius: var(--radius-sm); padding: 10px 18px;
+      font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--gray-2); cursor: pointer; transition: all 0.2s;
+      margin-bottom: 20px;
+    }
+    .photo-change-btn:hover { border-color: var(--pink); color: var(--pink); }
+
+    /* Stats preview */
+    .stats-preview { display: flex; flex-direction: column; gap: 8px; }
+    .sp-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--black-4); border-radius: var(--radius-sm);
+      padding: 10px 14px;
+    }
+    .sp-label {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray-3);
+    }
+    .sp-value {
+      font-family: var(--font-cond); font-size: 14px; font-weight: 800;
+      letter-spacing: 0.04em; color: var(--white);
+    }
+    .sp-value.pink { color: var(--pink); }
+
+    /* =================== FORMS =================== */
+    .profile-form { display: flex; flex-direction: column; gap: 14px; }
+    .pf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .pf-field { display: flex; flex-direction: column; gap: 6px; }
+    .pf-label {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-3);
+    }
+    .pf-input {
+      background: var(--black-4); border: 1.5px solid var(--black-5);
+      border-radius: var(--radius-sm); padding: 12px 14px;
+      color: var(--white); font-family: var(--font-body); font-size: 14px;
+      outline: none; transition: border-color 0.2s; width: 100%;
+    }
+    .pf-input:focus { border-color: var(--pink); }
+    select.pf-input { cursor: pointer; }
+    .pf-input::placeholder { color: var(--gray-4); }
+
+    /* Save button */
+    .save-btn {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; padding: 14px;
+      background: var(--pink); color: white; border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-cond); font-size: 14px; font-weight: 800;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .save-btn:hover { background: var(--pink-light); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,26,94,0.3); }
+
+    /* Divider */
+    .form-divider {
+      height: 1px; background: var(--black-5); margin: 4px 0;
+    }
+
+    /* Password strength */
+    .pw-strength-bar {
+      height: 4px; border-radius: 4px;
+      background: var(--black-5); margin-top: 6px; overflow: hidden;
+    }
+    .pw-strength-fill {
+      height: 100%; border-radius: 4px;
+      transition: width 0.3s ease, background 0.3s ease;
+      width: 0%;
+    }
+    .pw-strength-label {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--gray-3); margin-top: 4px;
+    }
+
+    /* Danger zone */
+    .danger-card { border-color: rgba(255,59,48,0.2) !important; }
+    .danger-card:hover { border-color: rgba(255,59,48,0.4) !important; }
+    .danger-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 20px; border-radius: var(--radius-sm);
+      background: rgba(255,59,48,0.1); border: 1.5px solid rgba(255,59,48,0.25);
+      color: #ff6b6b; font-family: var(--font-cond);
+      font-size: 13px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .danger-btn:hover { background: rgba(255,59,48,0.2); border-color: rgba(255,59,48,0.5); }
+    .danger-desc {
+      font-size: 12px; color: var(--gray-3); margin-bottom: 14px; line-height: 1.6;
+    }
+
+    /* =================== AUTO LOGOUT =================== */
+    .auto-logout-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+      background: rgba(255,59,48,0.9); backdrop-filter: blur(8px);
+      padding: 10px 24px; display: none;
+      align-items: center; justify-content: space-between; gap: 16px;
+      font-family: var(--font-cond); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase; color: white;
+    }
+    .auto-logout-bar.show { display: flex; animation: slideDown 0.3s ease; }
+    @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+    .alb-stay-btn {
+      background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+      border-radius: var(--radius-sm); padding: 6px 16px; color: white;
+      font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: background 0.2s;
+    }
+    .alb-stay-btn:hover { background: rgba(255,255,255,0.3); }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 199; }
+    .sidebar-overlay.show { display: block; }
+
+    /* =================== RESPONSIVE =================== */
+    @media (max-width: 1100px) {
+      .profile-layout { grid-template-columns: 1fr; }
+      .photo-card { display: flex; align-items: center; gap: 24px; text-align: left; }
+      .photo-avatar-wrap { margin: 0; flex-shrink: 0; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); box-shadow: 16px 0 60px rgba(0,0,0,0.6); }
+      .page-main { margin-left: 0; }
+      .db-menu-btn { display: flex; }
+      .page-content { padding: 16px; }
+      .pf-row { grid-template-columns: 1fr; }
+      .photo-card { flex-direction: column; align-items: center; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CUSTOM CURSOR -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-follower" id="cursorFollower"></div>
+  <div class="noise-overlay"></div>
+
+  <!-- AUTO LOGOUT BAR -->
+  <div class="auto-logout-bar" id="autoLogoutBar">
+    <span>⚠️ You will be automatically logged out in <strong id="alb-countdown">10:00</strong></span>
+    <button class="alb-stay-btn" onclick="extendSession()">Stay Logged In</button>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-text">
+        <span class="logo-gud">GUD</span><span class="logo-space">SPACE</span>
+        <span class="logo-gym" style="font-size:15px;color:var(--gray-3)">GYM</span>
+      </div>
+    </div>
+
+    <div class="sb-profile">
+      <div class="sb-avatar-wrap">
+        <div class="sb-avatar" id="sbAvatar"><span id="sbAvatarLetter">?</span>
+          <img id="sbAvatarImg" src="" alt="" style="display:none;" />
+        </div>
+        <div class="sb-avatar-ring"></div>
+        <div class="sb-cam-btn" onclick="triggerPhotoUpload()" title="Change photo">📷</div>
+        <input type="file" id="photoInput" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)" />
+      </div>
+      <div class="sb-name" id="sbName">Loading...</div>
+      <div class="sb-meta" id="sbMeta">— · — kg · — cm</div>
+      <div class="sb-goal-badge" id="sbGoalBadge">🎯 —</div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-nav-section">Main</div>
+      <a class="sb-nav-link" href="dashboard.html">
+        <span class="sb-nav-icon">🏠</span> Home
+      </a>
+      <a class="sb-nav-link" href="workout.html">
+        <span class="sb-nav-icon">🏋️</span> Workout
+      </a>
+      <a class="sb-nav-link" href="nutrition.html">
+        <span class="sb-nav-icon">🍎</span> Nutrition
+      </a>
+
+      <div class="sb-nav-section" style="margin-top:8px;">Fitness</div>
+      <a class="sb-nav-link" href="progress.html">
+        <span class="sb-nav-icon">📈</span> My Progress
+      </a>
+      <a class="sb-nav-link" href="attendance.html">
+        <span class="sb-nav-icon">📅</span> Attendance
+      </a>
+      <a class="sb-nav-link" href="musclemap.html"><span class="sb-nav-icon">💪</span> Muscle Map</a>
+
+      <div class="sb-nav-section" style="margin-top:8px;">Settings</div>
+      <a class="sb-nav-link active" href="profile.html">
+        <span class="sb-nav-icon">👤</span> Edit Profile
+      </a>
+    </nav>
+
+    <div class="sb-logout-wrap">
+      <button class="sb-logout-btn" onclick="confirmLogout()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Log Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <div class="page-main">
+
+    <div class="db-topbar">
+      <div>
+        <div class="db-date-line">ACCOUNT SETTINGS</div>
+        <div class="db-greeting">👤 <span>Edit Profile</span></div>
+      </div>
+      <div class="db-topbar-right">
+        <button class="db-menu-btn" onclick="openSidebar()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- MAIN PROFILE GRID -->
+      <div class="view-section-title"><span class="vst-dot"></span>PERSONAL INFO</div>
+      <div class="profile-layout">
+
+        <!-- LEFT: FORMS -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+          <!-- Personal Info -->
+          <div class="db-card">
+            <div class="card-label"><div class="card-label-dot"></div> NAME & IDENTITY</div>
+            <div class="profile-form">
+              <div class="pf-row">
+                <div class="pf-field">
+                  <label class="pf-label">First Name</label>
+                  <input type="text" class="pf-input" id="pfFirstName" placeholder="e.g. Juan" />
+                </div>
+                <div class="pf-field">
+                  <label class="pf-label">Last Name</label>
+                  <input type="text" class="pf-input" id="pfLastName" placeholder="e.g. dela Cruz" />
+                </div>
+              </div>
+              <div class="pf-row">
+                <div class="pf-field">
+                  <label class="pf-label">Gender</label>
+                  <select class="pf-input" id="pfGender">
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="non-binary">Non-Binary</option>
+                    <option value="prefer-not-to-say">Prefer not to say</option>
+                  </select>
+                </div>
+                <div class="pf-field">
+                  <label class="pf-label">Age</label>
+                  <input type="number" class="pf-input" id="pfAge" min="10" max="100" placeholder="e.g. 24" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Body Stats -->
+          <div class="db-card">
+            <div class="card-label"><div class="card-label-dot"></div> BODY STATS</div>
+            <div class="profile-form">
+              <div class="pf-row">
+                <div class="pf-field">
+                  <label class="pf-label">Weight (kg)</label>
+                  <input type="number" class="pf-input" id="pfWeight" min="20" max="300" step="0.1" placeholder="e.g. 70" oninput="livePreview()" />
+                </div>
+                <div class="pf-field">
+                  <label class="pf-label">Height (cm)</label>
+                  <input type="number" class="pf-input" id="pfHeight" min="100" max="250" placeholder="e.g. 170" oninput="livePreview()" />
+                </div>
+              </div>
+              <div class="pf-field">
+                <label class="pf-label">Fitness Goal</label>
+                <select class="pf-input" id="pfGoal" onchange="livePreview()">
+                  <option value="">Select goal</option>
+                  <option value="build-muscle">Build Muscle</option>
+                  <option value="lose-weight">Lose Weight</option>
+                  <option value="get-lean">Get Lean</option>
+                  <option value="build-strength">Build Strength</option>
+                  <option value="get-in-shape">Get in Shape</option>
+                  <option value="overall-fitness">Overall Fitness</option>
+                </select>
+              </div>
+              <button class="save-btn" onclick="saveProfile()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save Changes
+              </button>
+            </div>
+          </div>
+
+          <!-- Change Password -->
+          <div class="db-card">
+            <div class="card-label"><div class="card-label-dot"></div> CHANGE PASSWORD</div>
+            <div class="profile-form">
+              <div class="pf-field">
+                <label class="pf-label">Current Password</label>
+                <input type="password" class="pf-input" id="pwCurrent" placeholder="Enter current password" />
+              </div>
+              <div class="form-divider"></div>
+              <div class="pf-field">
+                <label class="pf-label">New Password</label>
+                <input type="password" class="pf-input" id="pwNew" placeholder="Min. 8 characters" oninput="checkPasswordStrength(this.value)" />
+                <div class="pw-strength-bar"><div class="pw-strength-fill" id="pwStrengthFill"></div></div>
+                <div class="pw-strength-label" id="pwStrengthLabel">—</div>
+              </div>
+              <div class="pf-field">
+                <label class="pf-label">Confirm New Password</label>
+                <input type="password" class="pf-input" id="pwConfirm" placeholder="Repeat new password" />
+              </div>
+              <button class="save-btn" onclick="changePassword()" style="background:var(--black-4);border:1.5px solid var(--black-5);color:var(--gray-2);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                Update Password
+              </button>
+            </div>
+          </div>
+
+        </div><!-- end left col -->
+
+        <!-- RIGHT: PHOTO + STATS PREVIEW -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+          <!-- Photo -->
+          <div class="db-card photo-card">
+            <div class="card-label"><div class="card-label-dot"></div> PROFILE PHOTO</div>
+            <div class="photo-avatar-wrap">
+              <div class="photo-avatar" id="photoAvatar">?
+                <img id="photoAvatarImg" src="" alt="" style="display:none;" />
+              </div>
+              <div class="photo-avatar-ring"></div>
+            </div>
+            <button class="photo-change-btn" onclick="triggerPhotoUpload()">
+              📷 Change Photo
+            </button>
+            <input type="file" id="photoInputMain" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)" />
+            <p style="font-size:11px;color:var(--gray-3);line-height:1.6;">
+              Supported formats: JPG, PNG, GIF.<br/>
+              Photo is stored locally on this device.
+            </p>
+          </div>
+
+          <!-- Live Stats Preview -->
+          <div class="db-card">
+            <div class="card-label"><div class="card-label-dot"></div> STATS PREVIEW</div>
+            <div class="stats-preview">
+              <div class="sp-row">
+                <span class="sp-label">BMI</span>
+                <span class="sp-value pink" id="previewBmi">--</span>
+              </div>
+              <div class="sp-row">
+                <span class="sp-label">Classification</span>
+                <span class="sp-value" id="previewBmiClass">--</span>
+              </div>
+              <div class="sp-row">
+                <span class="sp-label">Daily Calories</span>
+                <span class="sp-value" id="previewCalories">--</span>
+              </div>
+              <div class="sp-row">
+                <span class="sp-label">Protein Target</span>
+                <span class="sp-value" id="previewProtein">--</span>
+              </div>
+              <div class="sp-row">
+                <span class="sp-label">Carbs Target</span>
+                <span class="sp-value" id="previewCarbs">--</span>
+              </div>
+              <div class="sp-row">
+                <span class="sp-label">Fat Target</span>
+                <span class="sp-value" id="previewFat">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Danger Zone -->
+          <div class="db-card danger-card">
+            <div class="card-label"><div class="card-label-dot"></div> DANGER ZONE</div>
+            <p class="danger-desc">
+              Clearing your data will permanently remove all your attendance records,
+              weight logs, and progress history. This cannot be undone.
+            </p>
+            <button class="danger-btn" onclick="clearData()">
+              🗑️ Clear My Data
+            </button>
+          </div>
+
+        </div><!-- end right col -->
+      </div><!-- end profile-layout -->
+
+    </div><!-- end page-content -->
+  </div><!-- end page-main -->
+
+  <script src="script.js"></script>
+  <script>
+    'use strict';
+
+    /* ---- STATE ---- */
+    let currentUser         = null;
+    let autoLogoutTimer     = null;
+    let autoLogoutCountdown = null;
+
+    /* ---- INIT ---- */
+    document.addEventListener('DOMContentLoaded', () => {
+      currentUser = window.GudSpace.storage.get('currentUser');
+      if (!currentUser) { window.location.href = 'login.html'; return; }
+      initPage();
+    });
+
+    function initPage() {
+      loadSidebar();
+      loadForm();
+      livePreview();
+      startAutoLogoutTimer();
+    }
+
+    /* ---- SIDEBAR ---- */
+    function loadSidebar() {
+      const u = currentUser;
+      const p = u.profile || {};
+      const name = u.firstName || u.name || 'Champ';
+
+      document.getElementById('sbAvatarLetter').textContent = name.charAt(0).toUpperCase();
+      document.getElementById('sbName').textContent = ((u.firstName || '') + ' ' + (u.lastName || '')).trim().toUpperCase();
+
+      const genderLabel = { male:'Male', female:'Female', 'non-binary':'Non-Binary', 'prefer-not-to-say':'—' };
+      document.getElementById('sbMeta').textContent =
+        `${genderLabel[p.gender] || '—'} · ${p.weightKg || '--'} kg · ${p.heightCm || '--'} cm`;
+
+      const goalMap = {
+        'build-strength':'Build Strength', 'lose-weight':'Lose Weight', 'get-lean':'Get Lean',
+        'get-in-shape':'Get in Shape', 'build-muscle':'Build Muscle', 'overall-fitness':'Overall Fitness'
+      };
+      document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalMap[p.goal] || 'Set Goal');
+
+      // Both avatar elements
+      [document.getElementById('sbAvatarImg'), document.getElementById('photoAvatarImg')].forEach(img => {
+        if (u.photoUrl) { img.src = u.photoUrl; img.style.display = 'block'; }
+      });
+
+      // Large photo avatar initial
+      const pa = document.getElementById('photoAvatar');
+      pa.childNodes[0].textContent = name.charAt(0).toUpperCase();
+    }
+
+    /* ---- LOAD FORM ---- */
+    function loadForm() {
+      const u = currentUser;
+      const p = u.profile || {};
+
+      const set = (id, val) => { if (val !== undefined && val !== null) document.getElementById(id).value = val; };
+      set('pfFirstName', u.firstName || '');
+      set('pfLastName',  u.lastName  || '');
+      set('pfGender',    p.gender);
+      set('pfAge',       p.age);
+      set('pfWeight',    p.weightKg);
+      set('pfHeight',    p.heightCm);
+      set('pfGoal',      p.goal);
+    }
+
+    /* ---- LIVE PREVIEW ---- */
+    function livePreview() {
+      const w = parseFloat(document.getElementById('pfWeight').value);
+      const h = parseFloat(document.getElementById('pfHeight').value);
+      const a = parseInt(document.getElementById('pfAge')?.value);
+      const g = document.getElementById('pfGender')?.value;
+
+      if (w && h) {
+        const bmiResult = window.GudSpace.calculateBMI(w, h);
+        document.getElementById('previewBmi').textContent      = bmiResult.bmi;
+        document.getElementById('previewBmiClass').textContent = bmiResult.classification;
+
+        if (a && g) {
+          const nut = window.GudSpace.calculateNutrition({ gender: g, age: a, weightKg: w, heightCm: h });
+          document.getElementById('previewCalories').textContent = nut.tdee + ' kcal';
+          document.getElementById('previewProtein').textContent  = nut.protein + 'g';
+          document.getElementById('previewCarbs').textContent    = nut.carbs + 'g';
+          document.getElementById('previewFat').textContent      = nut.fat + 'g';
+        }
+      } else {
+        ['previewBmi','previewBmiClass','previewCalories','previewProtein','previewCarbs','previewFat']
+          .forEach(id => document.getElementById(id).textContent = '--');
+      }
+    }
+
+    /* ---- SAVE PROFILE ---- */
+    function saveProfile() {
+      const get = id => document.getElementById(id)?.value?.trim();
+
+      const firstName = get('pfFirstName');
+      const lastName  = get('pfLastName');
+      const gender    = get('pfGender');
+      const age       = parseInt(get('pfAge'));
+      const weight    = parseFloat(get('pfWeight'));
+      const height    = parseFloat(get('pfHeight'));
+      const goal      = get('pfGoal');
+
+      if (firstName) currentUser.firstName = firstName;
+      if (lastName)  currentUser.lastName  = lastName;
+
+      currentUser.profile = currentUser.profile || {};
+      if (gender) currentUser.profile.gender   = gender;
+      if (age)    currentUser.profile.age       = age;
+      if (weight) currentUser.profile.weightKg  = weight;
+      if (height) currentUser.profile.heightCm  = height;
+      if (goal)   currentUser.profile.goal      = goal;
+
+      // Recalculate BMI
+      if (weight && height) {
+        const bmi = window.GudSpace.calculateBMI(weight, height);
+        currentUser.profile.bmi      = bmi.bmi;
+        currentUser.profile.bmiClass = bmi.classification;
+      }
+
+      // Recalculate nutrition
+      if (weight && height && age && (gender || currentUser.profile.gender)) {
+        const nut = window.GudSpace.calculateNutrition({
+          gender: gender || currentUser.profile.gender,
+          age, weightKg: weight, heightCm: height
+        });
+        currentUser.profile.calories = nut.tdee;
+        currentUser.profile.protein  = nut.protein;
+        currentUser.profile.carbs    = nut.carbs;
+        currentUser.profile.fat      = nut.fat;
+      }
+
+      saveUser();
+      loadSidebar();  // Refresh sidebar immediately
+      window.GudSpace.showToast('Profile updated! 💪', '✅');
+    }
+
+    /* ---- CHANGE PASSWORD ---- */
+    function changePassword() {
+      const current = document.getElementById('pwCurrent').value;
+      const newPw   = document.getElementById('pwNew').value;
+      const confirm = document.getElementById('pwConfirm').value;
+
+      if (!current || !newPw || !confirm) {
+        window.GudSpace.showToast('Fill in all password fields.', '⚠️'); return;
+      }
+      if (current !== currentUser.password) {
+        window.GudSpace.showToast('Current password is incorrect.', '❌'); return;
+      }
+      if (newPw !== confirm) {
+        window.GudSpace.showToast('New passwords do not match.', '❌'); return;
+      }
+      const strength = window.GudSpace.validatePassword(newPw);
+      if (strength.score < 2) {
+        window.GudSpace.showToast('Password is too weak. Add uppercase, numbers, or symbols.', '⚠️'); return;
+      }
+
+      currentUser.password = newPw;
+      saveUser();
+      document.getElementById('pwCurrent').value = '';
+      document.getElementById('pwNew').value     = '';
+      document.getElementById('pwConfirm').value = '';
+      document.getElementById('pwStrengthFill').style.width = '0%';
+      document.getElementById('pwStrengthLabel').textContent = '—';
+      window.GudSpace.showToast('Password updated successfully! 🔒', '✅');
+    }
+
+    /* ---- PASSWORD STRENGTH ---- */
+    function checkPasswordStrength(pw) {
+      const result = window.GudSpace.validatePassword(pw);
+      const fill   = document.getElementById('pwStrengthFill');
+      const label  = document.getElementById('pwStrengthLabel');
+      const levels = [
+        { pct:'0%',   color:'transparent', text:'—'        },
+        { pct:'25%',  color:'#ff6b6b',     text:'Weak'     },
+        { pct:'50%',  color:'#fdcb6e',     text:'Fair'     },
+        { pct:'75%',  color:'#74b9ff',     text:'Good'     },
+        { pct:'100%', color:'#2ed573',     text:'Strong'   },
+      ];
+      const lvl = levels[result.score] || levels[0];
+      fill.style.width      = lvl.pct;
+      fill.style.background = lvl.color;
+      label.textContent     = lvl.text;
+      label.style.color     = lvl.color;
+    }
+
+    /* ---- PHOTO UPLOAD ---- */
+    function triggerPhotoUpload() {
+      document.getElementById('photoInputMain').click();
+    }
+    function handlePhotoUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const url = ev.target.result;
+        // Update both avatars
+        [document.getElementById('sbAvatarImg'), document.getElementById('photoAvatarImg')].forEach(img => {
+          img.src = url; img.style.display = 'block';
+        });
+        currentUser.photoUrl = url;
+        saveUser();
+        window.GudSpace.showToast('Profile photo updated! 📸', '✅');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /* ---- CLEAR DATA ---- */
+    function clearData() {
+      if (!confirm('Are you sure? This will permanently delete all your attendance, weight logs, and progress. This cannot be undone.')) return;
+      currentUser.attendance = [];
+      currentUser.weightLog  = [];
+      currentUser.streak     = 0;
+      saveUser();
+      window.GudSpace.showToast('Your data has been cleared.', '🗑️');
+    }
+
+    /* ---- SIDEBAR MOBILE ---- */
+    function openSidebar() {
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('sidebarOverlay').classList.add('show');
+    }
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebarOverlay').classList.remove('show');
+    }
+
+    /* ---- LOGOUT ---- */
+    function confirmLogout() {
+      if (confirm('Are you sure you want to log out?')) window.GudSpace.logout();
+    }
+
+    /* ---- AUTO LOGOUT ---- */
+    function startAutoLogoutTimer() {
+      const loginTime = window.GudSpace.storage.get('loginTime');
+      if (!loginTime) return;
+      const SESSION   = 3 * 60 * 60 * 1000;
+      const remaining = SESSION - (Date.now() - loginTime);
+      if (remaining <= 0) { window.GudSpace.logout(true); return; }
+      const warnAt = remaining - 10 * 60 * 1000;
+      if (warnAt > 0) setTimeout(() => showLogoutWarning(10 * 60), warnAt);
+      else showLogoutWarning(Math.floor(remaining / 1000));
+      autoLogoutTimer = setTimeout(() => window.GudSpace.logout(true), remaining);
+    }
+
+    function showLogoutWarning(secs) {
+      document.getElementById('autoLogoutBar').classList.add('show');
+      let s = secs;
+      autoLogoutCountdown = setInterval(() => {
+        s--;
+        if (s <= 0) { clearInterval(autoLogoutCountdown); return; }
+        document.getElementById('alb-countdown').textContent =
+          Math.floor(s / 60).toString().padStart(2, '0') + ':' + (s % 60).toString().padStart(2, '0');
+      }, 1000);
+    }
+
+    function extendSession() {
+      clearTimeout(autoLogoutTimer);
+      clearInterval(autoLogoutCountdown);
+      window.GudSpace.storage.set('loginTime', Date.now());
+      document.getElementById('autoLogoutBar').classList.remove('show');
+      window.GudSpace.showToast('Session extended by 3 hours ✅', '⏱');
+      startAutoLogoutTimer();
+    }
+
+    /* ---- HELPERS ---- */
+    function saveUser() {
+      const users = window.GudSpace.storage.get('users') || [];
+      const idx   = users.findIndex(u => u.id === currentUser.id);
+      if (idx >= 0) users[idx] = currentUser;
+      window.GudSpace.storage.set('users', users);
+      window.GudSpace.storage.set('currentUser', currentUser);
+    }
+  </script>
+</body>
+</html>

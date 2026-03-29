@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log In — GUD SPACE GYM</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== LOGIN PAGE ===== */
+    .login-layout {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    /* ---- LEFT VISUAL PANEL ---- */
+    .login-visual {
+      background: var(--black-2);
+      border-right: 1px solid var(--black-5);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 40px 48px;
+    }
+    .lv-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+      background-size: 52px 52px;
+      pointer-events: none;
+    }
+    .lv-glow {
+      position: absolute;
+      width: 560px; height: 560px;
+      background: radial-gradient(circle, rgba(255,26,94,0.13) 0%, transparent 70%);
+      bottom: -100px; right: -100px;
+      pointer-events: none;
+    }
+    .lv-glow-2 {
+      position: absolute;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(255,26,94,0.07) 0%, transparent 70%);
+      top: 100px; left: -50px;
+      pointer-events: none;
+    }
+    .lv-top { position: relative; z-index: 2; }
+    .lv-logo {
+      font-family: var(--font-display);
+      font-size: 26px;
+      letter-spacing: 0.04em;
+      display: flex; align-items: baseline; gap: 3px;
+      text-decoration: none;
+    }
+    .lv-center {
+      position: relative; z-index: 2;
+      flex: 1;
+      display: flex; flex-direction: column;
+      justify-content: center;
+    }
+    .lv-headline {
+      font-family: var(--font-display);
+      font-size: clamp(56px, 6vw, 96px);
+      line-height: 0.88;
+      letter-spacing: 0.02em;
+      margin-bottom: 28px;
+    }
+    .lv-headline .pink { color: var(--pink); }
+    .lv-headline .dim  { color: var(--gray-4); }
+    .lv-sub {
+      font-size: 15px;
+      color: var(--gray-2);
+      line-height: 1.8;
+      max-width: 380px;
+      margin-bottom: 48px;
+    }
+
+    /* Stats row */
+    .lv-stats {
+      display: flex; gap: 32px; margin-bottom: 16px;
+    }
+    .lv-stat { display: flex; flex-direction: column; }
+    .lv-stat-num {
+      font-family: var(--font-display);
+      font-size: 38px; color: var(--white); line-height: 1;
+    }
+    .lv-stat-num span { color: var(--pink); font-size: 26px; }
+    .lv-stat-lbl {
+      font-family: var(--font-cond);
+      font-size: 11px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--gray-3);
+      margin-top: 4px;
+    }
+    .lv-stat-div { width: 1px; background: var(--gray-4); align-self: stretch; }
+
+    /* Floating member cards */
+    .lv-members {
+      display: flex; gap: 10px; flex-wrap: wrap;
+    }
+    .lv-member-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--black-3);
+      border: 1px solid var(--black-5);
+      border-radius: 100px;
+      padding: 7px 14px 7px 7px;
+      opacity: 0;
+      animation: chipIn 0.4s ease forwards;
+    }
+    .lv-member-chip:nth-child(1) { animation-delay: 0.1s; }
+    .lv-member-chip:nth-child(2) { animation-delay: 0.22s; }
+    .lv-member-chip:nth-child(3) { animation-delay: 0.34s; }
+    .lv-member-chip:nth-child(4) { animation-delay: 0.46s; }
+    .lv-member-chip:nth-child(5) { animation-delay: 0.58s; }
+    @keyframes chipIn {
+      from { opacity: 0; transform: scale(0.85); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .lmc-av {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 12px;
+      color: white; flex-shrink: 0;
+    }
+    .lmc-name {
+      font-family: var(--font-cond);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--white);
+    }
+    .lmc-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #2ed573; flex-shrink: 0;
+    }
+
+    .lv-bottom { position: relative; z-index: 2; font-size: 12px; color: var(--gray-4); }
+
+    /* ---- RIGHT FORM PANEL ---- */
+    .login-form-panel {
+      background: var(--black);
+      display: flex; align-items: center; justify-content: center;
+      padding: 48px 60px;
+      position: relative;
+    }
+    .login-form-inner {
+      width: 100%; max-width: 420px;
+    }
+    .login-back {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: var(--font-cond);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--gray-3); margin-bottom: 40px;
+      transition: color 0.2s;
+      text-decoration: none;
+    }
+    .login-back:hover { color: var(--pink); }
+    .login-back svg { transition: transform 0.2s; }
+    .login-back:hover svg { transform: translateX(-4px); }
+    .login-title {
+      font-family: var(--font-display);
+      font-size: 52px; letter-spacing: 0.03em; line-height: 1;
+      margin-bottom: 6px;
+    }
+    .login-sub {
+      font-size: 14px; color: var(--gray-2);
+      margin-bottom: 40px; line-height: 1.6;
+    }
+    .login-sub a { color: var(--pink); font-weight: 600; }
+
+    /* Timeout notice */
+    .timeout-notice {
+      display: none;
+      background: rgba(255,59,48,0.08);
+      border: 1px solid rgba(255,59,48,0.25);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 13px; color: #ff6b6b;
+      margin-bottom: 24px;
+      align-items: flex-start; gap: 10px;
+    }
+    .timeout-notice.show { display: flex; }
+
+    /* Password reveal */
+    .pw-eye {
+      position: absolute; right: 14px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none;
+      color: var(--gray-3); cursor: pointer;
+      padding: 4px; display: flex; align-items: center;
+      transition: color 0.2s;
+    }
+    .pw-eye:hover { color: var(--pink); }
+
+    /* Remember + Forgot row */
+    .login-options {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .remember-wrap {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--gray-3);
+    }
+    .remember-wrap input[type="checkbox"] {
+      accent-color: var(--pink);
+      cursor: pointer;
+    }
+    .forgot-link {
+      font-size: 13px; color: var(--pink);
+      font-weight: 600; cursor: pointer;
+      transition: color 0.2s;
+    }
+    .forgot-link:hover { color: var(--pink-light); }
+
+    /* Login button */
+    .login-btn {
+      width: 100%;
+      background: var(--pink); color: white;
+      font-family: var(--font-cond);
+      font-size: 16px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 17px; border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      margin-top: 20px;
+      position: relative; overflow: hidden;
+      display: flex; align-items: center;
+      justify-content: center; gap: 10px;
+    }
+    .login-btn::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.12);
+      transform: translateX(-100%) skewX(-15deg);
+      transition: transform 0.4s ease;
+    }
+    .login-btn:hover:not(:disabled)::before { transform: translateX(100%) skewX(-15deg); }
+    .login-btn:hover:not(:disabled) {
+      background: var(--pink-light);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 32px rgba(255,26,94,0.35);
+    }
+    .login-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .login-btn .btn-spinner {
+      display: none;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    .login-btn.loading .btn-text { display: none; }
+    .login-btn.loading .btn-spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error box */
+    .login-error {
+      display: none;
+      background: rgba(255,59,48,0.08);
+      border: 1px solid rgba(255,59,48,0.25);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 13px; color: #ff6b6b;
+      margin-top: 16px;
+      align-items: flex-start; gap: 10px;
+      animation: errorShake 0.4s ease;
+    }
+    .login-error.show { display: flex; }
+    @keyframes errorShake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+
+    /* Forgot modal */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      z-index: 9000;
+      display: none; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .modal-overlay.show { display: flex; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-box {
+      background: var(--black-3);
+      border: 1px solid var(--black-5);
+      border-radius: var(--radius-xl);
+      padding: 40px;
+      width: 100%; max-width: 400px;
+      animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.92) translateY(20px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 32px; letter-spacing: 0.03em;
+      margin-bottom: 6px;
+    }
+    .modal-sub {
+      font-size: 13px; color: var(--gray-2);
+      line-height: 1.6; margin-bottom: 28px;
+    }
+    .modal-close {
+      position: absolute; top: 16px; right: 16px;
+      width: 32px; height: 32px;
+      background: var(--black-4); border: none;
+      border-radius: 50%; cursor: pointer;
+      color: var(--gray-2); font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .modal-close:hover { background: var(--pink); color: white; }
+    .modal-found {
+      display: none;
+      background: rgba(46,213,115,0.08);
+      border: 1px solid rgba(46,213,115,0.2);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      font-size: 13px; color: #2ed573; line-height: 1.6;
+      margin-top: 16px;
+    }
+    .modal-found.show { display: block; animation: fadeIn 0.3s ease; }
+    .modal-notfound {
+      display: none;
+      font-size: 13px; color: #ff6b6b;
+      margin-top: 12px;
+    }
+    .modal-notfound.show { display: block; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .login-layout { grid-template-columns: 1fr; }
+      .login-visual  { display: none; }
+      .login-form-panel { padding: 40px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-follower" id="cursorFollower"></div>
+  <div class="noise-overlay"></div>
+
+  <div class="login-layout">
+
+    <!-- ======== LEFT VISUAL ======== -->
+    <aside class="login-visual">
+      <div class="lv-grid"></div>
+      <div class="lv-glow"></div>
+      <div class="lv-glow-2"></div>
+
+      <div class="lv-top">
+        <a href="index.html" class="lv-logo">
+          <span class="logo-gud">GUD</span><span class="logo-space">SPACE</span><span class="logo-gym" style="font-size:17px;color:var(--gray-3)">GYM</span>
+        </a>
+      </div>
+
+      <div class="lv-center">
+        <h1 class="lv-headline">
+          <div>WELCOME</div>
+          <div class="pink">BACK,</div>
+          <div class="dim">CHAMP.</div>
+        </h1>
+        <p class="lv-sub">
+          Your progress is waiting. Log back in and keep your streak alive.
+          Every session counts.
+        </p>
+
+        <div class="lv-stats">
+          <div class="lv-stat">
+            <div class="lv-stat-num">500<span>+</span></div>
+            <div class="lv-stat-lbl">Active Members</div>
+          </div>
+          <div class="lv-stat-div"></div>
+          <div class="lv-stat">
+            <div class="lv-stat-num">24/7</div>
+            <div class="lv-stat-lbl">Portal Access</div>
+          </div>
+          <div class="lv-stat-div"></div>
+          <div class="lv-stat">
+            <div class="lv-stat-num">🔥</div>
+            <div class="lv-stat-lbl">Streak System</div>
+          </div>
+        </div>
+
+        <div style="font-family:var(--font-cond);font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--gray-4);margin-bottom:12px;margin-top:32px;">
+          Currently Active
+        </div>
+        <div class="lv-members" id="lvMembers">
+          <!-- injected by JS -->
+        </div>
+      </div>
+
+      <div class="lv-bottom">
+        © 2025 Gud Space Gym. All rights reserved.
+      </div>
+    </aside>
+
+    <!-- ======== RIGHT FORM ======== -->
+    <main class="login-form-panel">
+      <div class="login-form-inner">
+
+        <a href="index.html" class="login-back">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Home
+        </a>
+
+        <!-- Timeout notice -->
+        <div class="timeout-notice" id="timeoutNotice">
+          <span style="font-size:18px;flex-shrink:0;">🔒</span>
+          <div>
+            <div style="font-family:var(--font-cond);font-weight:700;letter-spacing:0.06em;margin-bottom:3px;">SESSION EXPIRED</div>
+            You were automatically logged out after 3 hours of inactivity. Please log in again.
+          </div>
+        </div>
+
+        <h1 class="login-title">LOG<br /><span style="color:var(--pink)">IN.</span></h1>
+        <p class="login-sub">
+          Don't have an account yet?
+          <a href="register.html">Create one free →</a>
+        </p>
+
+        <form id="loginForm" novalidate autocomplete="off">
+
+          <!-- Email -->
+          <div class="form-group">
+            <label class="form-label" for="loginEmail">Email Address</label>
+            <div class="form-input-wrap">
+              <input
+                class="form-input" type="email" id="loginEmail"
+                placeholder="you@email.com"
+                autocomplete="email"
+                style="padding-right:44px;"
+                oninput="clearLoginError(); updateLoginBtn()"
+              />
+              <span class="form-input-icon">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="2" y="4" width="20" height="16" rx="2"/>
+                  <path d="m2 7 10 7 10-7"/>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <label class="form-label" for="loginPassword">Password</label>
+            <div class="form-input-wrap">
+              <input
+                class="form-input" type="password" id="loginPassword"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                style="padding-right:44px;"
+                oninput="clearLoginError(); updateLoginBtn()"
+                onkeydown="if(event.key==='Enter') submitLogin()"
+              />
+              <button type="button" class="pw-eye" id="pwEye" onclick="togglePw()">
+                <svg id="pwEyeIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Options row -->
+          <div class="login-options">
+            <label class="remember-wrap">
+              <input type="checkbox" id="rememberMe" />
+              Remember me
+            </label>
+            <span class="forgot-link" onclick="openForgotModal()">Forgot password?</span>
+          </div>
+
+          <!-- Submit -->
+          <button type="button" class="login-btn" id="loginBtn" onclick="submitLogin()" disabled>
+            <span class="btn-text">
+              Log In
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-left:6px">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+              </svg>
+            </span>
+            <div class="btn-spinner"></div>
+          </button>
+
+          <!-- Error -->
+          <div class="login-error" id="loginError">
+            <span style="font-size:18px;flex-shrink:0;">⚠️</span>
+            <span id="loginErrorMsg">Incorrect email or password.</span>
+          </div>
+
+        </form>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- FORGOT PASSWORD MODAL -->
+  <div class="modal-overlay" id="forgotModal">
+    <div class="modal-box" style="position:relative;">
+      <button class="modal-close" onclick="closeForgotModal()">✕</button>
+      <h2 class="modal-title">FORGOT<br /><span style="color:var(--pink)">PASSWORD?</span></h2>
+      <p class="modal-sub">Enter your registered email. We'll look up your saved credentials.</p>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input class="form-input" type="email" id="forgotEmail" placeholder="you@email.com" />
+      </div>
+      <button class="login-btn" onclick="lookupPassword()" style="margin-top:8px;">
+        <span class="btn-text">Find My Account</span>
+        <div class="btn-spinner"></div>
+      </button>
+
+      <div class="modal-found" id="modalFound"></div>
+      <div class="modal-notfound" id="modalNotFound">
+        No account found with that email address.
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script src="api.js"></script>
+  <script>
+  /* =====================================================
+     LOGIN PAGE LOGIC
+  ===================================================== */
+
+  /* ---- On Load ---- */
+  document.addEventListener('DOMContentLoaded', () => {
+    window.GudSpace.redirectIfLoggedIn('dashboard.html');
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reason') === 'timeout') {
+      document.getElementById('timeoutNotice').classList.add('show');
+    }
+
+    const remembered = window.GudSpace.storage.get('rememberedEmail');
+    if (remembered) {
+      document.getElementById('loginEmail').value = remembered;
+      document.getElementById('rememberMe').checked = true;
+      updateLoginBtn();
+    }
+
+    loadActiveMembers();
+  });
+
+  /* ---- Active Members on Left Panel ---- */
+  function loadActiveMembers() {
+    const el = document.getElementById('lvMembers');
+    if (!el) return;
+
+    const today = new Date().toDateString();
+    const users = window.GudSpace.storage.get('users') || [];
+    const present = users.filter(u =>
+      (u.attendance || []).some(s => new Date(s.date).toDateString() === today && s.timeIn && !s.timeOut)
+    );
+
+    const colors = ['#FF1A5E','#a29bfe','#74b9ff','#fd79a8','#fdcb6e','#2ed573'];
+
+    if (!present.length) {
+      el.innerHTML = '<div style="font-size:13px;color:var(--gray-4);">No members checked in yet today.</div>';
+      return;
+    }
+
+    el.innerHTML = present.slice(0, 5).map((u, i) => {
+      const name = (u.firstName || u.name || '?');
+      const initial = name.charAt(0).toUpperCase();
+      const color = colors[i % colors.length];
+      return `
+        <div class="lv-member-chip">
+          <div class="lmc-av" style="background:${color}">${initial}</div>
+          <span class="lmc-name">${name}</span>
+          <div class="lmc-dot"></div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  /* ---- Password toggle ---- */
+  function togglePw() {
+    const input = document.getElementById('loginPassword');
+    const icon = document.getElementById('pwEyeIcon');
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    icon.innerHTML = isHidden
+      ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+         <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+         <line x1="1" y1="1" x2="23" y2="23"/>`
+      : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+         <circle cx="12" cy="12" r="3"/>`;
+  }
+
+  /* ---- Enable button ---- */
+  function updateLoginBtn() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pw    = document.getElementById('loginPassword').value;
+    document.getElementById('loginBtn').disabled = !email || !pw;
+  }
+
+  /* ---- Clear error ---- */
+  function clearLoginError() {
+    document.getElementById('loginError').classList.remove('show');
+  }
+
+  /* ---- SUBMIT LOGIN ---- */
+  async function submitLogin() {
+    const email    = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const remember = document.getElementById('rememberMe').checked;
+
+    if (!email || !password) return;
+
+    const btn = document.getElementById('loginBtn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    try {
+      const result = await window.GudAPI.login({ email, password });
+
+      btn.classList.remove('loading');
+
+      if (result.error) {
+        btn.disabled = false;
+        const errEl = document.getElementById('loginError');
+        document.getElementById('loginErrorMsg').textContent = result.error;
+        errEl.classList.add('show');
+        ['loginEmail','loginPassword'].forEach(id => {
+          const el = document.getElementById(id);
+          el.style.borderColor = 'rgba(255,59,48,0.5)';
+          setTimeout(() => el.style.borderColor = '', 2000);
+        });
+        return;
+      }
+
+      if (remember) {
+        window.GudSpace.storage.set('rememberedEmail', email);
+      } else {
+        window.GudSpace.storage.remove('rememberedEmail');
+      }
+
+      window.GudSpace.storage.set('currentUser', {
+        ...result.user,
+        token: result.token
+      });
+      window.GudSpace.storage.set('loginTime', Date.now());
+
+      if (!result.user.onboardingDone) {
+        window.location.href = 'onboarding.html';
+      } else {
+        window.location.href = 'dashboard.html';
+      }
+
+    } catch (err) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      console.error('Login error:', err);
+      const errEl = document.getElementById('loginError');
+      document.getElementById('loginErrorMsg').textContent = 'Something went wrong. Please try again.';
+      errEl.classList.add('show');
+    }
+  }
+
+  /* ---- FORGOT PASSWORD MODAL ---- */
+  function openForgotModal() {
+    document.getElementById('forgotModal').classList.add('show');
+    document.getElementById('forgotEmail').value = document.getElementById('loginEmail').value;
+    document.getElementById('modalFound').classList.remove('show');
+    document.getElementById('modalNotFound').classList.remove('show');
+  }
+
+  function closeForgotModal() {
+    document.getElementById('forgotModal').classList.remove('show');
+  }
+
+  document.getElementById('forgotModal').addEventListener('click', function(e) {
+    if (e.target === this) closeForgotModal();
+  });
+
+  function lookupPassword() {
+    const email = document.getElementById('forgotEmail').value.trim();
+    if (!email) return;
+
+    const users = window.GudSpace.storage.get('users') || [];
+    const user  = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    document.getElementById('modalFound').classList.remove('show');
+    document.getElementById('modalNotFound').classList.remove('show');
+
+    if (user) {
+      document.getElementById('modalFound').classList.add('show');
+      document.getElementById('modalFound').innerHTML = `
+        <div style="font-family:var(--font-cond);font-weight:700;letter-spacing:0.06em;margin-bottom:8px;color:#2ed573;">✅ ACCOUNT FOUND</div>
+        <div style="color:var(--gray-2);line-height:1.8;">
+          <strong style="color:white;">Name:</strong> ${user.firstName} ${user.lastName || ''}<br/>
+          <strong style="color:white;">Email:</strong> ${user.email}<br/>
+        </div>
+        <div style="font-size:11px;color:var(--gray-4);margin-top:10px;">💡 Please contact the gym admin to reset your password.</div>
+      `;
+    } else {
+      document.getElementById('modalNotFound').classList.add('show');
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeForgotModal();
+  });
+  </script>
+</body>
+</html>

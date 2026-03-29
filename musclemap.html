@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Muscle Map — GUD SPACE GYM</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: var(--font-body);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* =================== SIDEBAR =================== */
+    .sidebar {
+      width: 260px; min-height: 100vh;
+      background: rgba(10,10,10,0.97);
+      border-right: 1px solid rgba(255,255,255,0.05);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      z-index: 200;
+      transition: transform 0.35s cubic-bezier(0.25,0.8,0.25,1);
+      overflow-y: auto;
+      backdrop-filter: blur(20px);
+    }
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 300px;
+      background: linear-gradient(180deg, rgba(255,26,94,0.06) 0%, transparent 100%);
+      pointer-events: none;
+    }
+    .sidebar::-webkit-scrollbar { width: 0; }
+    .sb-logo { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; position: relative; z-index: 1; }
+    .sb-logo-text { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.04em; display: flex; align-items: baseline; gap: 2px; }
+    .sb-profile { padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; position: relative; z-index: 1; }
+    .sb-avatar-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 14px; }
+    .sb-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink), #a0004a);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 30px; color: white;
+      border: 2px solid rgba(255,26,94,0.4);
+      position: relative; overflow: hidden; cursor: pointer;
+      box-shadow: 0 0 30px rgba(255,26,94,0.25);
+    }
+    .sb-avatar img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+    .sb-avatar-ring { position: absolute; inset: -5px; border-radius: 50%; border: 1.5px solid rgba(255,26,94,0.4); animation: ringPulse 3s ease-in-out infinite; }
+    @keyframes ringPulse { 0%,100%{opacity:.3;transform:scale(1)} 50%{opacity:.8;transform:scale(1.05)} }
+    .sb-cam-btn {
+      position: absolute; bottom: 0; right: 0;
+      width: 24px; height: 24px; background: var(--black-4);
+      border: 2px solid var(--black-5); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; cursor: pointer; transition: background 0.2s;
+    }
+    .sb-cam-btn:hover { background: var(--pink); }
+    .sb-name { font-family: var(--font-cond); font-size: 18px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--white); }
+    .sb-meta { font-size: 12px; color: var(--gray-3); margin-top: 3px; }
+    .sb-goal-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,26,94,0.1); border: 1px solid rgba(255,26,94,0.2);
+      border-radius: 4px; padding: 4px 10px;
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--pink); margin-top: 10px;
+    }
+    .sb-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; position: relative; z-index: 1; }
+    .sb-nav-section { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray-4); padding: 12px 12px 6px; }
+    .sb-nav-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 14px; border-radius: var(--radius-sm);
+      font-family: var(--font-cond); font-size: 14px; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--gray-3); cursor: pointer;
+      transition: all 0.2s ease; text-decoration: none;
+      position: relative; overflow: hidden;
+    }
+    .sb-nav-link::before {
+      content: ''; position: absolute; inset: 0;
+      background: var(--pink); opacity: 0;
+      transition: opacity 0.2s; border-radius: var(--radius-sm);
+    }
+    .sb-nav-link:hover { color: var(--white); }
+    .sb-nav-link:hover::before { opacity: 0.08; }
+    .sb-nav-link.active { background: rgba(255,26,94,0.1); color: var(--pink); border-left: 3px solid var(--pink); }
+    .sb-nav-icon { font-size: 18px; flex-shrink: 0; width: 22px; text-align: center; position: relative; z-index: 1; }
+    .sb-nav-link span:last-child { position: relative; z-index: 1; }
+    .sb-logout-wrap { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; position: relative; z-index: 1; }
+    .sb-logout-btn {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 12px 14px; border-radius: var(--radius-sm);
+      background: rgba(255,59,48,0.08); border: 1px solid rgba(255,59,48,0.15);
+      color: #ff6b6b; font-family: var(--font-cond);
+      font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .sb-logout-btn:hover { background: rgba(255,59,48,0.2); border-color: rgba(255,59,48,0.4); }
+
+    /* =================== LAYOUT =================== */
+    .page-main { margin-left: 260px; flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
+    .db-topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(8,8,8,0.88); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--black-5);
+      padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .db-date-line { font-family: var(--font-cond); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-3); }
+    .db-greeting { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.03em; line-height: 1.1; }
+    .db-greeting span { color: var(--pink); }
+    .db-topbar-right { display: flex; align-items: center; gap: 16px; }
+    .db-streak-pill {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--black-3); border: 1px solid var(--black-5);
+      border-radius: 100px; padding: 6px 14px;
+    }
+    .db-streak-num { font-family: var(--font-display); font-size: 22px; color: var(--pink); line-height: 1; }
+    .db-streak-label { font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray-3); }
+    .db-menu-btn { display: none; background: none; border: none; color: var(--white); cursor: pointer; padding: 4px; }
+    .page-content { padding: 28px 32px; }
+
+    /* =================== SHARED CARD =================== */
+    .db-card {
+      background: var(--black-3); border: 1px solid var(--black-5);
+      border-radius: var(--radius-lg); padding: 24px; transition: border-color 0.2s;
+    }
+    .db-card:hover { border-color: rgba(255,255,255,0.08); }
+    .card-label {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.16em; text-transform: uppercase; color: var(--gray-3);
+      margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .card-label-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pink); }
+    .view-section-title {
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray-3);
+      margin: 28px 0 14px; display: flex; align-items: center; gap: 10px;
+    }
+    .view-section-title:first-child { margin-top: 0; }
+    .vst-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--pink); flex-shrink: 0; }
+
+    /* =================== MUSCLE MAP LAYOUT =================== */
+    .mm-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    /* ── BODY VIEWER PANEL ── */
+    .mm-body-panel { position: sticky; top: 100px; }
+
+    .mm-rotate-hint {
+      text-align: center; font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(255,255,255,.2); margin-bottom: 8px;
+    }
+    .mm-view-btns {
+      display: flex; gap: 5px; justify-content: center; margin-bottom: 14px;
+    }
+    .mm-view-btn {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      padding: 4px 12px; border-radius: 20px;
+      border: 1px solid var(--black-5); background: var(--black-4);
+      color: var(--gray-3); cursor: pointer; transition: all 0.2s;
+    }
+    .mm-view-btn:hover { border-color: rgba(255,26,94,0.35); color: rgba(255,255,255,0.8); }
+    .mm-view-btn.active { background: var(--pink); border-color: var(--pink); color: #fff; box-shadow: 0 2px 14px rgba(255,26,94,0.3); }
+
+    /* 3D wrap */
+    .mm-3d-wrap { perspective: 900px; display: flex; justify-content: center; }
+    .mm-body-3d {
+      transform-style: preserve-3d;
+      transition: transform 0.65s cubic-bezier(0.25,0.8,0.25,1);
+      position: relative; width: 240px;
+    }
+    .mm-body-3d.vf  { transform: rotateY(0deg); }
+    .mm-body-3d.vsl { transform: rotateY(-38deg); }
+    .mm-body-3d.vb  { transform: rotateY(180deg); }
+    .mm-body-3d.vsr { transform: rotateY(38deg); }
+
+    .mm-face { backface-visibility: hidden; position: relative; width: 240px; }
+    .mm-back-face {
+      position: absolute; top: 0; left: 0;
+      transform: rotateY(180deg); backface-visibility: hidden;
+    }
+    .mm-canvas { position: relative; width: 240px; }
+    .mm-canvas svg { width: 100%; height: auto; display: block; }
+
+    /* SVG muscle groups */
+    .mg { cursor: pointer; }
+    .mg path, .mg ellipse, .mg rect, .mg polygon { transition: fill 0.2s, filter 0.2s; }
+    .mg:hover path, .mg:hover ellipse, .mg:hover rect, .mg:hover polygon { filter: brightness(1.6); }
+    .mg.lit path, .mg.lit ellipse, .mg.lit rect, .mg.lit polygon {
+      fill: var(--pink) !important;
+      filter: drop-shadow(0 0 5px rgba(255,26,94,0.5));
+    }
+    .mg.group-lit path, .mg.group-lit ellipse, .mg.group-lit rect, .mg.group-lit polygon {
+      fill: rgba(255,26,94,0.45) !important;
+    }
+
+    /* Hotspot dots */
+    .mm-dot {
+      position: absolute; width: 9px; height: 9px; border-radius: 50%;
+      background: rgba(255,26,94,0.9); border: 1.5px solid rgba(255,255,255,0.5);
+      transform: translate(-50%,-50%); cursor: pointer;
+      box-shadow: 0 0 0 3px rgba(255,26,94,0.18);
+      transition: all 0.2s; animation: dotPulse 2.2s ease-in-out infinite;
+    }
+    .mm-dot:hover { transform: translate(-50%,-50%) scale(1.5); }
+    .mm-dot.active {
+      background: var(--pink); animation: none;
+      transform: translate(-50%,-50%) scale(1.35);
+      box-shadow: 0 0 0 5px rgba(255,26,94,0.32);
+    }
+    @keyframes dotPulse {
+      0%,100% { box-shadow: 0 0 0 3px rgba(255,26,94,0.18); }
+      50%      { box-shadow: 0 0 0 7px rgba(255,26,94,0.05); }
+    }
+
+    /* ── RIGHT PANEL: GROUP TABS + EXERCISES ── */
+    .mm-right-panel { display: flex; flex-direction: column; gap: 16px; }
+
+    /* Group selector tabs */
+    .mm-group-tabs {
+      display: flex; flex-wrap: wrap; gap: 7px;
+    }
+    .mm-group-tab {
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      padding: 7px 16px; border-radius: 8px;
+      border: 1px solid var(--black-5); background: var(--black-4);
+      color: var(--gray-3); cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .mm-group-tab:hover { border-color: rgba(255,26,94,0.35); color: rgba(255,255,255,0.8); }
+    .mm-group-tab.active { background: rgba(255,26,94,0.12); border-color: rgba(255,26,94,0.4); color: var(--pink); }
+
+    /* Sub-muscle chips */
+    .mm-submuscle-area { display: flex; flex-direction: column; gap: 10px; }
+    .mm-submuscle-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .mm-submuscle-label {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray-4);
+      width: 100%; margin-bottom: 2px;
+    }
+    .mm-chip {
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 6px 14px; border-radius: 20px;
+      border: 1px solid var(--black-5); background: var(--black-4);
+      color: var(--gray-2); cursor: pointer; transition: all 0.2s;
+    }
+    .mm-chip:hover { border-color: rgba(255,26,94,0.4); color: rgba(255,255,255,0.85); }
+    .mm-chip.active {
+      background: var(--pink); border-color: var(--pink); color: #fff;
+      box-shadow: 0 2px 12px rgba(255,26,94,0.3);
+    }
+
+    /* Exercise panel */
+    .mm-ex-panel {
+      display: none; animation: exSlide 0.25s ease;
+    }
+    .mm-ex-panel.show { display: block; }
+    @keyframes exSlide { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+    .mm-ex-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+      padding-bottom: 14px; border-bottom: 1px solid var(--black-5);
+    }
+    .mm-ex-icon { font-size: 22px; }
+    .mm-ex-title-wrap { flex: 1; }
+    .mm-ex-muscle { font-family: var(--font-display); font-size: 26px; letter-spacing: 0.03em; color: var(--pink); line-height: 1; }
+    .mm-ex-subtitle { font-family: var(--font-cond); font-size: 10px; color: var(--gray-3); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 3px; }
+    .mm-ex-close {
+      margin-left: auto; background: none; border: 1px solid var(--black-5);
+      border-radius: 50%; width: 28px; height: 28px; color: var(--gray-3);
+      cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .mm-ex-close:hover { border-color: rgba(255,26,94,0.4); color: var(--pink); }
+
+    /* Exercise grid */
+    .mm-ex-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px;
+    }
+    .mm-ex-card {
+      background: var(--black-4); border: 1px solid var(--black-5);
+      border-radius: var(--radius-md); padding: 13px 14px;
+      cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+    }
+    .mm-ex-card::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+      background: var(--pink); opacity: 0; transition: opacity 0.2s;
+    }
+    .mm-ex-card:hover { border-color: rgba(255,26,94,0.3); background: rgba(255,26,94,0.04); }
+    .mm-ex-card:hover::before { opacity: 1; }
+    .mm-ex-name { font-family: var(--font-cond); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; color: #fff; margin-bottom: 6px; }
+    .mm-ex-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .mm-ex-sets { font-family: var(--font-cond); font-size: 11px; color: var(--gray-3); }
+    .mm-ex-tag {
+      display: inline-flex; align-items: center;
+      background: rgba(255,26,94,0.1); border: 1px solid rgba(255,26,94,0.18);
+      border-radius: 3px; padding: 1px 7px;
+      font-family: var(--font-cond); font-size: 8px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--pink);
+    }
+    .mm-ex-tip {
+      margin-top: 8px; padding: 8px 10px;
+      background: rgba(255,255,255,0.03); border-radius: 6px;
+      font-size: 11px; color: var(--gray-3); line-height: 1.5;
+    }
+    .mm-ex-tip strong { color: var(--pink); font-weight: 600; }
+
+    /* Empty state */
+    .mm-empty {
+      text-align: center; padding: 40px 20px;
+      font-family: var(--font-cond); font-size: 13px; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--gray-4);
+    }
+    .mm-empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+    /* =================== AUTO LOGOUT BAR =================== */
+    .auto-logout-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+      background: rgba(255,59,48,.9); backdrop-filter: blur(10px);
+      padding: 10px 24px; display: none;
+      align-items: center; justify-content: space-between; gap: 16px;
+      font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase; color: white;
+    }
+    .auto-logout-bar.show { display: flex; animation: slideDown .3s ease; }
+    @keyframes slideDown { from{transform:translateY(-100%)} to{transform:translateY(0)} }
+    .alb-stay-btn {
+      background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.3);
+      border-radius: 6px; padding: 5px 16px; color: white;
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: background .2s;
+    }
+    .alb-stay-btn:hover { background: rgba(255,255,255,.3); }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 199; }
+    .sidebar-overlay.show { display: block; }
+
+    /* =================== RESPONSIVE =================== */
+    @media (max-width: 1100px) {
+      .mm-layout { grid-template-columns: 280px 1fr; }
+      .mm-ex-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 820px) {
+      .mm-layout { grid-template-columns: 1fr; }
+      .mm-body-panel { position: static; }
+      .mm-3d-wrap { margin-bottom: 10px; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); box-shadow: 16px 0 60px rgba(0,0,0,0.6); }
+      .page-main { margin-left: 0; }
+      .db-menu-btn { display: flex; }
+      .page-content { padding: 16px; }
+      .mm-ex-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .mm-ex-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-follower" id="cursorFollower"></div>
+  <div class="noise-overlay"></div>
+
+  <div class="auto-logout-bar" id="autoLogoutBar">
+    <span>⚠️ You will be automatically logged out in <strong id="alb-countdown">10:00</strong></span>
+    <button class="alb-stay-btn" onclick="extendSession()">Stay Logged In</button>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-text">
+        <span class="logo-gud">GUD</span><span class="logo-space">SPACE</span>
+        <span class="logo-gym" style="font-size:15px;color:var(--gray-3)">GYM</span>
+      </div>
+    </div>
+
+    <div class="sb-profile">
+      <div class="sb-avatar-wrap">
+        <div class="sb-avatar" id="sbAvatar"><span id="sbAvatarLetter">?</span>
+          <img id="sbAvatarImg" src="" alt="" style="display:none;" />
+        </div>
+        <div class="sb-avatar-ring"></div>
+        <div class="sb-cam-btn" onclick="triggerPhotoUpload()" title="Change photo">📷</div>
+        <input type="file" id="photoInput" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)" />
+      </div>
+      <div class="sb-name" id="sbName">Loading...</div>
+      <div class="sb-meta" id="sbMeta">— · — kg · — cm</div>
+      <div class="sb-goal-badge" id="sbGoalBadge">🎯 —</div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-nav-section">Main</div>
+      <a class="sb-nav-link" href="dashboard.html"><span class="sb-nav-icon">🏠</span> Home</a>
+      <a class="sb-nav-link" href="workout.html"><span class="sb-nav-icon">🏋️</span> Workout</a>
+      <a class="sb-nav-link" href="nutrition.html"><span class="sb-nav-icon">🍎</span> Nutrition</a>
+
+      <div class="sb-nav-section" style="margin-top:8px;">Fitness</div>
+      <a class="sb-nav-link" href="progress.html"><span class="sb-nav-icon">📈</span> My Progress</a>
+      <a class="sb-nav-link" href="attendance.html"><span class="sb-nav-icon">📅</span> Attendance</a>
+      <a class="sb-nav-link active" href="musclemap.html"><span class="sb-nav-icon">💪</span> Muscle Map</a>
+
+      <div class="sb-nav-section" style="margin-top:8px;">Settings</div>
+      <a class="sb-nav-link" href="profile.html"><span class="sb-nav-icon">👤</span> Edit Profile</a>
+    </nav>
+
+    <div class="sb-logout-wrap">
+      <button class="sb-logout-btn" onclick="confirmLogout()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Log Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <div class="page-main">
+
+    <div class="db-topbar">
+      <div>
+        <div class="db-date-line" id="topDate">—</div>
+        <div class="db-greeting">💪 <span>Muscle Map</span></div>
+      </div>
+      <div class="db-topbar-right">
+        <div class="db-streak-pill">
+          <span>🔥</span>
+          <span class="db-streak-num" id="topStreakNum">0</span>
+          <span class="db-streak-label">Day Streak</span>
+        </div>
+        <button class="db-menu-btn" onclick="openSidebar()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="view-section-title"><span class="vst-dot"></span>INTERACTIVE MUSCLE EXPLORER</div>
+
+      <div class="mm-layout">
+
+        <!-- ── LEFT: 3D BODY ── -->
+        <div class="mm-body-panel db-card" style="padding:20px;">
+          <div class="card-label"><div class="card-label-dot"></div> BODY VIEW</div>
+          <div class="mm-rotate-hint">Drag to rotate · Click a muscle</div>
+          <div class="mm-view-btns">
+            <button class="mm-view-btn active" onclick="mmView('vf',this)">Front</button>
+            <button class="mm-view-btn" onclick="mmView('vsl',this)">L</button>
+            <button class="mm-view-btn" onclick="mmView('vb',this)">Back</button>
+            <button class="mm-view-btn" onclick="mmView('vsr',this)">R</button>
+          </div>
+
+          <div class="mm-3d-wrap" id="mm3dWrap">
+            <div class="mm-body-3d vf" id="mmBody">
+
+              <!-- FRONT FACE -->
+              <div class="mm-face" id="mmFront">
+                <div class="mm-canvas">
+                  <svg viewBox="0 0 200 490" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Head -->
+                    <ellipse cx="100" cy="32" rx="22" ry="26" fill="#2a2a2a" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+                    <rect x="91" y="55" width="18" height="14" rx="4" fill="#222"/>
+                    <!-- Torso base -->
+                    <path d="M65 70 Q55 72 50 86 L45 200 Q44 208 55 212 L145 212 Q156 208 155 200 L150 86 Q145 72 135 70 Z" fill="#181818" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+
+                    <!-- UPPER CHEST -->
+                    <g class="mg" id="mg-upper-chest" data-sub="upper-chest" onclick="mmClick('upper-chest',this)">
+                      <path d="M68 76 Q78 70 90 75 L92 103 Q80 108 67 100 Z" fill="#2d2d2d"/>
+                    </g>
+                    <!-- MID CHEST -->
+                    <g class="mg" id="mg-mid-chest" data-sub="mid-chest" onclick="mmClick('mid-chest',this)">
+                      <path d="M67 100 Q80 108 92 103 L90 118 Q78 122 66 113 Z" fill="#282828"/>
+                    </g>
+                    <!-- LOWER CHEST -->
+                    <g class="mg" id="mg-lower-chest" data-sub="lower-chest" onclick="mmClick('lower-chest',this)">
+                      <path d="M66 113 Q78 122 90 118 L88 130 Q75 134 64 126 Z" fill="#242424"/>
+                    </g>
+                    <!-- UPPER CHEST R -->
+                    <g class="mg" id="mg-upper-chest-r" data-sub="upper-chest" onclick="mmClick('upper-chest',this)">
+                      <path d="M132 76 Q122 70 110 75 L108 103 Q120 108 133 100 Z" fill="#2d2d2d"/>
+                    </g>
+                    <!-- MID CHEST R -->
+                    <g class="mg" id="mg-mid-chest-r" data-sub="mid-chest" onclick="mmClick('mid-chest',this)">
+                      <path d="M133 100 Q120 108 108 103 L110 118 Q122 122 134 113 Z" fill="#282828"/>
+                    </g>
+                    <!-- LOWER CHEST R -->
+                    <g class="mg" id="mg-lower-chest-r" data-sub="lower-chest" onclick="mmClick('lower-chest',this)">
+                      <path d="M134 113 Q122 122 110 118 L112 130 Q125 134 136 126 Z" fill="#242424"/>
+                    </g>
+
+                    <!-- FRONT DELT L -->
+                    <g class="mg" id="mg-front-delt-l" data-sub="front-delt" onclick="mmClick('front-delt',this)">
+                      <ellipse cx="52" cy="80" rx="14" ry="12" fill="#2d2d2d"/>
+                    </g>
+                    <!-- FRONT DELT R -->
+                    <g class="mg" id="mg-front-delt-r" data-sub="front-delt" onclick="mmClick('front-delt',this)">
+                      <ellipse cx="148" cy="80" rx="14" ry="12" fill="#2d2d2d"/>
+                    </g>
+
+                    <!-- BICEPS L -->
+                    <g class="mg" id="mg-biceps-l" data-sub="biceps" onclick="mmClick('biceps',this)">
+                      <path d="M37 98 Q28 102 27 128 L34 148 Q44 150 50 136 L52 108 Z" fill="#2d2d2d"/>
+                    </g>
+                    <!-- BICEPS R -->
+                    <g class="mg" id="mg-biceps-r" data-sub="biceps" onclick="mmClick('biceps',this)">
+                      <path d="M163 98 Q172 102 173 128 L166 148 Q156 150 150 136 L148 108 Z" fill="#2d2d2d"/>
+                    </g>
+
+                    <!-- BRACHIALIS L -->
+                    <g class="mg" id="mg-brachialis-l" data-sub="brachialis" onclick="mmClick('brachialis',this)">
+                      <path d="M34 148 Q28 152 28 162 L36 170 Q44 168 44 158 L44 150 Z" fill="#262626"/>
+                    </g>
+                    <!-- BRACHIALIS R -->
+                    <g class="mg" id="mg-brachialis-r" data-sub="brachialis" onclick="mmClick('brachialis',this)">
+                      <path d="M166 148 Q172 152 172 162 L164 170 Q156 168 156 158 L156 150 Z" fill="#262626"/>
+                    </g>
+
+                    <!-- FOREARMS L -->
+                    <g class="mg" id="mg-forearms-l" data-sub="forearms" onclick="mmClick('forearms',this)">
+                      <path d="M28 163 Q22 170 23 200 L34 207 Q40 196 38 165 Z" fill="#2d2d2d"/>
+                    </g>
+                    <!-- FOREARMS R -->
+                    <g class="mg" id="mg-forearms-r" data-sub="forearms" onclick="mmClick('forearms',this)">
+                      <path d="M172 163 Q178 170 177 200 L166 207 Q160 196 162 165 Z" fill="#2d2d2d"/>
+                    </g>
+
+                    <!-- Hands -->
+                    <ellipse cx="28" cy="212" rx="8" ry="10" fill="#202020"/>
+                    <ellipse cx="172" cy="212" rx="8" ry="10" fill="#202020"/>
+
+                    <!-- ABS -->
+                    <g class="mg" id="mg-abs" data-sub="abs" onclick="mmClick('abs',this)">
+                      <rect x="88" y="132" width="10" height="13" rx="3" fill="#2d2d2d"/>
+                      <rect x="102" y="132" width="10" height="13" rx="3" fill="#2d2d2d"/>
+                      <rect x="88" y="148" width="10" height="13" rx="3" fill="#2d2d2d"/>
+                      <rect x="102" y="148" width="10" height="13" rx="3" fill="#2d2d2d"/>
+                      <rect x="88" y="164" width="10" height="13" rx="3" fill="#2d2d2d"/>
+                      <rect x="102" y="164" width="10" height="13" rx="3" fill="#2d2d2d"/>
+                    </g>
+
+                    <!-- OBLIQUES -->
+                    <g class="mg" id="mg-obliques" data-sub="obliques" onclick="mmClick('obliques',this)">
+                      <path d="M68 134 L82 132 L78 186 L58 178 Z" fill="#2a2a2a"/>
+                      <path d="M132 134 L118 132 L122 186 L142 178 Z" fill="#2a2a2a"/>
+                    </g>
+
+                    <!-- SERRATUS -->
+                    <g class="mg" id="mg-serratus" data-sub="serratus" onclick="mmClick('serratus',this)">
+                      <path d="M62 126 L68 130 L64 150 L56 145 Z" fill="#252525"/>
+                      <path d="M62 148 L67 152 L63 168 L55 162 Z" fill="#252525"/>
+                      <path d="M138 126 L132 130 L136 150 L144 145 Z" fill="#252525"/>
+                      <path d="M138 148 L133 152 L137 168 L145 162 Z" fill="#252525"/>
+                    </g>
+
+                    <!-- Hip -->
+                    <path d="M55 212 Q60 222 100 226 Q140 222 145 212 Z" fill="#181818" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+
+                    <!-- HIP FLEXORS -->
+                    <g class="mg" id="mg-hip-flexors" data-sub="hip-flexors" onclick="mmClick('hip-flexors',this)">
+                      <path d="M78 212 Q88 218 100 220 Q112 218 122 212 L118 232 Q100 238 82 232 Z" fill="#2a2a2a"/>
+                    </g>
+
+                    <!-- QUADS L -->
+                    <g class="mg" id="mg-quads-l" data-sub="quads" onclick="mmClick('quads',this)">
+                      <path d="M58 228 Q46 236 44 305 Q45 322 60 326 L76 326 Q88 318 86 290 L78 230 Z" fill="#2d2d2d"/>
+                    </g>
+                    <!-- QUADS R -->
+                    <g class="mg" id="mg-quads-r" data-sub="quads" onclick="mmClick('quads',this)">
+                      <path d="M142 228 Q154 236 156 305 Q155 322 140 326 L124 326 Q112 318 114 290 L122 230 Z" fill="#2d2d2d"/>
+                    </g>
+
+                    <!-- Knees -->
+                    <ellipse cx="63" cy="332" rx="14" ry="9" fill="#1e1e1e"/>
+                    <ellipse cx="137" cy="332" rx="14" ry="9" fill="#1e1e1e"/>
+
+                    <!-- CALVES L -->
+                    <g class="mg" id="mg-calves-l" data-sub="calves" onclick="mmClick('calves',this)">
+                      <path d="M49 341 Q43 360 47 405 L60 412 Q73 404 71 360 L63 342 Z" fill="#2d2d2d"/>
+                    </g>
+                    <!-- CALVES R -->
+                    <g class="mg" id="mg-calves-r" data-sub="calves" onclick="mmClick('calves',this)">
+                      <path d="M151 341 Q157 360 153 405 L140 412 Q127 404 129 360 L137 342 Z" fill="#2d2d2d"/>
+                    </g>
+
+                    <!-- Shins -->
+                    <path d="M56 342 Q50 362 52 408 L66 411 Q68 392 66 344 Z" fill="#1e1e1e"/>
+                    <path d="M144 342 Q150 362 148 408 L134 411 Q132 392 134 344 Z" fill="#1e1e1e"/>
+
+                    <!-- Feet -->
+                    <ellipse cx="55" cy="417" rx="13" ry="7" fill="#1a1a1a"/>
+                    <ellipse cx="145" cy="417" rx="13" ry="7" fill="#1a1a1a"/>
+                  </svg>
+
+                  <!-- FRONT DOTS -->
+                  <div class="mm-dot" data-sub="front-delt" style="left:26%;top:17%;" onclick="mmClick('front-delt',null)" title="Front Delt"></div>
+                  <div class="mm-dot" data-sub="upper-chest" style="left:38%;top:20%;" onclick="mmClick('upper-chest',null)" title="Upper Chest"></div>
+                  <div class="mm-dot" data-sub="mid-chest" style="left:36%;top:24%;" onclick="mmClick('mid-chest',null)" title="Mid Chest"></div>
+                  <div class="mm-dot" data-sub="lower-chest" style="left:34%;top:27%;" onclick="mmClick('lower-chest',null)" title="Lower Chest"></div>
+                  <div class="mm-dot" data-sub="biceps" style="left:14%;top:28%;" onclick="mmClick('biceps',null)" title="Biceps"></div>
+                  <div class="mm-dot" data-sub="brachialis" style="left:13%;top:34%;" onclick="mmClick('brachialis',null)" title="Brachialis"></div>
+                  <div class="mm-dot" data-sub="forearms" style="left:11%;top:39%;" onclick="mmClick('forearms',null)" title="Forearms"></div>
+                  <div class="mm-dot" data-sub="serratus" style="left:30%;top:28%;" onclick="mmClick('serratus',null)" title="Serratus"></div>
+                  <div class="mm-dot" data-sub="abs" style="left:54%;top:33%;" onclick="mmClick('abs',null)" title="Abs"></div>
+                  <div class="mm-dot" data-sub="obliques" style="left:30%;top:37%;" onclick="mmClick('obliques',null)" title="Obliques"></div>
+                  <div class="mm-dot" data-sub="hip-flexors" style="left:50%;top:46%;" onclick="mmClick('hip-flexors',null)" title="Hip Flexors"></div>
+                  <div class="mm-dot" data-sub="quads" style="left:36%;top:60%;" onclick="mmClick('quads',null)" title="Quads"></div>
+                  <div class="mm-dot" data-sub="calves" style="left:25%;top:78%;" onclick="mmClick('calves',null)" title="Calves"></div>
+                </div>
+              </div>
+
+              <!-- BACK FACE -->
+              <div class="mm-face mm-back-face" id="mmBack">
+                <div class="mm-canvas">
+                  <svg viewBox="0 0 200 490" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Head -->
+                    <ellipse cx="100" cy="32" rx="22" ry="26" fill="#2a2a2a" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+                    <rect x="91" y="55" width="18" height="14" rx="4" fill="#222"/>
+                    <!-- Torso base -->
+                    <path d="M65 70 Q55 72 50 86 L45 212 Q55 217 100 220 Q145 217 155 212 L150 86 Q145 72 135 70 Z" fill="#181818" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+
+                    <!-- TRAPS -->
+                    <g class="mg" id="mg-traps" data-sub="traps" onclick="mmClick('traps',this)">
+                      <path d="M76 70 Q100 82 124 70 L132 98 Q100 110 68 98 Z" fill="#2d2d2d"/>
+                    </g>
+                    <!-- RHOMBOIDS -->
+                    <g class="mg" id="mg-rhomboids" data-sub="rhomboids" onclick="mmClick('rhomboids',this)">
+                      <path d="M80 110 Q100 116 120 110 L118 140 Q100 146 82 140 Z" fill="#2a2a2a"/>
+                    </g>
+                    <!-- LATS L -->
+                    <g class="mg" id="mg-lats-l" data-sub="lats" onclick="mmClick('lats',this)">
+                      <path d="M65 90 Q50 102 47 148 L57 172 Q72 166 76 136 L80 92 Z" fill="#2d2d2d"/>
+                    </g>
+                    <!-- LATS R -->
+                    <g class="mg" id="mg-lats-r" data-sub="lats" onclick="mmClick('lats',this)">
+                      <path d="M135 90 Q150 102 153 148 L143 172 Q128 166 124 136 L120 92 Z" fill="#2d2d2d"/>
+                    </g>
+                    <!-- LOWER BACK -->
+                    <g class="mg" id="mg-lower-back" data-sub="lower-back" onclick="mmClick('lower-back',this)">
+                      <rect x="82" y="154" width="16" height="38" rx="4" fill="#2d2d2d"/>
+                      <rect x="102" y="154" width="16" height="38" rx="4" fill="#2d2d2d"/>
+                    </g>
+
+                    <!-- REAR DELT L -->
+                    <g class="mg" id="mg-rear-delt-l" data-sub="rear-delt" onclick="mmClick('rear-delt',this)">
+                      <ellipse cx="52" cy="80" rx="14" ry="12" fill="#2d2d2d"/>
+                    </g>
+                    <!-- REAR DELT R -->
+                    <g class="mg" id="mg-rear-delt-r" data-sub="rear-delt" onclick="mmClick('rear-delt',this)">
+                      <ellipse cx="148" cy="80" rx="14" ry="12" fill="#2d2d2d"/>
+                    </g>
+                    <!-- SIDE DELT L (visible from back) -->
+                    <g class="mg" id="mg-side-delt-bl" data-sub="side-delt" onclick="mmClick('side-delt',this)">
+                      <path d="M38 82 Q44 90 48 92 L50 78 Q44 72 38 78 Z" fill="#282828"/>
+                    </g>
+                    <!-- SIDE DELT R (visible from back) -->
+                    <g class="mg" id="mg-side-delt-br" data-sub="side-delt" onclick="mmClick('side-delt',this)">
+                      <path d="M162 82 Q156 90 152 92 L150 78 Q156 72 162 78 Z" fill="#282828"/>
+                    </g>
+
+                    <!-- TRICEPS L -->
+                    <g class="mg" id="mg-triceps-l" data-sub="triceps" onclick="mmClick('triceps',this)">
+                      <path d="M37 98 Q27 110 26 136 L33 152 Q45 152 50 132 L52 106 Z" fill="#2d2d2d"/>
+                    </g>
+                    <!-- TRICEPS R -->
+                    <g class="mg" id="mg-triceps-r" data-sub="triceps" onclick="mmClick('triceps',this)">
+                      <path d="M163 98 Q173 110 174 136 L167 152 Q155 152 150 132 L148 106 Z" fill="#2d2d2d"/>
+                    </g>
+
+                    <!-- FOREARMS BACK L -->
+                    <g class="mg" id="mg-forearms-bl" data-sub="forearms" onclick="mmClick('forearms',this)">
+                      <path d="M26 154 Q20 162 21 198 L33 205 Q39 194 36 156 Z" fill="#2d2d2d"/>
+                    </g>
+                    <!-- FOREARMS BACK R -->
+                    <g class="mg" id="mg-forearms-br" data-sub="forearms" onclick="mmClick('forearms',this)">
+                      <path d="M174 154 Q180 162 179 198 L167 205 Q161 194 164 156 Z" fill="#2d2d2d"/>
+                    </g>
+
+                    <!-- Hands -->
+                    <ellipse cx="26" cy="210" rx="8" ry="10" fill="#202020"/>
+                    <ellipse cx="174" cy="210" rx="8" ry="10" fill="#202020"/>
+
+                    <!-- GLUTES -->
+                    <g class="mg" id="mg-glutes" data-sub="glutes" onclick="mmClick('glutes',this)">
+                      <path d="M55 212 Q56 244 70 256 Q85 264 100 262 Q115 264 130 256 Q144 244 145 212 Z" fill="#2d2d2d"/>
+                    </g>
+
+                    <!-- HAMSTRINGS L -->
+                    <g class="mg" id="mg-hamstrings-l" data-sub="hamstrings" onclick="mmClick('hamstrings',this)">
+                      <path d="M60 262 Q47 275 45 330 Q47 342 62 344 L76 344 Q88 332 86 298 L76 264 Z" fill="#2d2d2d"/>
+                    </g>
+                    <!-- HAMSTRINGS R -->
+                    <g class="mg" id="mg-hamstrings-r" data-sub="hamstrings" onclick="mmClick('hamstrings',this)">
+                      <path d="M140 262 Q153 275 155 330 Q153 342 138 344 L124 344 Q112 332 114 298 L124 264 Z" fill="#2d2d2d"/>
+                    </g>
+
+                    <!-- Knee back -->
+                    <ellipse cx="63" cy="350" rx="14" ry="9" fill="#1e1e1e"/>
+                    <ellipse cx="137" cy="350" rx="14" ry="9" fill="#1e1e1e"/>
+
+                    <!-- CALVES BACK L -->
+                    <g class="mg" id="mg-calves-bl" data-sub="calves" onclick="mmClick('calves',this)">
+                      <path d="M48 358 Q42 378 46 415 L60 420 Q72 410 70 370 L60 358 Z" fill="#2d2d2d"/>
+                    </g>
+                    <!-- CALVES BACK R -->
+                    <g class="mg" id="mg-calves-br" data-sub="calves" onclick="mmClick('calves',this)">
+                      <path d="M152 358 Q158 378 154 415 L140 420 Q128 410 130 370 L140 358 Z" fill="#2d2d2d"/>
+                    </g>
+
+                    <!-- Feet -->
+                    <ellipse cx="55" cy="425" rx="13" ry="7" fill="#1a1a1a"/>
+                    <ellipse cx="145" cy="425" rx="13" ry="7" fill="#1a1a1a"/>
+                  </svg>
+
+                  <!-- BACK DOTS -->
+                  <div class="mm-dot" data-sub="traps" style="left:50%;top:16%;" onclick="mmClick('traps',null)" title="Traps"></div>
+                  <div class="mm-dot" data-sub="rear-delt" style="left:23%;top:17%;" onclick="mmClick('rear-delt',null)" title="Rear Delt"></div>
+                  <div class="mm-dot" data-sub="side-delt" style="left:18%;top:19%;" onclick="mmClick('side-delt',null)" title="Side Delt"></div>
+                  <div class="mm-dot" data-sub="rhomboids" style="left:50%;top:28%;" onclick="mmClick('rhomboids',null)" title="Rhomboids"></div>
+                  <div class="mm-dot" data-sub="lats" style="left:22%;top:25%;" onclick="mmClick('lats',null)" title="Lats"></div>
+                  <div class="mm-dot" data-sub="triceps" style="left:13%;top:28%;" onclick="mmClick('triceps',null)" title="Triceps"></div>
+                  <div class="mm-dot" data-sub="lower-back" style="left:50%;top:38%;" onclick="mmClick('lower-back',null)" title="Lower Back"></div>
+                  <div class="mm-dot" data-sub="forearms" style="left:10%;top:39%;" onclick="mmClick('forearms',null)" title="Forearms"></div>
+                  <div class="mm-dot" data-sub="glutes" style="left:50%;top:52%;" onclick="mmClick('glutes',null)" title="Glutes"></div>
+                  <div class="mm-dot" data-sub="hamstrings" style="left:34%;top:65%;" onclick="mmClick('hamstrings',null)" title="Hamstrings"></div>
+                  <div class="mm-dot" data-sub="calves" style="left:25%;top:79%;" onclick="mmClick('calves',null)" title="Calves"></div>
+                </div>
+              </div>
+
+            </div><!-- end mm-body-3d -->
+          </div><!-- end mm-3d-wrap -->
+        </div><!-- end mm-body-panel -->
+
+        <!-- ── RIGHT: GROUP TABS + EXERCISES ── -->
+        <div class="mm-right-panel">
+
+          <!-- Group selector -->
+          <div class="db-card" style="padding:18px 20px;">
+            <div class="card-label"><div class="card-label-dot"></div> SELECT MUSCLE GROUP</div>
+            <div class="mm-group-tabs" id="mmGroupTabs">
+              <button class="mm-group-tab" data-group="chest" onclick="mmSelectGroup('chest',this)">🫁 Chest</button>
+              <button class="mm-group-tab" data-group="back" onclick="mmSelectGroup('back',this)">🔙 Back</button>
+              <button class="mm-group-tab" data-group="shoulders" onclick="mmSelectGroup('shoulders',this)">🔺 Shoulders</button>
+              <button class="mm-group-tab" data-group="arms" onclick="mmSelectGroup('arms',this)">💪 Arms</button>
+              <button class="mm-group-tab" data-group="core" onclick="mmSelectGroup('core',this)">⚡ Core</button>
+              <button class="mm-group-tab" data-group="legs" onclick="mmSelectGroup('legs',this)">🦵 Legs</button>
+            </div>
+          </div>
+
+          <!-- Sub-muscle chips (shows after group selected) -->
+          <div class="db-card" id="mmSubArea" style="padding:18px 20px; display:none;">
+            <div class="card-label"><div class="card-label-dot"></div> <span id="mmSubLabel">—</span></div>
+            <div class="mm-submuscle-row" id="mmChips"></div>
+          </div>
+
+          <!-- Exercises panel -->
+          <div class="db-card mm-ex-panel" id="mmExPanel" style="padding:20px;">
+            <div class="mm-ex-header">
+              <span class="mm-ex-icon" id="mmExIcon">💪</span>
+              <div class="mm-ex-title-wrap">
+                <div class="mm-ex-muscle" id="mmExMuscle">—</div>
+                <div class="mm-ex-subtitle" id="mmExSubtitle">—</div>
+              </div>
+              <button class="mm-ex-close" onclick="mmCloseEx()">✕</button>
+            </div>
+            <div class="mm-ex-grid" id="mmExGrid"></div>
+          </div>
+
+          <!-- Default empty state -->
+          <div class="mm-empty" id="mmEmpty">
+            <div class="mm-empty-icon">🫀</div>
+            <div>Select a muscle group above<br>or click directly on the body</div>
+          </div>
+
+        </div><!-- end mm-right-panel -->
+      </div><!-- end mm-layout -->
+    </div><!-- end page-content -->
+  </div><!-- end page-main -->
+
+  <script src="script.js"></script>
+  <script>
+    'use strict';
+
+    /* ─── DATA ─── */
+    const MM_DATA = {
+
+      /* ── CHEST ── */
+      'upper-chest': {
+        label: 'Upper Chest', group: 'chest', icon: '🫁',
+        subtitle: 'Clavicular head of the pectoralis major',
+        tip: '<strong>Key tip:</strong> Incline movements (30–45°) maximize upper chest activation. Keep shoulder blades retracted throughout.',
+        exercises: [
+          {n:'Incline Barbell Press',    s:'4×6-8',  t:'Compound'},
+          {n:'Incline Dumbbell Press',   s:'4×8-10', t:'Compound'},
+          {n:'Low-to-High Cable Fly',    s:'3×12-15',t:'Cable'},
+          {n:'Incline Dumbbell Fly',     s:'3×12',   t:'Isolation'},
+          {n:'Landmine Press',           s:'3×10',   t:'Compound'},
+          {n:'Smith Machine Incline',    s:'3×10-12',t:'Machine'},
+        ]
+      },
+      'mid-chest': {
+        label: 'Mid Chest', group: 'chest', icon: '🫁',
+        subtitle: 'Sternal head of the pectoralis major',
+        tip: '<strong>Key tip:</strong> Flat bench movements hit the mid chest hardest. Full range of motion — let the bar touch your chest.',
+        exercises: [
+          {n:'Flat Barbell Bench Press', s:'4×6-8',  t:'Compound'},
+          {n:'Flat Dumbbell Press',      s:'4×8-10', t:'Compound'},
+          {n:'Pec Deck Machine',         s:'3×12-15',t:'Machine'},
+          {n:'Cable Crossover (mid)',    s:'3×15',   t:'Cable'},
+          {n:'Dumbbell Fly (flat)',      s:'3×12',   t:'Isolation'},
+          {n:'Push-Ups (standard)',      s:'4×15-20',t:'Bodyweight'},
+        ]
+      },
+      'lower-chest': {
+        label: 'Lower Chest', group: 'chest', icon: '🫁',
+        subtitle: 'Lower portion of the pectoralis major',
+        tip: '<strong>Key tip:</strong> Decline angle or high-to-low cable direction isolates the lower fibers. Dips are highly effective.',
+        exercises: [
+          {n:'Decline Barbell Press',    s:'4×8-10', t:'Compound'},
+          {n:'Chest Dips',               s:'4×10-12',t:'Bodyweight'},
+          {n:'High-to-Low Cable Fly',    s:'3×15',   t:'Cable'},
+          {n:'Decline Dumbbell Fly',     s:'3×12',   t:'Isolation'},
+          {n:'Decline Push-Ups',         s:'3×15-20',t:'Bodyweight'},
+        ]
+      },
+
+      /* ── BACK ── */
+      'lats': {
+        label: 'Lats', group: 'back', icon: '🔙',
+        subtitle: 'Latissimus dorsi — width of the back',
+        tip: '<strong>Key tip:</strong> Initiate every pull by depressing your shoulder blades. Think "elbows to hips" not "hands to chest".',
+        exercises: [
+          {n:'Pull-Ups / Chin-Ups',      s:'4×6-10', t:'Bodyweight'},
+          {n:'Lat Pulldown',             s:'4×10-12',t:'Machine'},
+          {n:'Single-Arm DB Row',        s:'4×10',   t:'Compound'},
+          {n:'Bent-Over Barbell Row',    s:'4×6-8',  t:'Compound'},
+          {n:'Seated Cable Row (wide)',  s:'3×12',   t:'Cable'},
+          {n:'Straight-Arm Pulldown',    s:'3×15',   t:'Cable'},
+        ]
+      },
+      'traps': {
+        label: 'Trapezius', group: 'back', icon: '🔙',
+        subtitle: 'Upper, mid & lower traps',
+        tip: '<strong>Key tip:</strong> Upper traps respond well to shrugs; mid/lower traps to rows and face pulls. Don\'t neglect lower traps!',
+        exercises: [
+          {n:'Barbell Shrugs',           s:'4×12',   t:'Isolation'},
+          {n:'Dumbbell Shrugs',          s:'3×15',   t:'Isolation'},
+          {n:'Face Pulls',               s:'4×15-20',t:'Cable'},
+          {n:'Rack Pulls',               s:'4×5-6',  t:'Compound'},
+          {n:'Deadlift',                 s:'4×5',    t:'Compound'},
+          {n:'Farmer\'s Carry',          s:'3×30m',  t:'Functional'},
+        ]
+      },
+      'rhomboids': {
+        label: 'Rhomboids', group: 'back', icon: '🔙',
+        subtitle: 'Rhomboid major & minor — scapular retraction',
+        tip: '<strong>Key tip:</strong> Squeeze shoulder blades together at the top of every row. Pause 1–2 seconds for best activation.',
+        exercises: [
+          {n:'Seated Cable Row (close)', s:'4×12',   t:'Cable'},
+          {n:'Chest-Supported Row',      s:'3×12',   t:'Machine'},
+          {n:'Bent-Over DB Row',         s:'3×10',   t:'Compound'},
+          {n:'Band Pull-Apart',          s:'4×20',   t:'Band'},
+          {n:'Face Pulls',               s:'3×15',   t:'Cable'},
+          {n:'Inverted Row',             s:'3×15',   t:'Bodyweight'},
+        ]
+      },
+      'lower-back': {
+        label: 'Lower Back', group: 'back', icon: '🔙',
+        subtitle: 'Erector spinae & multifidus',
+        tip: '<strong>Key tip:</strong> Never round your lower back under load. Maintain a neutral spine — brace your core like you\'re about to get punched.',
+        exercises: [
+          {n:'Conventional Deadlift',    s:'4×5',    t:'Compound'},
+          {n:'Romanian Deadlift',        s:'3×8-10', t:'Compound'},
+          {n:'Back Extensions',          s:'3×15',   t:'Bodyweight'},
+          {n:'Good Mornings',            s:'3×10',   t:'Compound'},
+          {n:'Superman Hold',            s:'3×30s',  t:'Bodyweight'},
+          {n:'45° Hyperextension',       s:'3×15',   t:'Machine'},
+        ]
+      },
+
+      /* ── SHOULDERS ── */
+      'front-delt': {
+        label: 'Front Delts', group: 'shoulders', icon: '🔺',
+        subtitle: 'Anterior deltoid — front of the shoulder',
+        tip: '<strong>Key tip:</strong> Front delts already get heavy work from pressing. Avoid overtraining — 1–2 isolation exercises is enough.',
+        exercises: [
+          {n:'Overhead Barbell Press',   s:'4×6-8',  t:'Compound'},
+          {n:'Dumbbell Front Raise',     s:'3×12-15',t:'Isolation'},
+          {n:'Arnold Press',             s:'3×10-12',t:'Compound'},
+          {n:'Cable Front Raise',        s:'3×15',   t:'Cable'},
+          {n:'Plate Front Raise',        s:'3×12',   t:'Isolation'},
+          {n:'Landmine Press',           s:'3×10',   t:'Compound'},
+        ]
+      },
+      'side-delt': {
+        label: 'Side Delts', group: 'shoulders', icon: '🔺',
+        subtitle: 'Lateral deltoid — shoulder width',
+        tip: '<strong>Key tip:</strong> Lead with your elbows, not your hands. Slight forward lean isolates the lateral head better. Go lighter, go slower.',
+        exercises: [
+          {n:'Dumbbell Lateral Raise',   s:'4×15',   t:'Isolation'},
+          {n:'Cable Lateral Raise',      s:'4×15-20',t:'Cable'},
+          {n:'Machine Lateral Raise',    s:'3×15',   t:'Machine'},
+          {n:'Upright Row',              s:'3×12',   t:'Compound'},
+          {n:'Behind-the-Back Cable',    s:'3×15',   t:'Cable'},
+          {n:'Leaning Lateral Raise',    s:'3×15',   t:'Isolation'},
+        ]
+      },
+      'rear-delt': {
+        label: 'Rear Delts', group: 'shoulders', icon: '🔺',
+        subtitle: 'Posterior deltoid — back of the shoulder',
+        tip: '<strong>Key tip:</strong> Most lifters neglect rear delts. They\'re critical for posture and shoulder health. Train them 2× per week.',
+        exercises: [
+          {n:'Face Pulls',               s:'4×15-20',t:'Cable'},
+          {n:'Bent-Over Reverse Fly',    s:'4×15',   t:'Isolation'},
+          {n:'Reverse Pec Deck',         s:'3×15',   t:'Machine'},
+          {n:'Band Pull-Apart',          s:'3×20-25',t:'Band'},
+          {n:'Seated DB Rear Delt Fly',  s:'3×15',   t:'Isolation'},
+          {n:'Cable Rear Delt Fly',      s:'3×15',   t:'Cable'},
+        ]
+      },
+
+      /* ── ARMS ── */
+      'biceps': {
+        label: 'Biceps', group: 'arms', icon: '💪',
+        subtitle: 'Biceps brachii — long & short head',
+        tip: '<strong>Key tip:</strong> Supinate (rotate) your wrist at the top of curls for peak bicep contraction. Elbow stays fixed — don\'t swing!',
+        exercises: [
+          {n:'Barbell Curl',             s:'4×8-10', t:'Isolation'},
+          {n:'Dumbbell Curl (alt.)',     s:'3×10-12',t:'Isolation'},
+          {n:'Incline DB Curl',          s:'3×10',   t:'Isolation'},
+          {n:'Preacher Curl',            s:'3×10-12',t:'Machine'},
+          {n:'Cable Curl',               s:'3×15',   t:'Cable'},
+          {n:'Chin-Up',                  s:'4×6-10', t:'Bodyweight'},
+        ]
+      },
+      'triceps': {
+        label: 'Triceps', group: 'arms', icon: '💪',
+        subtitle: 'Triceps brachii — long, lateral & medial head',
+        tip: '<strong>Key tip:</strong> The long head is only fully stretched when the arm is overhead. Include overhead extensions for complete development.',
+        exercises: [
+          {n:'Close-Grip Bench Press',   s:'4×6-8',  t:'Compound'},
+          {n:'Skull Crushers (EZ Bar)', s:'3×10-12',t:'Isolation'},
+          {n:'Overhead Tricep Extension',s:'3×10-12',t:'Isolation'},
+          {n:'Cable Rope Pushdown',      s:'3×15',   t:'Cable'},
+          {n:'Dips (tricep focus)',      s:'4×10-12',t:'Bodyweight'},
+          {n:'Diamond Push-Ups',         s:'3×15',   t:'Bodyweight'},
+        ]
+      },
+      'forearms': {
+        label: 'Forearms', group: 'arms', icon: '💪',
+        subtitle: 'Flexors & extensors of the forearm',
+        tip: '<strong>Key tip:</strong> Grip-heavy compound lifts (deadlifts, rows) already work forearms. Add direct work at the end of arm day.',
+        exercises: [
+          {n:'Wrist Curls (barbell)',    s:'3×15-20',t:'Isolation'},
+          {n:'Reverse Wrist Curls',      s:'3×15',   t:'Isolation'},
+          {n:'Reverse Barbell Curl',     s:'3×12',   t:'Isolation'},
+          {n:'Hammer Curl',              s:'3×12',   t:'Isolation'},
+          {n:'Dead Hang',                s:'3×30-45s',t:'Bodyweight'},
+          {n:'Farmer\'s Carry',          s:'3×30m',  t:'Functional'},
+        ]
+      },
+      'brachialis': {
+        label: 'Brachialis', group: 'arms', icon: '💪',
+        subtitle: 'Sits beneath the bicep — pushes it up',
+        tip: '<strong>Key tip:</strong> Best trained with the wrist in neutral position (hammer grip). A bigger brachialis = bigger-looking arms overall.',
+        exercises: [
+          {n:'Hammer Curl',              s:'4×10-12',t:'Isolation'},
+          {n:'Cross-Body Hammer Curl',   s:'3×12',   t:'Isolation'},
+          {n:'Cable Hammer Curl',        s:'3×15',   t:'Cable'},
+          {n:'Neutral-Grip Pull-Up',     s:'3×6-10', t:'Bodyweight'},
+          {n:'Reverse Curl',             s:'3×12',   t:'Isolation'},
+          {n:'Zottman Curl',             s:'3×10',   t:'Isolation'},
+        ]
+      },
+
+      /* ── CORE ── */
+      'abs': {
+        label: 'Abs', group: 'core', icon: '⚡',
+        subtitle: 'Rectus abdominis — the "six-pack" muscle',
+        tip: '<strong>Key tip:</strong> Abs are made in the kitchen AND the gym. Exhale hard at the top of every crunch to fully contract the rectus.',
+        exercises: [
+          {n:'Cable Crunch',             s:'4×15-20',t:'Cable'},
+          {n:'Hanging Leg Raise',        s:'3×12-15',t:'Bodyweight'},
+          {n:'Ab Wheel Rollout',         s:'3×8-12', t:'Bodyweight'},
+          {n:'Decline Sit-Up',           s:'3×15',   t:'Bodyweight'},
+          {n:'Dragon Flag',              s:'3×5-8',  t:'Advanced'},
+          {n:'V-Up',                     s:'4×15',   t:'Bodyweight'},
+        ]
+      },
+      'obliques': {
+        label: 'Obliques', group: 'core', icon: '⚡',
+        subtitle: 'Internal & external obliques — rotation & side flexion',
+        tip: '<strong>Key tip:</strong> Obliques love rotational movements. Weighted oblique work adds thickness — train them but don\'t overtrain.',
+        exercises: [
+          {n:'Cable Woodchoppers',       s:'3×15',   t:'Cable'},
+          {n:'Russian Twists (weighted)',s:'3×20',   t:'Bodyweight'},
+          {n:'Side Plank',               s:'3×45-60s',t:'Bodyweight'},
+          {n:'Bicycle Crunch',           s:'3×20',   t:'Bodyweight'},
+          {n:'Pallof Press',             s:'3×12',   t:'Cable'},
+          {n:'Landmine Rotation',        s:'3×10',   t:'Compound'},
+        ]
+      },
+      'serratus': {
+        label: 'Serratus Anterior', group: 'core', icon: '⚡',
+        subtitle: 'The "boxer\'s muscle" — scapular protraction',
+        tip: '<strong>Key tip:</strong> Serratus is trained by protracting your scapula (pushing it forward). Critical for shoulder health and that "framed" chest look.',
+        exercises: [
+          {n:'Serratus Punch (cable)',   s:'3×15',   t:'Cable'},
+          {n:'Ab Wheel Rollout',         s:'3×10',   t:'Bodyweight'},
+          {n:'Push-Up Plus',             s:'3×15',   t:'Bodyweight'},
+          {n:'Landmine Press',           s:'3×12',   t:'Compound'},
+          {n:'Overhead Reach (cable)',   s:'3×15',   t:'Cable'},
+          {n:'Bear Crawl',               s:'3×20m',  t:'Functional'},
+        ]
+      },
+
+      /* ── LEGS ── */
+      'quads': {
+        label: 'Quadriceps', group: 'legs', icon: '🦵',
+        subtitle: 'Rectus femoris, vastus lateralis, medialis & intermedius',
+        tip: '<strong>Key tip:</strong> Feet shoulder-width apart hits all four heads. Closer stance = more outer quad (vastus lateralis). Sit back on squats!',
+        exercises: [
+          {n:'Barbell Back Squat',       s:'4×5-8',  t:'Compound'},
+          {n:'Leg Press',                s:'4×10-12',t:'Machine'},
+          {n:'Bulgarian Split Squat',    s:'3×10',   t:'Compound'},
+          {n:'Hack Squat',               s:'3×10-12',t:'Machine'},
+          {n:'Leg Extension',            s:'3×15',   t:'Machine'},
+          {n:'Lunges (walking)',         s:'3×12',   t:'Compound'},
+        ]
+      },
+      'hamstrings': {
+        label: 'Hamstrings', group: 'legs', icon: '🦵',
+        subtitle: 'Biceps femoris, semitendinosus & semimembranosus',
+        tip: '<strong>Key tip:</strong> Hamstrings are often undertrained. They act as both a hip extensor AND knee flexor — train both functions.',
+        exercises: [
+          {n:'Romanian Deadlift',        s:'4×8-10', t:'Compound'},
+          {n:'Lying Leg Curl',           s:'4×12',   t:'Machine'},
+          {n:'Seated Leg Curl',          s:'3×15',   t:'Machine'},
+          {n:'Good Mornings',            s:'3×10',   t:'Compound'},
+          {n:'Nordic Curl',              s:'3×5-8',  t:'Bodyweight'},
+          {n:'Sumo Deadlift',            s:'4×6-8',  t:'Compound'},
+        ]
+      },
+      'glutes': {
+        label: 'Glutes', group: 'legs', icon: '🦵',
+        subtitle: 'Gluteus maximus, medius & minimus',
+        tip: '<strong>Key tip:</strong> Squeeze hard at full hip extension. Hip thrusts with a barbell are the #1 glute builder — period.',
+        exercises: [
+          {n:'Barbell Hip Thrust',       s:'4×10-12',t:'Compound'},
+          {n:'Romanian Deadlift',        s:'3×10',   t:'Compound'},
+          {n:'Glute Bridge',             s:'4×15',   t:'Bodyweight'},
+          {n:'Cable Kickback',           s:'3×15',   t:'Cable'},
+          {n:'Step-Ups (weighted)',      s:'3×12',   t:'Compound'},
+          {n:'Sumo Squat',               s:'3×12',   t:'Compound'},
+        ]
+      },
+      'calves': {
+        label: 'Calves', group: 'legs', icon: '🦵',
+        subtitle: 'Gastrocnemius & soleus',
+        tip: '<strong>Key tip:</strong> Calves need HIGH volume and FULL range of motion. Go all the way up AND all the way down — no half reps!',
+        exercises: [
+          {n:'Standing Calf Raise',      s:'5×15-20',t:'Machine'},
+          {n:'Seated Calf Raise',        s:'4×20',   t:'Machine'},
+          {n:'Donkey Calf Raise',        s:'4×15-20',t:'Bodyweight'},
+          {n:'Single-Leg Calf Raise',    s:'3×20',   t:'Bodyweight'},
+          {n:'Jump Rope',                s:'3×3min', t:'Cardio'},
+          {n:'Box Jumps',                s:'3×10',   t:'Explosive'},
+        ]
+      },
+      'hip-flexors': {
+        label: 'Hip Flexors', group: 'legs', icon: '🦵',
+        subtitle: 'Iliopsoas — iliacus & psoas major',
+        tip: '<strong>Key tip:</strong> Most people have tight hip flexors from sitting. Pair strengthening with stretching. Crucial for squat depth.',
+        exercises: [
+          {n:'Hanging Knee Raise',       s:'3×15',   t:'Bodyweight'},
+          {n:'Cable Hip Flexion',        s:'3×15',   t:'Cable'},
+          {n:'Mountain Climbers',        s:'3×20',   t:'Bodyweight'},
+          {n:'Psoas March',              s:'3×12',   t:'Functional'},
+          {n:'Leg Raise (lying)',        s:'4×15',   t:'Bodyweight'},
+          {n:'Reverse Lunge',            s:'3×12',   t:'Compound'},
+        ]
+      },
+    };
+
+    /* ── GROUP MAP ── */
+    const MM_GROUPS = {
+      chest:     { label:'Chest',     subs:['upper-chest','mid-chest','lower-chest'] },
+      back:      { label:'Back',      subs:['lats','traps','rhomboids','lower-back'] },
+      shoulders: { label:'Shoulders', subs:['front-delt','side-delt','rear-delt'] },
+      arms:      { label:'Arms',      subs:['biceps','triceps','forearms','brachialis'] },
+      core:      { label:'Core',      subs:['abs','obliques','serratus'] },
+      legs:      { label:'Legs',      subs:['quads','hamstrings','glutes','calves','hip-flexors'] },
+    };
+
+    /* ── dot→SVG mapping (which SVG groups light up per sub) ── */
+    const MM_SVG_MAP = {
+      'upper-chest':  ['mg-upper-chest','mg-upper-chest-r'],
+      'mid-chest':    ['mg-mid-chest','mg-mid-chest-r'],
+      'lower-chest':  ['mg-lower-chest','mg-lower-chest-r'],
+      'lats':         ['mg-lats-l','mg-lats-r'],
+      'traps':        ['mg-traps'],
+      'rhomboids':    ['mg-rhomboids'],
+      'lower-back':   ['mg-lower-back'],
+      'front-delt':   ['mg-front-delt-l','mg-front-delt-r'],
+      'side-delt':    ['mg-side-delt-bl','mg-side-delt-br'],
+      'rear-delt':    ['mg-rear-delt-l','mg-rear-delt-r'],
+      'biceps':       ['mg-biceps-l','mg-biceps-r'],
+      'triceps':      ['mg-triceps-l','mg-triceps-r'],
+      'forearms':     ['mg-forearms-l','mg-forearms-r','mg-forearms-bl','mg-forearms-br'],
+      'brachialis':   ['mg-brachialis-l','mg-brachialis-r'],
+      'abs':          ['mg-abs'],
+      'obliques':     ['mg-obliques'],
+      'serratus':     ['mg-serratus'],
+      'quads':        ['mg-quads-l','mg-quads-r'],
+      'hamstrings':   ['mg-hamstrings-l','mg-hamstrings-r'],
+      'glutes':       ['mg-glutes'],
+      'calves':       ['mg-calves-l','mg-calves-r','mg-calves-bl','mg-calves-br'],
+      'hip-flexors':  ['mg-hip-flexors'],
+    };
+
+    /* ── STATE ── */
+    let currentUser         = null;
+    let autoLogoutTimer     = null;
+    let autoLogoutCountdown = null;
+    let mmRotDeg            = 0;
+    let mmDragging          = false;
+    let mmStartX            = 0;
+    let mmActiveSub         = null;
+    let mmActiveGroup       = null;
+
+    const MONTHS_FULL  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const DAYS_SHORT   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    /* ── INIT ── */
+    document.addEventListener('DOMContentLoaded', () => {
+      currentUser = window.GudSpace.storage.get('currentUser');
+      if (!currentUser) { window.location.href = 'login.html'; return; }
+      loadSidebar();
+      loadTopBar();
+      recalcStreak();
+      startAutoLogoutTimer();
+      initDrag();
+    });
+
+    /* ── SIDEBAR ── */
+    function loadSidebar() {
+      const u = currentUser, p = u.profile || {};
+      const name = u.firstName || u.name || 'Champ';
+      document.getElementById('sbAvatarLetter').textContent = name.charAt(0).toUpperCase();
+      document.getElementById('sbName').textContent = ((u.firstName||'') + ' ' + (u.lastName||'')).trim().toUpperCase();
+      const gL = {male:'Male',female:'Female','non-binary':'Non-Binary','prefer-not-to-say':'—'};
+      document.getElementById('sbMeta').textContent = `${gL[p.gender]||'—'} · ${p.weightKg||'--'} kg · ${p.heightCm||'--'} cm`;
+      const gM = {'build-strength':'Build Strength','lose-weight':'Lose Weight','get-lean':'Get Lean','get-in-shape':'Get in Shape','build-muscle':'Build Muscle','overall-fitness':'Overall Fitness'};
+      document.getElementById('sbGoalBadge').textContent = '🎯 ' + (gM[p.goal] || 'Set Goal');
+      if (u.photoUrl) { const i = document.getElementById('sbAvatarImg'); i.src = u.photoUrl; i.style.display = 'block'; }
+    }
+
+    function loadTopBar() {
+      const now = new Date();
+      document.getElementById('topDate').textContent = (DAYS_SHORT[now.getDay()] + ', ' + MONTHS_FULL[now.getMonth()] + ' ' + now.getDate()).toUpperCase();
+      document.getElementById('topStreakNum').textContent = currentUser.streak || 0;
+    }
+
+    function recalcStreak() {
+      const attended = new Set((currentUser.attendance||[]).filter(s=>s.timeIn).map(s=>new Date(s.date).toDateString()));
+      const today = new Date(); let streak = 0;
+      for (let i=0;i<365;i++) { const d=new Date(today); d.setDate(today.getDate()-i); if (attended.has(d.toDateString())) streak++; else break; }
+      if (streak !== (currentUser.streak||0)) { currentUser.streak=streak; saveUser(); }
+      document.getElementById('topStreakNum').textContent = streak;
+    }
+
+    /* ── 3D BODY CONTROLS ── */
+    function mmView(cls, btn) {
+      document.getElementById('mmBody').className = 'mm-body-3d ' + cls;
+      document.querySelectorAll('.mm-view-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const m = {vf:0,vsl:-38,vb:180,vsr:38};
+      mmRotDeg = m[cls] || 0;
+    }
+
+    function initDrag() {
+      const wrap = document.getElementById('mm3dWrap');
+      const body = document.getElementById('mmBody');
+      wrap.addEventListener('mousedown', e => { mmDragging=true; mmStartX=e.clientX; });
+      document.addEventListener('mousemove', e => {
+        if (!mmDragging) return;
+        mmRotDeg += (e.clientX - mmStartX) * 0.45;
+        mmStartX = e.clientX;
+        body.style.transform = 'rotateY(' + mmRotDeg + 'deg)';
+        body.className = 'mm-body-3d';
+        document.querySelectorAll('.mm-view-btn').forEach(b=>b.classList.remove('active'));
+      });
+      document.addEventListener('mouseup', () => { mmDragging=false; });
+      wrap.addEventListener('touchstart', e => { mmDragging=true; mmStartX=e.touches[0].clientX; e.preventDefault(); },{passive:false});
+      wrap.addEventListener('touchmove', e => {
+        if (!mmDragging) return;
+        mmRotDeg += (e.touches[0].clientX - mmStartX) * 0.45;
+        mmStartX = e.touches[0].clientX;
+        body.style.transform = 'rotateY(' + mmRotDeg + 'deg)';
+        body.className = 'mm-body-3d';
+        e.preventDefault();
+      },{passive:false});
+      wrap.addEventListener('touchend', () => { mmDragging=false; });
+    }
+
+    /* ── GROUP SELECTION ── */
+    function mmSelectGroup(group, btn) {
+      mmActiveGroup = group;
+      document.querySelectorAll('.mm-group-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const g = MM_GROUPS[group];
+      document.getElementById('mmSubLabel').textContent = g.label + ' — Select a muscle';
+      document.getElementById('mmSubArea').style.display = 'block';
+
+      /* Build chips */
+      const chips = document.getElementById('mmChips');
+      chips.innerHTML = g.subs.map(sub => {
+        const d = MM_DATA[sub];
+        return `<button class="mm-chip${mmActiveSub===sub?' active':''}" data-sub="${sub}" onclick="mmClick('${sub}',null)">${d.label}</button>`;
+      }).join('');
+
+      /* Light up all sub-muscles of group on body */
+      clearBodyHighlights();
+      g.subs.forEach(sub => {
+        (MM_SVG_MAP[sub]||[]).forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add('group-lit');
+        });
+      });
+
+      /* If a sub was already active in this group, keep it shown */
+      if (mmActiveSub && g.subs.includes(mmActiveSub)) {
+        renderExercises(mmActiveSub);
+      } else {
+        mmActiveSub = null;
+        document.getElementById('mmExPanel').classList.remove('show');
+        document.getElementById('mmEmpty').style.display = 'block';
+      }
+    }
+
+    /* ── MUSCLE CLICK (from dot or SVG) ── */
+    function mmClick(sub, svgEl) {
+      if (mmActiveSub === sub) { mmCloseEx(); return; }
+      mmActiveSub = sub;
+
+      const data = MM_DATA[sub];
+      if (!data) return;
+
+      /* Activate matching group tab if not already */
+      if (mmActiveGroup !== data.group) {
+        const btn = document.querySelector(`[data-group="${data.group}"]`);
+        if (btn) mmSelectGroup(data.group, btn);
+      }
+
+      /* Highlight chip */
+      document.querySelectorAll('.mm-chip').forEach(c => c.classList.toggle('active', c.dataset.sub === sub));
+
+      /* Highlight SVG */
+      clearBodyHighlights();
+      /* Group lit still */
+      const g = MM_GROUPS[data.group];
+      g.subs.forEach(s => {
+        (MM_SVG_MAP[s]||[]).forEach(id => { const el=document.getElementById(id); if(el) el.classList.add('group-lit'); });
+      });
+      /* Active lit */
+      (MM_SVG_MAP[sub]||[]).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.classList.remove('group-lit'); el.classList.add('lit'); }
+      });
+
+      /* Active dots */
+      document.querySelectorAll('.mm-dot').forEach(d => d.classList.toggle('active', d.dataset.sub === sub));
+
+      renderExercises(sub);
+    }
+
+    function renderExercises(sub) {
+      const data = MM_DATA[sub];
+      document.getElementById('mmEmpty').style.display = 'none';
+      document.getElementById('mmExIcon').textContent    = data.icon;
+      document.getElementById('mmExMuscle').textContent  = data.label;
+      document.getElementById('mmExSubtitle').textContent = data.subtitle;
+      document.getElementById('mmExGrid').innerHTML = data.exercises.map(e =>
+        `<div class="mm-ex-card">
+          <div class="mm-ex-name">${e.n}</div>
+          <div class="mm-ex-meta">
+            <span class="mm-ex-sets">${e.s}</span>
+            <span class="mm-ex-tag">${e.t}</span>
+          </div>
+        </div>`
+      ).join('') +
+      `<div class="mm-ex-tip" style="grid-column:1/-1;">${data.tip}</div>`;
+      document.getElementById('mmExPanel').classList.add('show');
+      document.getElementById('mmExPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+
+    function mmCloseEx() {
+      mmActiveSub = null;
+      document.getElementById('mmExPanel').classList.remove('show');
+      document.getElementById('mmEmpty').style.display = 'block';
+      document.querySelectorAll('.mm-dot').forEach(d => d.classList.remove('active'));
+      document.querySelectorAll('.mm-chip').forEach(c => c.classList.remove('active'));
+      clearBodyHighlights();
+      /* Re-light group if one is still selected */
+      if (mmActiveGroup) {
+        const g = MM_GROUPS[mmActiveGroup];
+        g.subs.forEach(s => {
+          (MM_SVG_MAP[s]||[]).forEach(id => { const el=document.getElementById(id); if(el) el.classList.add('group-lit'); });
+        });
+      }
+    }
+
+    function clearBodyHighlights() {
+      document.querySelectorAll('.mg').forEach(el => { el.classList.remove('lit','group-lit'); });
+    }
+
+    /* ── LOGOUT / SESSION ── */
+    function confirmLogout() {
+      if (confirm('Are you sure you want to log out?')) window.GudSpace.logout();
+    }
+    function startAutoLogoutTimer() {
+      const loginTime = window.GudSpace.storage.get('loginTime');
+      if (!loginTime) return;
+      const SESSION   = 3*60*60*1000;
+      const remaining = SESSION - (Date.now() - loginTime);
+      if (remaining <= 0) { window.GudSpace.logout(true); return; }
+      const warnAt = remaining - 10*60*1000;
+      if (warnAt > 0) setTimeout(()=>showLogoutWarning(10*60), warnAt);
+      else showLogoutWarning(Math.floor(remaining/1000));
+      autoLogoutTimer = setTimeout(()=>window.GudSpace.logout(true), remaining);
+    }
+    function showLogoutWarning(secs) {
+      document.getElementById('autoLogoutBar').classList.add('show');
+      let s = secs;
+      autoLogoutCountdown = setInterval(()=>{
+        s--; if (s<=0){clearInterval(autoLogoutCountdown);return;}
+        document.getElementById('alb-countdown').textContent = Math.floor(s/60).toString().padStart(2,'0')+':'+(s%60).toString().padStart(2,'0');
+      },1000);
+    }
+    function extendSession() {
+      clearTimeout(autoLogoutTimer); clearInterval(autoLogoutCountdown);
+      window.GudSpace.storage.set('loginTime',Date.now());
+      document.getElementById('autoLogoutBar').classList.remove('show');
+      window.GudSpace.showToast('Session extended by 3 hours ✅','⏱');
+      startAutoLogoutTimer();
+    }
+
+    /* ── SIDEBAR MOBILE ── */
+    function openSidebar()  { document.getElementById('sidebar').classList.add('open');    document.getElementById('sidebarOverlay').classList.add('show'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); }
+
+    /* ── PHOTO UPLOAD ── */
+    function triggerPhotoUpload() { document.getElementById('photoInput').click(); }
+    function handlePhotoUpload(e) {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = document.getElementById('sbAvatarImg');
+        img.src = ev.target.result; img.style.display = 'block';
+        currentUser.photoUrl = ev.target.result; saveUser();
+        window.GudSpace.showToast('Profile photo updated! 📸','✅');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /* ── HELPERS ── */
+    function saveUser() {
+      const users = window.GudSpace.storage.get('users') || [];
+      const idx   = users.findIndex(u => u.id === currentUser.id);
+      if (idx >= 0) users[idx] = currentUser;
+      window.GudSpace.storage.set('users', users);
+      window.GudSpace.storage.set('currentUser', currentUser);
+    }
+  </script>
+</body>
+</html>

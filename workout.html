@@ -1,0 +1,2818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workout — GUD SPACE GYM</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* =====================================================
+       WORKOUT PAGE — GUD SPACE GYM  ·  REVAMP v2
+    ===================================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: var(--font-body);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── ANIMATED BACKGROUND GRID ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,26,94,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,26,94,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+      animation: gridDrift 40s linear infinite;
+    }
+    @keyframes gridDrift {
+      0%   { background-position: 0 0; }
+      100% { background-position: 48px 48px; }
+    }
+
+    /* ── AMBIENT GLOW ORBS ── */
+    .ambient-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(140px);
+      pointer-events: none;
+      z-index: 0;
+      animation: orbFloat 12s ease-in-out infinite;
+    }
+    .orb-1 {
+      width: 500px; height: 500px;
+      background: rgba(255,26,94,0.07);
+      top: -100px; right: -50px;
+      animation-delay: 0s;
+    }
+    .orb-2 {
+      width: 350px; height: 350px;
+      background: rgba(255,26,94,0.04);
+      bottom: 10%; left: -80px;
+      animation-delay: -6s;
+    }
+    @keyframes orbFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50%       { transform: translateY(-40px) scale(1.06); }
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 260px; min-height: 100vh;
+      background: rgba(10,10,10,0.97);
+      border-right: 1px solid rgba(255,255,255,0.05);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      z-index: 200;
+      transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+      overflow-y: auto;
+      backdrop-filter: blur(20px);
+    }
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 300px;
+      background: linear-gradient(180deg, rgba(255,26,94,0.06) 0%, transparent 100%);
+      pointer-events: none;
+    }
+    .sidebar::-webkit-scrollbar { width: 0; }
+    .sb-logo { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; position: relative; z-index: 1; }
+    .sb-logo-text { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.04em; display: flex; align-items: baseline; gap: 2px; }
+    .sb-profile { padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; position: relative; z-index: 1; }
+    .sb-avatar-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 14px; }
+    .sb-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink), #a0004a);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 30px; color: white;
+      border: 2px solid rgba(255,26,94,0.4);
+      position: relative; overflow: hidden; cursor: pointer;
+      box-shadow: 0 0 30px rgba(255,26,94,0.25);
+    }
+    .sb-avatar img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+    .sb-avatar-ring { position: absolute; inset: -5px; border-radius: 50%; border: 1.5px solid rgba(255,26,94,0.4); animation: ringPulse 3s ease-in-out infinite; }
+    @keyframes ringPulse { 0%,100%{opacity:.3;transform:scale(1)} 50%{opacity:.8;transform:scale(1.05)} }
+    .sb-name { font-family: var(--font-cond); font-size: 18px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--white); }
+    .sb-meta { font-size: 12px; color: var(--gray-3); margin-top: 3px; }
+    .sb-goal-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,26,94,0.1); border: 1px solid rgba(255,26,94,0.2);
+      border-radius: 4px; padding: 4px 10px;
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--pink); margin-top: 10px;
+    }
+    .sb-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; position: relative; z-index: 1; }
+    .sb-nav-section { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray-4); padding: 12px 12px 6px; }
+    .sb-nav-link {
+      display: flex; align-items: center; gap: 12px; padding: 11px 14px;
+      border-radius: var(--radius-sm); font-family: var(--font-cond); font-size: 14px;
+      font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--gray-3); cursor: pointer; transition: all 0.2s ease;
+      text-decoration: none; border: none; background: none; width: 100%; text-align: left;
+      position: relative; overflow: hidden;
+    }
+    .sb-nav-link::before {
+      content: ''; position: absolute; inset: 0;
+      background: var(--pink); opacity: 0;
+      transition: opacity 0.2s;
+      border-radius: var(--radius-sm);
+    }
+    .sb-nav-link:hover { color: var(--white); }
+    .sb-nav-link:hover::before { opacity: 0.08; }
+    .sb-nav-link.active { background: rgba(255,26,94,0.1); color: var(--pink); border-left: 3px solid var(--pink); }
+    .sb-nav-icon { font-size: 18px; flex-shrink: 0; width: 22px; text-align: center; position: relative; z-index: 1; }
+    .sb-nav-link span:last-child { position: relative; z-index: 1; }
+    .sb-logout-wrap { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; position: relative; z-index: 1; }
+    .sb-logout-btn {
+      display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px;
+      border-radius: var(--radius-sm); background: rgba(255,59,48,0.08);
+      border: 1px solid rgba(255,59,48,0.15); color: #ff6b6b;
+      font-family: var(--font-cond); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+    }
+    .sb-logout-btn:hover { background: rgba(255,59,48,0.18); border-color: rgba(255,59,48,0.35); }
+
+    /* ── MOBILE SIDEBAR ── */
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 199; backdrop-filter: blur(4px); }
+    .sidebar-overlay.show { display: block; }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .db-main { margin-left: 0 !important; width: 100vw !important; }
+      .db-menu-btn { display: flex !important; }
+    }
+
+    /* ── MAIN ── */
+    .db-main {
+      margin-left: 260px;
+      width: calc(100vw - 260px);
+      min-width: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 1;
+      overflow-x: hidden;
+    }
+
+    /* ── TOP BAR ── */
+    .db-topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(8,8,8,0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 18px 36px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .db-topbar::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,26,94,0.4), transparent);
+    }
+    .db-topbar-left { display: flex; flex-direction: column; gap: 2px; }
+    .db-page-label { font-family: var(--font-cond); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-3); }
+    .db-page-title { font-family: var(--font-display); font-size: 24px; letter-spacing: 0.03em; line-height: 1.1; }
+    .db-page-title span { color: var(--pink); }
+    .db-topbar-right { display: flex; align-items: center; gap: 16px; }
+    .db-menu-btn { display: none; background: none; border: none; color: var(--white); cursor: pointer; padding: 4px; }
+
+    /* ── WORKOUT HERO BANNER ── */
+    .wo-hero {
+      position: relative;
+      height: 220px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .wo-hero-bg {
+      position: absolute; inset: 0;
+      background-image: url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1400&q=80');
+      background-size: cover;
+      background-position: center 30%;
+      background-attachment: scroll;
+      /* Subtle Ken Burns zoom — no scroll movement */
+      animation: heroBgZoom 18s ease-in-out infinite alternate;
+      will-change: transform;
+    }
+    @keyframes heroBgZoom {
+      0%   { transform: scale(1);    }
+      100% { transform: scale(1.05); }
+    }
+    .wo-hero-overlay {
+      position: absolute; inset: 0;
+      /* Layered cinematic overlay */
+      background:
+        linear-gradient(to bottom,  rgba(8,8,8,0.55) 0%,   rgba(8,8,8,0.2)  40%, transparent 60%),
+        linear-gradient(to top,     rgba(8,8,8,0.98) 0%,   rgba(8,8,8,0.6)  55%, transparent 80%),
+        linear-gradient(to right,   rgba(8,8,8,0.85) 0%,   transparent 55%),
+        linear-gradient(135deg,     transparent 40%,       rgba(255,26,94,0.08) 100%);
+      /* Slow vignette pulse */
+      animation: heroOverlayPulse 6s ease-in-out infinite alternate;
+    }
+    @keyframes heroOverlayPulse {
+      0%   { opacity: 1;   }
+      100% { opacity: 0.88; }
+    }
+    /* Scanline sheen that sweeps across once on load */
+    .wo-hero::after {
+      content: '';
+      position: absolute; inset: 0; z-index: 3;
+      background: linear-gradient(
+        105deg,
+        transparent 30%,
+        rgba(255,255,255,0.04) 50%,
+        transparent 70%
+      );
+      background-size: 200% 100%;
+      animation: heroSheen 3.5s ease-out forwards;
+      pointer-events: none;
+    }
+    @keyframes heroSheen {
+      0%   { background-position: 200% 0; opacity: 1; }
+      100% { background-position: -50%  0; opacity: 0; }
+    }
+    .wo-hero-content {
+      position: relative; z-index: 2;
+      height: 100%; padding: 32px 36px;
+      display: flex; flex-direction: column; justify-content: flex-end;
+    }
+    /* Animate hero text in on load */
+    .wo-hero-tag   { animation: heroFadeUp 0.7s cubic-bezier(.22,1,.36,1) both; }
+    .wo-hero-title { animation: heroFadeUp 0.7s cubic-bezier(.22,1,.36,1) 0.12s both; }
+    .wo-hero-sub   { animation: heroFadeUp 0.7s cubic-bezier(.22,1,.36,1) 0.22s both; }
+    .wo-hero-stats { animation: heroFadeUp 0.7s cubic-bezier(.22,1,.36,1) 0.32s both; }
+    @keyframes heroFadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+    .wo-hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--pink); margin-bottom: 10px;
+    }
+    .wo-hero-tag-dot { width: 6px; height: 6px; background: var(--pink); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+    .wo-hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(32px, 4vw, 52px);
+      letter-spacing: 0.03em;
+      line-height: 1;
+      color: var(--white);
+    }
+    .wo-hero-title span { color: var(--pink); }
+    .wo-hero-sub { font-size: 13px; color: var(--gray-2); margin-top: 6px; max-width: 480px; }
+    .wo-hero-stats {
+      position: absolute; right: 36px; bottom: 32px;
+      display: flex; gap: 24px;
+    }
+    .wo-hero-stat { text-align: right; }
+    .wo-hero-stat-num { font-family: var(--font-display); font-size: 28px; color: var(--white); line-height: 1; }
+    .wo-hero-stat-num span { color: var(--pink); font-size: 18px; }
+    .wo-hero-stat-label { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray-3); margin-top: 2px; }
+
+    /* ── CONTENT AREA ── */
+    .wo-content { padding: 20px 20px; flex: 1; width: 100%; box-sizing: border-box; }
+
+    /* ── SECTION HEADER ── */
+    .wo-section-header { margin-bottom: 20px; }
+    .wo-section-label {
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase; color: var(--pink); margin-bottom: 6px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .wo-section-label::before {
+      content: ''; width: 20px; height: 2px; background: var(--pink); border-radius: 1px;
+    }
+    .wo-section-title { font-family: var(--font-display); font-size: 30px; letter-spacing: 0.02em; color: var(--white); }
+    .wo-section-title span { color: var(--pink); }
+
+    /* ── RULES BANNER — redesigned ── */
+    .rules-banner {
+      background: linear-gradient(135deg, rgba(255,26,94,0.06) 0%, rgba(10,10,10,0.98) 60%);
+      border: 1px solid rgba(255,26,94,0.18);
+      border-left: 4px solid var(--pink);
+      border-radius: var(--radius-md);
+      padding: 24px 28px;
+      margin-bottom: 28px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .rules-banner::before {
+      content: 'RULES';
+      position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+      font-family: var(--font-display); font-size: 80px; color: rgba(255,26,94,0.04);
+      pointer-events: none; line-height: 1;
+    }
+    .rules-banner-title {
+      grid-column: 1 / -1;
+      font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase; color: var(--pink); margin-bottom: 4px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .rule-item { display: flex; flex-direction: column; gap: 4px; }
+    .rule-label {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray-3);
+    }
+    .rule-val { font-size: 13px; color: var(--white); line-height: 1.6; }
+    .rule-val strong { color: var(--pink); font-weight: 600; }
+
+    /* ── GLOSSARY — redesigned ── */
+    /* ── GLOSSARY CAROUSEL ── */
+    .glossary {
+      margin-bottom: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .glossary::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--pink), transparent);
+    }
+    .glossary-title {
+      font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray-2);
+      margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+      padding: 20px 0 0 0;
+    }
+
+    /* The scrolling track wrapper — clips the overflow */
+    .glossary-track-wrap {
+      overflow: hidden;
+      mask-image: linear-gradient(to right, transparent 0%, black 5%, black 90%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 90%, transparent 100%);
+    }
+
+    /* The moving track — doubled items for seamless loop */
+    .glossary-track {
+      display: flex;
+      gap: 14px;
+      width: max-content;
+      animation: glossaryScroll 28s linear infinite;
+    }
+    .glossary-track:hover { animation-play-state: paused; }
+
+    @keyframes glossaryScroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .glossary-item {
+      flex-shrink: 0;
+      width: 230px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      transition: all 0.3s ease;
+      position: relative; overflow: hidden;
+      cursor: default;
+    }
+    .glossary-item::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,26,94,0.08), transparent);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .glossary-item::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--pink);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s ease;
+    }
+    .glossary-item:hover {
+      border-color: rgba(255,26,94,0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    }
+    .glossary-item:hover::before { opacity: 1; }
+    .glossary-item:hover::after { transform: scaleX(1); }
+
+    .glossary-emoji { font-size: 24px; margin-bottom: 10px; display: block; }
+    .glossary-term {
+      font-family: var(--font-cond); font-size: 14px; font-weight: 800;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--white); margin-bottom: 6px;
+    }
+    .glossary-def { font-size: 12px; color: var(--gray-2); line-height: 1.6; }
+    .glossary-example {
+      font-size: 11px; color: var(--pink);
+      margin-top: 8px; font-style: italic;
+      opacity: 0.8;
+    }
+
+    /* ── RECOMMENDED BANNER — redesigned ── */
+    .recommended-banner {
+      position: relative; overflow: hidden;
+      border-radius: var(--radius-md);
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      display: flex; align-items: center; gap: 24px;
+    }
+    .recommended-banner::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: url('https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=900&q=70');
+      background-size: cover; background-position: center;
+      opacity: 0.15;
+    }
+    .recommended-banner::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, rgba(8,8,8,0.97) 0%, rgba(8,8,8,0.8) 60%, rgba(255,26,94,0.15) 100%);
+      border: 1px solid rgba(255,26,94,0.3);
+      border-radius: var(--radius-md);
+    }
+    .rec-icon { font-size: 40px; flex-shrink: 0; position: relative; z-index: 1; }
+    .rec-text { flex: 1; position: relative; z-index: 1; }
+    .rec-label {
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.16em; text-transform: uppercase; color: var(--pink); margin-bottom: 6px;
+    }
+    .rec-split-name { font-family: var(--font-display); font-size: 28px; letter-spacing: 0.03em; color: var(--white); line-height: 1; }
+    .rec-reason { font-size: 13px; color: var(--gray-2); margin-top: 5px; }
+    .rec-btn {
+      position: relative; z-index: 1; flex-shrink: 0;
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--pink); color: var(--white);
+      font-family: var(--font-cond); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 13px 24px; border-radius: var(--radius-sm);
+      border: none; cursor: pointer; transition: all 0.25s;
+      box-shadow: 0 8px 30px rgba(255,26,94,0.35);
+    }
+    .rec-btn:hover { background: var(--pink-light); transform: translateY(-2px); box-shadow: 0 14px 40px rgba(255,26,94,0.45); }
+
+    /* ── ACTIVE PROGRAM BAR ── */
+    .active-program-bar {
+      background: linear-gradient(135deg, rgba(255,26,94,0.08) 0%, rgba(10,10,10,0.98) 100%);
+      border: 1px solid rgba(255,26,94,0.25);
+      border-radius: var(--radius-md);
+      padding: 22px 28px;
+      margin-bottom: 28px;
+      display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+      position: relative; overflow: hidden;
+    }
+    .active-program-bar::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 4px; background: var(--pink);
+    }
+    .apb-label { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pink); margin-bottom: 4px; }
+    .apb-name { font-family: var(--font-display); font-size: 24px; color: var(--white); letter-spacing: 0.02em; }
+    .apb-sub { font-size: 12px; color: var(--gray-3); margin-top: 2px; }
+    .apb-change-btn {
+      margin-left: auto; font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray-3);
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-sm); padding: 8px 18px; cursor: pointer; transition: all 0.2s;
+    }
+    .apb-change-btn:hover { border-color: var(--pink); color: var(--pink); }
+
+    /* ── LEVEL FILTER TABS ── */
+    .level-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .level-tab {
+      padding: 8px 20px; border-radius: 100px;
+      font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      border: 1.5px solid rgba(255,255,255,0.08); color: var(--gray-3);
+      background: transparent; cursor: pointer; transition: all 0.2s;
+    }
+    .level-tab:hover { border-color: rgba(255,255,255,0.2); color: var(--white); }
+    .level-tab.active {
+      background: var(--pink); border-color: var(--pink); color: var(--white);
+      box-shadow: 0 4px 20px rgba(255,26,94,0.35);
+    }
+
+    /* ── SPLITS GRID ── */
+    .splits-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 48px;
+    }
+
+    /* ── SPLIT CARD — compact, photo + info ── */
+    .split-card {
+      background: var(--black-2);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .split-card.card-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .split-card:hover {
+      border-color: rgba(255,26,94,0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,26,94,0.1);
+    }
+    .split-card.active-split {
+      border-color: var(--pink);
+      box-shadow: 0 0 0 1px var(--pink), 0 12px 40px rgba(255,26,94,0.2);
+    }
+
+    /* Photo — compact height */
+    .split-card-photo {
+      position: relative;
+      height: 110px;
+      overflow: hidden;
+      background: var(--black-4);
+      flex-shrink: 0;
+    }
+    .split-card-photo-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: center;
+      transition: transform 0.5s ease;
+      display: block;
+    }
+    .split-card:hover .split-card-photo-img { transform: scale(1.07); }
+    .split-card-photo-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, rgba(8,8,8,0.05) 0%, rgba(8,8,8,0.45) 55%, rgba(8,8,8,0.92) 100%);
+    }
+    .split-card-photo-badges {
+      position: absolute; top: 8px; left: 10px; right: 10px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 4px; flex-wrap: wrap;
+    }
+    .split-num-overlay {
+      font-family: var(--font-display); font-size: 32px; line-height: 1;
+      color: rgba(255,255,255,0.1); position: absolute;
+      bottom: 6px; right: 10px;
+    }
+
+    /* Card body — tighter padding */
+    .split-card-header { padding: 10px 14px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .split-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+    .split-badge {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 100px;
+    }
+    .badge-beginner { background: rgba(46,213,115,0.12); color: #2ed573; border: 1px solid rgba(46,213,115,0.2); }
+    .badge-intermediate { background: rgba(116,185,255,0.12); color: #74b9ff; border: 1px solid rgba(116,185,255,0.2); }
+    .badge-advanced { background: rgba(255,59,48,0.12); color: #ff6b6b; border: 1px solid rgba(255,59,48,0.2); }
+    .badge-hybrid { background: rgba(162,155,254,0.12); color: #a29bfe; border: 1px solid rgba(162,155,254,0.2); }
+    .split-name { font-family: var(--font-display); font-size: 16px; letter-spacing: 0.03em; color: var(--white); line-height: 1.1; }
+    .split-sub { font-size: 11px; color: var(--gray-3); margin-top: 2px; }
+    .split-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+    .split-tag {
+      display: flex; align-items: center; gap: 4px;
+      font-family: var(--font-cond); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.05em; color: var(--gray-3);
+    }
+
+    /* Schedule — compact */
+    .split-card-schedule { padding: 8px 14px; }
+    .schedule-label {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-4); margin-bottom: 6px;
+    }
+    .schedule-days { display: flex; gap: 3px; flex-wrap: wrap; }
+    .day-pill {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: 0.03em; padding: 2px 6px; border-radius: 3px;
+    }
+    .day-pill.train { background: rgba(255,26,94,0.12); color: var(--pink); border: 1px solid rgba(255,26,94,0.18); }
+    .day-pill.rest { background: rgba(255,255,255,0.03); color: var(--gray-4); border: 1px solid rgba(255,255,255,0.05); }
+
+    /* Footer */
+    .split-card-footer {
+      padding: 8px 14px; border-top: 1px solid rgba(255,255,255,0.05);
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: auto;
+    }
+    .view-split-btn {
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--pink); background: none; border: none; cursor: pointer;
+      display: flex; align-items: center; gap: 4px; transition: gap 0.2s;
+    }
+    .view-split-btn:hover { gap: 8px; }
+    .select-split-btn {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      background: rgba(255,255,255,0.04); color: var(--gray-3);
+      border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm);
+      padding: 5px 12px; cursor: pointer; transition: all 0.2s;
+    }
+    .select-split-btn:hover { border-color: var(--pink); color: var(--pink); background: rgba(255,26,94,0.08); }
+    .select-split-btn.selected {
+      background: var(--pink); color: var(--white); border-color: var(--pink);
+      box-shadow: 0 3px 12px rgba(255,26,94,0.4);
+    }
+
+    /* ── MODAL — redesigned ── */
+    .split-modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(12px);
+      z-index: 500; overflow-y: auto; padding: 40px 20px;
+    }
+    .split-modal-overlay.show { display: flex; align-items: flex-start; justify-content: center; }
+    .split-modal {
+      background: var(--black-2);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius-xl);
+      width: 100%; max-width: 920px;
+      position: relative;
+      box-shadow: 0 60px 120px rgba(0,0,0,0.9);
+      overflow: hidden;
+    }
+
+    /* Scroll fade hint on right edge of tabs */
+    .modal-tabs-wrap {
+      position: relative;
+    }
+    .modal-tabs-wrap::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 60px;
+      background: linear-gradient(to left, var(--black-2), transparent);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Modal photo header */
+    .modal-photo-header {
+      position: relative; height: 200px; overflow: hidden;
+    }
+    .modal-photo-bg {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      filter: brightness(0.5);
+      transition: transform 0.6s ease;
+    }
+    .split-modal-overlay.show .modal-photo-bg { transform: scale(1.02); }
+    .modal-photo-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, rgba(8,8,8,0.3) 0%, rgba(8,8,8,0.98) 100%);
+    }
+    .modal-header {
+      padding: 24px 36px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;
+      position: relative; z-index: 2;
+      margin-top: -80px;
+    }
+    .modal-close {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--gray-3); border-radius: 50%;
+      width: 38px; height: 38px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0; transition: all 0.2s;
+    }
+    .modal-close:hover { background: rgba(255,26,94,0.15); color: var(--pink); border-color: var(--pink); }
+    .modal-split-badge { font-family: var(--font-cond); font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; }
+    .modal-split-name { font-family: var(--font-display); font-size: 38px; letter-spacing: 0.02em; color: var(--white); line-height: 1; margin-bottom: 8px; }
+    .modal-split-desc { font-size: 14px; color: var(--gray-2); line-height: 1.7; max-width: 500px; }
+    .modal-meta-row { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 16px; }
+    .modal-meta-item { display: flex; flex-direction: column; gap: 3px; }
+    .modal-meta-label { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray-4); }
+    .modal-meta-val { font-family: var(--font-cond); font-size: 16px; font-weight: 700; color: var(--white); }
+
+    /* Day tabs */
+    .modal-day-tabs {
+      display: flex;
+      overflow-x: auto;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 0 36px;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+    }
+    .modal-day-tabs::-webkit-scrollbar {
+      height: 3px;
+    }
+    .modal-day-tabs::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .modal-day-tabs::-webkit-scrollbar-thumb {
+      background: rgba(255,26,94,0.4);
+      border-radius: 2px;
+    }
+    .modal-day-tab {
+      font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 13px 16px; color: var(--gray-3); cursor: pointer;
+      border-bottom: 2px solid transparent; transition: all 0.2s;
+      white-space: nowrap; flex-shrink: 0;
+      background: none; border-top: none; border-left: none; border-right: none;
+    }
+    .modal-day-tab:hover { color: var(--white); }
+    .modal-day-tab.active { color: var(--pink); border-bottom-color: var(--pink); }
+    .modal-day-tab.rest-tab { color: var(--gray-4); }
+
+    /* Day content */
+    .modal-body { padding: 28px 36px 36px; }
+    .day-content { display: none; }
+    .day-content.active { display: block; }
+
+    /* Rest day */
+    .rest-day-content { text-align: center; padding: 48px 0; }
+    .rest-day-emoji { font-size: 56px; margin-bottom: 16px; }
+    .rest-day-title { font-family: var(--font-display); font-size: 30px; color: var(--white); margin-bottom: 8px; }
+    .rest-day-desc { font-size: 14px; color: var(--gray-2); line-height: 1.7; max-width: 400px; margin: 0 auto; }
+
+    /* Day header */
+    .day-header { margin-bottom: 20px; }
+    .day-focus-label { font-family: var(--font-cond); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-3); margin-bottom: 4px; }
+    .day-focus-title { font-family: var(--font-display); font-size: 26px; color: var(--white); letter-spacing: 0.02em; }
+    .day-muscle-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .muscle-tag {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      background: rgba(255,26,94,0.08); border: 1px solid rgba(255,26,94,0.15);
+      border-radius: 4px; padding: 3px 10px; color: var(--pink);
+    }
+
+    /* Exercise list */
+    .exercise-list { display: flex; flex-direction: column; gap: 8px; }
+    .exercise-item {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .exercise-item:hover { border-color: rgba(255,26,94,0.2); }
+    .exercise-header {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 16px; cursor: pointer; user-select: none;
+    }
+    .exercise-num {
+      font-family: var(--font-display); font-size: 20px;
+      color: var(--pink); flex-shrink: 0; width: 26px; text-align: center; line-height: 1;
+    }
+    .exercise-info { flex: 1; }
+    .exercise-name { font-family: var(--font-cond); font-size: 15px; font-weight: 700; letter-spacing: 0.04em; color: var(--white); }
+    .exercise-sets-reps { font-size: 12px; color: var(--gray-3); margin-top: 2px; }
+    .exercise-sets-reps strong { color: var(--pink); }
+    .exercise-type-tag {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
+    }
+    .type-compound { background: rgba(255,26,94,0.1); color: var(--pink); border: 1px solid rgba(255,26,94,0.18); }
+    .type-isolation { background: rgba(116,185,255,0.1); color: #74b9ff; border: 1px solid rgba(116,185,255,0.18); }
+    .exercise-chevron { color: var(--gray-4); font-size: 12px; flex-shrink: 0; transition: transform 0.25s; }
+    .exercise-item.open .exercise-chevron { transform: rotate(180deg); }
+    .exercise-detail {
+      display: none; padding: 0 16px 16px 54px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .exercise-item.open .exercise-detail { display: block; }
+    .exercise-detail-inner { padding-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 600px) { .exercise-detail-inner { grid-template-columns: 1fr; } }
+    .detail-block { display: flex; flex-direction: column; gap: 4px; }
+    .detail-label { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-4); }
+    .detail-val { font-size: 13px; color: var(--gray-2); line-height: 1.6; }
+    .detail-alt { font-size: 12px; color: var(--gray-3); margin-top: 2px; }
+    .detail-alt strong { color: var(--gray-2); }
+    /* ═══════════════════════════════════════════
+       HIIT TIMER — embedded in exercise cards
+    ═══════════════════════════════════════════ */
+    .hiit-timer {
+      margin-top: 16px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 20px 18px 18px;
+      user-select: none;
+    }
+
+    /* header row */
+    .ht-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .ht-title {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase; color: var(--pink);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .ht-set-label {
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.1em; color: rgba(255,255,255,0.35);
+    }
+
+    /* ring + countdown */
+    .ht-ring-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 6px; margin-bottom: 16px;
+    }
+    .ht-svg { width: 130px; height: 130px; transform: rotate(-90deg); }
+    .ht-ring-bg  { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 8; }
+    .ht-ring-fg  {
+      fill: none; stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.95s linear, stroke 0.4s ease;
+    }
+    .ht-time-display {
+      font-family: var(--font-display);
+      font-size: 38px; letter-spacing: 0.02em;
+      color: var(--white); line-height: 1;
+      text-align: center; margin-top: 4px;
+    }
+    .ht-phase-label {
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      text-align: center;
+      transition: color 0.3s;
+    }
+    .ht-phase-label.work  { color: #2ed573; }
+    .ht-phase-label.rest  { color: #74b9ff; }
+    .ht-phase-label.done  { color: var(--pink); }
+
+    /* work/rest duration row */
+    .ht-durations {
+      display: flex; gap: 10px; margin-bottom: 14px;
+    }
+    .ht-dur-block {
+      flex: 1; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px; padding: 8px 10px;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .ht-dur-label {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+    }
+    .ht-dur-val {
+      font-family: var(--font-cond); font-size: 15px; font-weight: 700;
+      color: var(--white);
+    }
+    .ht-dur-val.work-col { color: #2ed573; }
+    .ht-dur-val.rest-col { color: #74b9ff; }
+
+    /* controls */
+    .ht-controls {
+      display: flex; gap: 8px; justify-content: center;
+    }
+    .ht-btn {
+      flex: 1; padding: 10px 0;
+      border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: rgba(255,255,255,0.5); cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+    }
+    .ht-btn:hover { border-color: rgba(255,255,255,0.22); color: var(--white); }
+    .ht-btn.primary {
+      background: linear-gradient(135deg, var(--pink) 0%, #c4003f 100%);
+      border-color: transparent; color: white;
+      box-shadow: 0 4px 16px rgba(255,26,94,0.35);
+      flex: 2;
+    }
+    .ht-btn.primary:hover { box-shadow: 0 6px 22px rgba(255,26,94,0.55); transform: translateY(-1px); }
+    .ht-btn.primary:active { transform: translateY(0); }
+
+
+    /* Modal footer */
+    .modal-footer {
+      padding: 20px 36px; border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    }
+    .modal-footer-note { font-size: 13px; color: var(--gray-3); }
+    .modal-select-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--pink); color: var(--white);
+      font-family: var(--font-cond); font-size: 14px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 13px 28px; border-radius: var(--radius-sm);
+      border: none; cursor: pointer; transition: var(--transition);
+      box-shadow: 0 6px 24px rgba(255,26,94,0.35);
+    }
+    .modal-select-btn:hover { background: var(--pink-light); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(255,26,94,0.5); }
+    .modal-select-btn.selected { background: #2ed573; box-shadow: 0 6px 24px rgba(46,213,115,0.35); }
+
+    /* ── AUTO LOGOUT BAR ── */
+    .auto-logout-bar { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 9000; background: rgba(45,26,0,0.97); border-bottom: 1px solid rgba(255,165,0,0.25); padding: 10px 24px; text-align: center; font-size: 13px; color: #fdcb6e; gap: 16px; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+    .auto-logout-bar.show { display: flex; }
+    .alb-stay-btn { background: rgba(253,203,110,0.12); border: 1px solid rgba(253,203,110,0.25); color: #fdcb6e; border-radius: var(--radius-sm); padding: 5px 14px; font-family: var(--font-cond); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; cursor: pointer; transition: all 0.2s; }
+    .alb-stay-btn:hover { background: rgba(253,203,110,0.22); }
+
+    /* ── NOISE ── */
+    .noise-overlay { position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); opacity: 0.035; pointer-events: none; z-index: 9990; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .wo-content { padding: 20px 16px; }
+      .wo-hero-content { padding: 20px 20px; }
+      .wo-hero-stats { display: none; }
+      .split-modal { border-radius: var(--radius-lg); }
+      .modal-header { padding: 20px 20px 20px; }
+      .modal-body { padding: 16px 20px 24px; }
+      .modal-day-tabs { padding: 0 20px; }
+      .modal-footer { padding: 16px 20px; }
+      .recommended-banner { flex-direction: column; align-items: flex-start; }
+      .rules-banner { grid-template-columns: 1fr 1fr; }
+      .modal-photo-header { height: 140px; }
+      .db-topbar { padding: 14px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- AMBIENT ORBS -->
+  <div class="ambient-orb orb-1"></div>
+  <div class="ambient-orb orb-2"></div>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-follower" id="cursorFollower"></div>
+  <div class="noise-overlay"></div>
+
+  <div class="auto-logout-bar" id="autoLogoutBar">
+    <span>⚠️ You will be automatically logged out in <strong id="alb-countdown">10:00</strong></span>
+    <button class="alb-stay-btn" onclick="extendSession()">Stay Logged In</button>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-text">
+        <span class="logo-gud">GUD</span><span class="logo-space">SPACE</span><span class="logo-gym" style="font-size:15px;color:var(--gray-3)">GYM</span>
+      </div>
+    </div>
+    <div class="sb-profile">
+      <div class="sb-avatar-wrap">
+        <div class="sb-avatar" id="sbAvatar">?
+          <img id="sbAvatarImg" src="" alt="" style="display:none;" />
+        </div>
+        <div class="sb-avatar-ring"></div>
+      </div>
+      <div class="sb-name" id="sbName">Loading...</div>
+      <div class="sb-meta" id="sbMeta">—</div>
+      <div class="sb-goal-badge" id="sbGoalBadge">🎯 —</div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-nav-section">Main</div>
+      <a class="sb-nav-link" href="dashboard.html"><span class="sb-nav-icon">🏠</span> Home</a>
+      <a class="sb-nav-link active" href="workout.html"><span class="sb-nav-icon">🏋️</span> Workout</a>
+      <a class="sb-nav-link" href="nutrition.html"><span class="sb-nav-icon">🍎</span> Nutrition</a>
+      <div class="sb-nav-section" style="margin-top:8px;">Fitness</div>
+      <a class="sb-nav-link" href="progress.html"><span class="sb-nav-icon">📈</span> My Progress</a>
+      <a class="sb-nav-link" href="attendance.html"><span class="sb-nav-icon">📅</span> Attendance</a>
+      <a class="sb-nav-link" href="musclemap.html"><span class="sb-nav-icon">💪</span> Muscle Map</a>
+      <a class="sb-nav-link" href="nutrition.html#foodguide"><span class="sb-nav-icon">🥗</span> Food Guide</a>
+      <div class="sb-nav-section" style="margin-top:8px;">Settings</div>
+      <a class="sb-nav-link" href="profile.html"><span class="sb-nav-icon">👤</span> Edit Profile</a>
+    </nav>
+    <div class="sb-logout-wrap">
+      <button class="sb-logout-btn" onclick="confirmLogout()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="db-main">
+
+    <div class="db-topbar">
+      <div class="db-topbar-left">
+        <div class="db-page-label">GUD SPACE GYM</div>
+        <div class="db-page-title">Your <span>Workout</span> Program</div>
+      </div>
+      <div class="db-topbar-right">
+        <button class="db-menu-btn" onclick="openSidebar()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- WORKOUT HERO BANNER -->
+    <div class="wo-hero">
+      <div class="wo-hero-bg" id="woHeroBg"></div>
+      <div class="wo-hero-overlay"></div>
+      <div class="wo-hero-content">
+        <div class="wo-hero-tag">
+          <span class="wo-hero-tag-dot"></span>
+          TRAINING PROGRAMS
+        </div>
+        <h1 class="wo-hero-title">Choose Your <span>Split.</span></h1>
+        <p class="wo-hero-sub">16 science-backed programs from beginner to elite. Every exercise has a no-equipment alternative.</p>
+      </div>
+      <div class="wo-hero-stats">
+        <div class="wo-hero-stat">
+          <div class="wo-hero-stat-num">16<span>+</span></div>
+          <div class="wo-hero-stat-label">Programs</div>
+        </div>
+        <div class="wo-hero-stat">
+          <div class="wo-hero-stat-num">4</div>
+          <div class="wo-hero-stat-label">Levels</div>
+        </div>
+        <div class="wo-hero-stat">
+          <div class="wo-hero-stat-num">100<span>+</span></div>
+          <div class="wo-hero-stat-label">Exercises</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wo-content">
+
+      <!-- UNIVERSAL RULES -->
+      <div class="rules-banner">
+        <div class="rules-banner-title">🔥 Universal Training Rules</div>
+        <div class="rule-item">
+          <div class="rule-label">Sets & Reps</div>
+          <div class="rule-val"><strong>3–4 sets</strong> · <strong>6–12 reps</strong> (muscle growth default)</div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-label">Rest Time</div>
+          <div class="rule-val">Compound: <strong>90–120 sec</strong><br>Isolation: <strong>60–90 sec</strong></div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-label">Progression</div>
+          <div class="rule-val">Add <strong>reps first</strong>, then <strong>increase weight</strong> weekly</div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-label">No Equipment?</div>
+          <div class="rule-val">Every exercise has a <strong>listed alternative</strong> below</div>
+        </div>
+      </div>
+
+      <!-- GLOSSARY -->
+      <div class="glossary">
+        <div class="glossary-title">📘 Know Your Terms</div>
+        <div class="glossary-track-wrap">
+          <div class="glossary-track" id="glossaryTrack">
+            <!-- SET 1 -->
+            <div class="glossary-item">
+              <span class="glossary-emoji">🏋️</span>
+              <div class="glossary-term">Compound Exercise</div>
+              <div class="glossary-def">Works multiple muscle groups at once. More bang for your buck.</div>
+              <div class="glossary-example">Squat, Bench Press, Deadlift</div>
+            </div>
+            <div class="glossary-item">
+              <span class="glossary-emoji">🎯</span>
+              <div class="glossary-term">Isolation Exercise</div>
+              <div class="glossary-def">Focuses on one specific muscle. Used for shaping and finishing.</div>
+              <div class="glossary-example">Bicep Curl, Lateral Raise</div>
+            </div>
+            <div class="glossary-item">
+              <span class="glossary-emoji">🔁</span>
+              <div class="glossary-term">Rep (Repetition)</div>
+              <div class="glossary-def">One complete movement of an exercise from start to finish.</div>
+              <div class="glossary-example">Lifting a dumbbell up and down = 1 rep</div>
+            </div>
+            <div class="glossary-item">
+              <span class="glossary-emoji">📦</span>
+              <div class="glossary-term">Set</div>
+              <div class="glossary-def">A group of consecutive reps performed before you rest.</div>
+              <div class="glossary-example">10 reps × 3 sets = 30 total reps</div>
+            </div>
+            <div class="glossary-item">
+              <span class="glossary-emoji">📈</span>
+              <div class="glossary-term">Progressive Overload</div>
+              <div class="glossary-def">Gradually increasing weight or reps over time. This is how you grow.</div>
+              <div class="glossary-example">Week 1: 10 reps → Week 3: add weight</div>
+            </div>
+            <div class="glossary-item">
+              <span class="glossary-emoji">😴</span>
+              <div class="glossary-term">Rest Day</div>
+              <div class="glossary-def">Your muscles grow during rest, not the workout. Required recovery.</div>
+              <div class="glossary-example">Light walking or stretching only</div>
+            </div>
+            <!-- SET 2 — exact duplicate for seamless loop -->
+            <div class="glossary-item">
+              <span class="glossary-emoji">🏋️</span>
+              <div class="glossary-term">Compound Exercise</div>
+              <div class="glossary-def">Works multiple muscle groups at once. More bang for your buck.</div>
+              <div class="glossary-example">Squat, Bench Press, Deadlift</div>
+            </div>
+            <div class="glossary-item">
+              <span class="glossary-emoji">🎯</span>
+              <div class="glossary-term">Isolation Exercise</div>
+              <div class="glossary-def">Focuses on one specific muscle. Used for shaping and finishing.</div>
+              <div class="glossary-example">Bicep Curl, Lateral Raise</div>
+            </div>
+            <div class="glossary-item">
+              <span class="glossary-emoji">🔁</span>
+              <div class="glossary-term">Rep (Repetition)</div>
+              <div class="glossary-def">One complete movement of an exercise from start to finish.</div>
+              <div class="glossary-example">Lifting a dumbbell up and down = 1 rep</div>
+            </div>
+            <div class="glossary-item">
+              <span class="glossary-emoji">📦</span>
+              <div class="glossary-term">Set</div>
+              <div class="glossary-def">A group of consecutive reps performed before you rest.</div>
+              <div class="glossary-example">10 reps × 3 sets = 30 total reps</div>
+            </div>
+            <div class="glossary-item">
+              <span class="glossary-emoji">📈</span>
+              <div class="glossary-term">Progressive Overload</div>
+              <div class="glossary-def">Gradually increasing weight or reps over time. This is how you grow.</div>
+              <div class="glossary-example">Week 1: 10 reps → Week 3: add weight</div>
+            </div>
+            <div class="glossary-item">
+              <span class="glossary-emoji">😴</span>
+              <div class="glossary-term">Rest Day</div>
+              <div class="glossary-def">Your muscles grow during rest, not the workout. Required recovery.</div>
+              <div class="glossary-example">Light walking or stretching only</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECOMMENDED BANNER -->
+      <div class="recommended-banner" id="recommendedBanner">
+        <div class="rec-icon">🎯</div>
+        <div class="rec-text">
+          <div class="rec-label">Recommended for You</div>
+          <div class="rec-split-name" id="recSplitName">—</div>
+          <div class="rec-reason" id="recReason">Based on your profile</div>
+        </div>
+        <button class="rec-btn" id="recBtn" onclick="openRecommended()">
+          View Program →
+        </button>
+      </div>
+
+      <!-- ACTIVE PROGRAM -->
+      <div class="active-program-bar" id="activeProgramBar" style="display:none;">
+        <div>
+          <div class="apb-label">🏋️ Your Current Program</div>
+          <div class="apb-name" id="activeProgramName">—</div>
+          <div class="apb-sub" id="activeProgramSub">—</div>
+        </div>
+        <button class="apb-change-btn" onclick="clearActiveProgram()">Change Program</button>
+      </div>
+
+      <!-- SPLITS BROWSER -->
+      <div class="wo-section-header">
+        <div class="wo-section-label">All Programs</div>
+        <div class="wo-section-title">Browse All <span>16 Splits</span></div>
+      </div>
+
+      <div class="level-tabs">
+        <button class="level-tab active" onclick="filterSplits('all', this)">All (16)</button>
+        <button class="level-tab" onclick="filterSplits('beginner', this)">🟢 Beginner</button>
+        <button class="level-tab" onclick="filterSplits('intermediate', this)">🔵 Intermediate</button>
+        <button class="level-tab" onclick="filterSplits('advanced', this)">🔴 Advanced</button>
+        <button class="level-tab" onclick="filterSplits('hybrid', this)">🟣 Hybrid</button>
+      </div>
+
+      <div class="splits-grid" id="splitsGrid"></div>
+
+    </div>
+  </div>
+
+  <!-- SPLIT DETAIL MODAL -->
+  <div class="split-modal-overlay" id="splitModal" onclick="handleModalClick(event)">
+    <div class="split-modal" id="splitModalBox">
+      <!-- Photo header -->
+      <div class="modal-photo-header" id="modalPhotoHeader">
+        <img class="modal-photo-bg" id="modalPhotoBg" src="" alt="" />
+        <div class="modal-photo-overlay"></div>
+      </div>
+      <div class="modal-header">
+        <div>
+          <div class="modal-split-badge" id="modalBadge"></div>
+          <div class="modal-split-name" id="modalName">—</div>
+          <div class="modal-split-desc" id="modalDesc">—</div>
+          <div class="modal-meta-row" id="modalMeta"></div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-tabs-wrap">
+        <div class="modal-day-tabs" id="modalDayTabs"></div>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer">
+        <div class="modal-footer-note" id="modalFooterNote">Select this program to track it on your dashboard.</div>
+        <button class="modal-select-btn" id="modalSelectBtn" onclick="selectThisSplit()">
+          Select This Program →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+  /* =====================================================
+     WORKOUT PAGE — GUD SPACE GYM
+  ===================================================== */
+
+  const GS = window.GudSpace;
+  let currentUser = GS.requireAuth();
+  if (!currentUser) throw new Error('Not logged in');
+
+  let activeSplitIndex = null;
+  let currentModalSplitIndex = null;
+  let autoLogoutTimer, autoLogoutCountdown;
+
+  /* ===== ALL 16 SPLITS DATA ===== */
+  const SPLITS = [
+    /* 1 */ {
+      id: 1,
+      name: 'Full Body — 3 Days',
+      short: 'Full Body 3x',
+      badge: 'beginner',
+      desc: 'Train your entire body every session. Best for beginners and people who want maximum efficiency with minimum time.',
+      days: 3, daysLabel: '3 days/week',
+      bestFor: 'Beginners / No experience',
+      schedule: ['Full Body A','Rest','Full Body B','Rest','Full Body A','Rest','Rest'],
+      program: [
+        {
+          title: 'Full Body A', focus: 'Full Body', muscles: ['Quads','Chest','Back','Shoulders','Core'],
+          exercises: [
+            { name:'Barbell Squat', type:'compound', sets:'3', reps:'10', rest:'90–120 sec', how:'Stand with bar on upper back, feet shoulder-width. Lower hips until thighs are parallel to floor, drive back up.', alt:'Goblet Squat / Bodyweight Squat' },
+            { name:'Bench Press', type:'compound', sets:'3', reps:'10', rest:'90–120 sec', how:'Lie on bench, grip bar slightly wider than shoulder-width. Lower bar to chest, press back up. Keep back slightly arched.', alt:'Push-Ups / Dumbbell Floor Press' },
+            { name:'Lat Pulldown', type:'compound', sets:'3', reps:'10', rest:'90–120 sec', how:'Grip bar wide, pull down to upper chest. Squeeze shoulder blades together at bottom. Control on the way up.', alt:'Pull-Ups / Resistance Band Pulldown' },
+            { name:'Dumbbell Deadlift', type:'compound', sets:'3', reps:'8', rest:'90–120 sec', how:'Dumbbells at sides, push hips back and lower until you feel hamstring stretch. Drive hips forward to stand. Keep back flat throughout.', alt:'Hip Hinge (bodyweight) / Romanian Deadlift' },
+            { name:'Overhead Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Press dumbbells or barbell straight overhead. Squeeze glutes to protect lower back. Lower slowly.', alt:'Dumbbell Shoulder Press' },
+            { name:'Plank', type:'isolation', sets:'3', reps:'30 sec', rest:'60 sec', how:'Forearms on floor, body in straight line. Squeeze core and glutes. Do not let hips sag or rise.', alt:'Dead Bug / Crunch' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        {
+          title: 'Full Body B', focus: 'Full Body', muscles: ['Hamstrings','Chest','Back','Shoulders','Core'],
+          exercises: [
+            { name:'Lunges', type:'compound', sets:'3', reps:'10 each leg', rest:'90 sec', how:'Step forward, lower back knee toward floor. Push through front heel to return. Keep torso upright.', alt:'Step-Ups / Split Squat' },
+            { name:'Incline Dumbbell Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Set bench to 30–45°. Press dumbbells up and together. Focus on upper chest.', alt:'Elevated Push-Ups (feet on chair)' },
+            { name:'Seated Cable Row', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Pull handle to stomach, squeeze shoulder blades. Keep elbows close to body. Control on return.', alt:'Resistance Band Row / Dumbbell Row' },
+            { name:'Romanian Deadlift', type:'compound', sets:'3', reps:'10', rest:'90–120 sec', how:'Push hips back, lowering dumbbells along legs. Feel stretch in hamstrings. Return by driving hips forward.', alt:'Glute Bridge' },
+            { name:'Lateral Raise', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Slight bend in elbows, raise arms to shoulder height. Pause at top, lower slowly. Do not swing.', alt:'Front Raise / Band Lateral Raise' },
+            { name:'Leg Raises', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Lie flat. Keep legs straight, raise them to 90°. Lower slowly — do not let feet touch the floor.', alt:'Reverse Crunch / Knee Raise' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        { title: 'Repeat Day A', focus: 'Full Body', muscles: ['Quads','Chest','Back','Shoulders','Core'], repeatOf: 0 },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 2 */ {
+      id: 2,
+      name: 'Full Body — 2 Days',
+      short: 'Full Body 2x',
+      badge: 'beginner',
+      desc: 'For very busy people. Two full-body sessions per week. Less optimal than 3 days but far better than nothing.',
+      days: 2, daysLabel: '2 days/week',
+      bestFor: 'Very busy schedules',
+      schedule: ['Full Body','Rest','Rest','Full Body','Rest','Rest','Rest'],
+      program: [
+        {
+          title: 'Full Body', focus: 'Full Body', muscles: ['Quads','Chest','Back','Shoulders','Core'],
+          exercises: [
+            { name:'Squat', type:'compound', sets:'3', reps:'10', rest:'90–120 sec', how:'Stand feet shoulder-width, squat until thighs are parallel. Drive through heels to stand.', alt:'Goblet Squat / Bodyweight Squat' },
+            { name:'Push-Ups', type:'compound', sets:'3', reps:'10', rest:'60 sec', how:'Hands shoulder-width, lower chest to floor. Press back up. Keep core tight throughout.', alt:'Knee Push-Ups / Bench Press' },
+            { name:'Lat Pulldown', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Pull bar to upper chest. Squeeze back muscles at bottom. Control on the way up.', alt:'Pull-Ups / Band Pulldown' },
+            { name:'Dumbbell Deadlift', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Push hips back, lower dumbbells along legs. Keep back flat. Drive hips to stand.', alt:'Hip Hinge' },
+            { name:'Shoulder Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Press weights directly overhead. Keep core braced. Lower with control.', alt:'Dumbbell Press' },
+            { name:'Core Exercise', type:'isolation', sets:'3', reps:'30 sec', rest:'60 sec', how:'Plank or Crunch. Focus on controlled breathing.', alt:'Any core movement' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        { title: 'Repeat', focus: 'Full Body', muscles: ['Full Body'], repeatOf: 0 },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 3 */ {
+      id: 3,
+      name: 'Minimalist — Compound Only',
+      short: 'Minimalist',
+      badge: 'beginner',
+      desc: 'Only the most important compound exercises. Perfect for beginners or anyone with limited time. No fluff, pure results.',
+      days: 3, daysLabel: '3 days/week',
+      bestFor: 'Beginners / Home training',
+      schedule: ['Squat + Push','Rest','Pull + Deadlift','Rest','Full Body','Rest','Rest'],
+      program: [
+        {
+          title: 'Day 1 — Squat + Push', focus: 'Lower & Push', muscles: ['Quads','Chest','Shoulders','Triceps'],
+          exercises: [
+            { name:'Squat', type:'compound', sets:'3', reps:'10', rest:'90–120 sec', how:'Full depth, chest up, knees track over toes.', alt:'Goblet Squat / Bodyweight' },
+            { name:'Bench Press / Push-Ups', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Lower bar/chest to floor, press up. Keep elbows at 45°.', alt:'Dumbbell Press' },
+            { name:'Overhead Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Press straight overhead, squeeze shoulders at top.', alt:'Pike Push-Ups' },
+            { name:'Plank', type:'isolation', sets:'3', reps:'30–45 sec', rest:'60 sec', how:'Straight body, no sagging hips.', alt:'Dead Bug' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        {
+          title: 'Day 2 — Pull + Deadlift', focus: 'Back & Hamstrings', muscles: ['Back','Biceps','Hamstrings','Glutes'],
+          exercises: [
+            { name:'Deadlift', type:'compound', sets:'3', reps:'8', rest:'90–120 sec', how:'Bar over mid-foot, grip just outside legs. Push floor away, keep bar close.', alt:'Dumbbell Deadlift' },
+            { name:'Pull-Ups', type:'compound', sets:'3', reps:'max reps', rest:'90 sec', how:'Hang with full extension. Pull chest to bar. Lower with control.', alt:'Lat Pulldown / Band Row' },
+            { name:'Dumbbell Row', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Brace on bench, pull dumbbell to hip. Keep back flat.', alt:'Resistance Band Row' },
+            { name:'Leg Raises', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Keep legs straight, raise to 90°. Slow lower.', alt:'Knee Raise' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        {
+          title: 'Day 3 — Full Body', focus: 'Full Body', muscles: ['Full Body'],
+          exercises: [
+            { name:'Goblet Squat', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Hold weight at chest, squat deep. Keep elbows inside knees.', alt:'Bodyweight Squat' },
+            { name:'Push-Ups', type:'compound', sets:'3', reps:'15', rest:'60 sec', how:'Wide grip for chest, narrow for triceps.', alt:'Knee Push-Ups' },
+            { name:'Inverted Row', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Bar at hip height, hang below, pull chest to bar.', alt:'Band Row / Dumbbell Row' },
+            { name:'Hip Thrust', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Back on bench, drive hips up. Squeeze glutes at top.', alt:'Glute Bridge' },
+            { name:'Plank', type:'isolation', sets:'3', reps:'30 sec', rest:'60 sec', how:'Hold tight core position.', alt:'Side Plank' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 4 */ {
+      id: 4,
+      name: 'Upper / Lower — 4 Days',
+      short: 'Upper/Lower 4x',
+      badge: 'intermediate',
+      desc: 'Alternate upper and lower body days. Hits each muscle group twice per week — the optimal training frequency for growth.',
+      days: 4, daysLabel: '4 days/week',
+      bestFor: 'Intermediate lifters',
+      schedule: ['Upper','Lower','Rest','Upper','Lower','Rest','Rest'],
+      program: [
+        {
+          title: 'Monday — Upper', focus: 'Upper Body', muscles: ['Chest','Back','Shoulders','Biceps','Triceps'],
+          exercises: [
+            { name:'Bench Press', type:'compound', sets:'3', reps:'8', rest:'90–120 sec', how:'Lower bar to mid-chest, press up. Feet flat on floor. Slight arch in lower back.', alt:'Push-Ups / Dumbbell Press' },
+            { name:'Lat Pulldown', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Wide grip, pull to upper chest. Lean back slightly. Squeeze shoulder blades.', alt:'Pull-Ups' },
+            { name:'Overhead Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Bar or dumbbells. Press straight up. Core tight.', alt:'Dumbbell Shoulder Press' },
+            { name:'Dumbbell Row', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'One arm on bench, pull dumbbell to hip. Elbow close to body.', alt:'Cable Row / Band Row' },
+            { name:'Bicep Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Full range. Curl up, squeeze at top. Lower slowly.', alt:'Hammer Curl / Band Curl' },
+            { name:'Tricep Pushdown', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Keep elbows close to sides. Push down until arms fully straight.', alt:'Dips / Bench Dips' },
+          ]
+        },
+        {
+          title: 'Tuesday — Lower', focus: 'Lower Body', muscles: ['Quads','Hamstrings','Glutes','Calves'],
+          exercises: [
+            { name:'Barbell Squat', type:'compound', sets:'3', reps:'8', rest:'90–120 sec', how:'Bar on upper back, squat until thighs parallel. Drive through heels.', alt:'Goblet Squat / Front Squat' },
+            { name:'Leg Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Feet shoulder-width on platform. Lower until 90° knee bend. Press up.', alt:'Step-Ups / Bulgarian Split Squat' },
+            { name:'Romanian Deadlift', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Push hips back, lower bar along legs. Feel hamstring stretch. Return.', alt:'Dumbbell RDL / Glute Bridge' },
+            { name:'Hip Thrust', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Back on bench, barbell on hips. Drive hips up. Squeeze glutes hard at top.', alt:'Bodyweight Bridge / Cable Pull-Through' },
+            { name:'Calf Raises', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Stand on edge, full range of motion. Slow controlled movement.', alt:'Single-Leg Calf Raise' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        {
+          title: 'Thursday — Upper', focus: 'Upper Body (Volume)', muscles: ['Chest','Back','Shoulders','Arms'],
+          exercises: [
+            { name:'Incline Dumbbell Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Set bench at 30–45°. Press up and in. Focus on upper chest.', alt:'Incline Push-Ups' },
+            { name:'Seated Cable Row', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Pull to lower chest. Squeeze at end position. Slow return.', alt:'Dumbbell Row / Band Row' },
+            { name:'Lateral Raise', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Lift to shoulder level only. Slight forward lean. Do not shrug.', alt:'Band Lateral Raise' },
+            { name:'Face Pull', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Pull rope to face, elbows high. Great for shoulder health.', alt:'Rear Delt Raise / Band Pull-Apart' },
+            { name:'Hammer Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Neutral grip (thumbs up). Targets brachialis for arm thickness.', alt:'Reverse Curl' },
+            { name:'Dips', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Lean forward for chest. Stay upright for triceps. Full range.', alt:'Bench Dips / Tricep Pushdown' },
+          ]
+        },
+        {
+          title: 'Friday — Lower', focus: 'Lower Body (Volume)', muscles: ['Hamstrings','Glutes','Quads','Calves'],
+          exercises: [
+            { name:'Deadlift', type:'compound', sets:'3', reps:'6', rest:'90–120 sec', how:'Drive through the floor. Bar stays close to body. Lockout glutes at top.', alt:'Trap Bar Deadlift / Dumbbell Deadlift' },
+            { name:'Lunges', type:'compound', sets:'3', reps:'10 each', rest:'90 sec', how:'Step forward, lower rear knee. Push through front heel. Keep torso tall.', alt:'Reverse Lunge / Split Squat' },
+            { name:'Leg Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Curl heels toward glutes. Squeeze at top. Slow eccentric (lowering).', alt:'Glute Bridge / Nordic Curl' },
+            { name:'Lateral Lunge', type:'compound', sets:'3', reps:'10 each', rest:'90 sec', how:'Step wide, sit into one hip. Push back to center.', alt:'Sumo Squat' },
+            { name:'Calf Raises', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Full range. Pause at top.', alt:'Single-Leg Calf Raise' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 5 */ {
+      id: 5,
+      name: 'Upper / Lower — 6 Days',
+      short: 'Upper/Lower 6x',
+      badge: 'advanced',
+      desc: 'High-frequency version. Alternate upper and lower every day for 6 days. Each muscle trained 3x/week. For advanced lifters only.',
+      days: 6, daysLabel: '6 days/week',
+      bestFor: 'Advanced lifters',
+      schedule: ['Upper','Lower','Upper','Lower','Upper','Lower','Rest'],
+      program: [
+        {
+          title: 'Upper (Day 1 & 3 & 5)', focus: 'Upper Body', muscles: ['Chest','Back','Shoulders','Arms'],
+          exercises: [
+            { name:'Bench Press', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Control the eccentric. Touch chest. Drive up with power.', alt:'Dumbbell Press' },
+            { name:'Weighted Pull-Ups', type:'compound', sets:'4', reps:'8', rest:'90 sec', how:'Full hang, pull chest to bar. Add weight when bodyweight becomes easy.', alt:'Lat Pulldown' },
+            { name:'Overhead Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Stand or seated. Core braced. Press overhead.', alt:'Dumbbell Press' },
+            { name:'Chest-Supported Row', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Lie face-down on incline bench. Row dumbbells up to sides.', alt:'Cable Row' },
+            { name:'Lateral Raise', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Controlled movement. No swinging.', alt:'Cable Lateral Raise' },
+            { name:'Bicep Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Supinate wrist at top for full contraction.', alt:'Band Curl' },
+            { name:'Tricep Pushdown', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Elbows fixed. Full extension.', alt:'Overhead Extension' },
+          ]
+        },
+        {
+          title: 'Lower (Day 2 & 4 & 6)', focus: 'Lower Body', muscles: ['Quads','Hamstrings','Glutes','Calves'],
+          exercises: [
+            { name:'Squat', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'High bar or low bar. Consistent depth every rep.', alt:'Leg Press' },
+            { name:'Romanian Deadlift', type:'compound', sets:'4', reps:'10', rest:'90 sec', how:'Hip hinge with straight back. Feel hamstring stretch at bottom.', alt:'Dumbbell RDL' },
+            { name:'Leg Press', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Full range. Do not lock out knees at top.', alt:'Step-Ups' },
+            { name:'Hip Thrust', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Squeeze glutes hard at top. 1-second pause at peak.', alt:'Glute Bridge' },
+            { name:'Leg Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Slow eccentric. 3 seconds down.', alt:'Nordic Curl' },
+            { name:'Calf Raises', type:'isolation', sets:'4', reps:'15', rest:'60 sec', how:'Full range. Slow and controlled.', alt:'Single-Leg Raise' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 6 */ {
+      id: 6,
+      name: 'Push / Pull — 4 Days',
+      short: 'Push/Pull 4x',
+      badge: 'intermediate',
+      desc: 'Group exercises by movement pattern. Push days work chest, shoulders, triceps. Pull days work back and biceps.',
+      days: 4, daysLabel: '4 days/week',
+      bestFor: 'Intermediate lifters',
+      schedule: ['Push','Pull','Rest','Push','Pull','Rest','Rest'],
+      program: [
+        {
+          title: 'Push Day', focus: 'Chest · Shoulders · Triceps', muscles: ['Chest','Shoulders','Triceps'],
+          exercises: [
+            { name:'Bench Press', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Lower to chest, press up. Keep lats tight on the bar.', alt:'Dumbbell Press / Push-Ups' },
+            { name:'Incline Dumbbell Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'30–45° incline. Upper chest focus.', alt:'Incline Push-Ups' },
+            { name:'Overhead Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Bar or dumbbells. Press to full extension overhead.', alt:'Arnold Press' },
+            { name:'Lateral Raise', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Raise to shoulder height. Do not shrug.', alt:'Cable Lateral Raise' },
+            { name:'Cable Fly / Pec Deck', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Slight bend in elbows. Hug a tree motion. Stretch chest at start.', alt:'Dumbbell Fly' },
+            { name:'Tricep Pushdown', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Full extension. Elbows fixed at sides.', alt:'Dips / Bench Dips' },
+          ]
+        },
+        {
+          title: 'Pull Day', focus: 'Back · Biceps', muscles: ['Lats','Traps','Rhomboids','Rear Delts','Biceps'],
+          exercises: [
+            { name:'Pull-Ups', type:'compound', sets:'4', reps:'max', rest:'90–120 sec', how:'Full hang to chin over bar. Multiple grip variations each session.', alt:'Lat Pulldown' },
+            { name:'Barbell Row', type:'compound', sets:'3', reps:'8', rest:'90–120 sec', how:'Hinge forward, pull bar to belly button. Keep back flat.', alt:'Dumbbell Row' },
+            { name:'Seated Cable Row', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Pull to lower chest. Retract shoulder blades.', alt:'Band Row' },
+            { name:'Face Pull', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Rope at face height. Pull to forehead. Elbows high and wide.', alt:'Rear Delt Raise' },
+            { name:'Bicep Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Full range. Slow on the way down.', alt:'Band Curl' },
+            { name:'Hammer Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Neutral grip. Targets the long head and brachialis.', alt:'Reverse Curl' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        { title: 'Push Day 2', focus: 'Chest · Shoulders · Triceps', muscles: ['Chest','Shoulders','Triceps'], repeatOf: 0 },
+        { title: 'Pull Day 2', focus: 'Back · Biceps', muscles: ['Back','Biceps'], repeatOf: 1 },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 7 */ {
+      id: 7,
+      name: 'Push / Pull / Legs — 3 Days',
+      short: 'PPL 3x',
+      badge: 'intermediate',
+      desc: 'Classic PPL on 3 days. Each muscle group trained once per week. Great starting point before moving to 6-day PPL.',
+      days: 3, daysLabel: '3 days/week',
+      bestFor: 'Intermediate / transitioning',
+      schedule: ['Push','Rest','Pull','Rest','Legs','Rest','Rest'],
+      program: [
+        {
+          title: 'Monday — Push', focus: 'Chest · Shoulders · Triceps', muscles: ['Chest','Shoulders','Triceps'],
+          exercises: [
+            { name:'Bench Press', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Full range. Touch chest. Explosive press.', alt:'Push-Ups' },
+            { name:'Incline Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Upper chest focus. Control the descent.', alt:'Elevated Push-Ups' },
+            { name:'Overhead Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Standing OHP. Core locked in.', alt:'Dumbbell Press' },
+            { name:'Lateral Raise', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'No swinging. Raise to shoulder height.', alt:'Band Raise' },
+            { name:'Tricep Pushdown', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Rope or bar. Full extension.', alt:'Dips' },
+            { name:'Overhead Tricep Extension', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Hold dumbbell overhead with both hands. Lower behind head. Press up.', alt:'Skull Crushers' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        {
+          title: 'Wednesday — Pull', focus: 'Back · Biceps', muscles: ['Lats','Traps','Biceps','Rear Delts'],
+          exercises: [
+            { name:'Pull-Ups', type:'compound', sets:'4', reps:'max', rest:'90–120 sec', how:'Full range. Vary grip weekly for muscle balance.', alt:'Lat Pulldown' },
+            { name:'Barbell Row', type:'compound', sets:'3', reps:'8', rest:'90–120 sec', how:'Hip hinge position. Pull bar to belly.', alt:'T-Bar Row' },
+            { name:'Seated Row', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Chest up. Elbows tight to body.', alt:'Band Row' },
+            { name:'Face Pull', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Elbows high. External rotation at end.', alt:'Rear Delt Raise' },
+            { name:'Bicep Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Supinate wrist at top.', alt:'Preacher Curl' },
+            { name:'Hammer Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Neutral grip throughout.', alt:'Cable Curl' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        {
+          title: 'Friday — Legs', focus: 'Quads · Hamstrings · Glutes · Calves', muscles: ['Quads','Hamstrings','Glutes','Calves'],
+          exercises: [
+            { name:'Barbell Squat', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Full depth. Knees track over toes. Back tight.', alt:'Goblet Squat' },
+            { name:'Romanian Deadlift', type:'compound', sets:'3', reps:'10', rest:'90–120 sec', how:'Hip hinge. Hamstring stretch. Drive hips through.', alt:'Dumbbell RDL' },
+            { name:'Leg Press', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Feet shoulder-width. Do not lock knees at top.', alt:'Step-Ups / Lunge' },
+            { name:'Hip Thrust', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Drive hips up. Squeeze hard at top.', alt:'Glute Bridge' },
+            { name:'Leg Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Slow tempo on way down. 3 sec eccentric.', alt:'Nordic Curl' },
+            { name:'Calf Raises', type:'isolation', sets:'4', reps:'15', rest:'60 sec', how:'Full range. Pause at top.', alt:'Single-Leg Raise' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 8 */ {
+      id: 8,
+      name: 'Push / Pull / Legs — 6 Days',
+      short: 'PPL 6x',
+      badge: 'advanced',
+      desc: 'The gold standard for advanced lifters. Each muscle trained twice per week with high volume. Maximum frequency and growth stimulus.',
+      days: 6, daysLabel: '6 days/week',
+      bestFor: 'Advanced / Serious lifters',
+      schedule: ['Push','Pull','Legs','Push','Pull','Legs','Rest'],
+      program: [
+        {
+          title: 'Push (Mon & Thu)', focus: 'Chest · Shoulders · Triceps', muscles: ['Chest','Shoulders','Triceps'],
+          exercises: [
+            { name:'Bench Press', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Heavy. Touch chest. Max chest stretch at bottom.', alt:'Dumbbell Press' },
+            { name:'Incline Dumbbell Press', type:'compound', sets:'4', reps:'10', rest:'90 sec', how:'30° angle. Controlled negative.', alt:'Incline Barbell' },
+            { name:'Overhead Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Standing. Full overhead extension.', alt:'Arnold Press' },
+            { name:'Lateral Raise', type:'isolation', sets:'4', reps:'12–15', rest:'60 sec', how:'High volume for shoulder width.', alt:'Cable Lateral' },
+            { name:'Cable Fly', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Cross-body at end for full contraction.', alt:'Pec Deck / Dumbbell Fly' },
+            { name:'Tricep Pushdown', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Rope for more range. Full extension.', alt:'Dips' },
+            { name:'Overhead Tricep Extension', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Long head stretch is key.', alt:'Skull Crushers' },
+          ]
+        },
+        {
+          title: 'Pull (Tue & Fri)', focus: 'Back · Biceps · Rear Delts', muscles: ['Lats','Traps','Biceps','Rear Delts'],
+          exercises: [
+            { name:'Weighted Pull-Ups', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Add weight via belt. Full range.', alt:'Lat Pulldown' },
+            { name:'Barbell Row', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Overhand grip. Pull to belly. Squeeze back.', alt:'Pendlay Row' },
+            { name:'Seated Cable Row', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Wide grip for upper back. Close grip for lats.', alt:'Machine Row' },
+            { name:'Face Pull', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Elbows high. Prevent shoulder imbalances.', alt:'Band Pull-Apart' },
+            { name:'Incline Dumbbell Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Full stretch at bottom for peak contraction.', alt:'Preacher Curl' },
+            { name:'Hammer Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Brachialis and forearm thickness.', alt:'Reverse Curl' },
+            { name:'Rear Delt Fly', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Hinge forward. Elbows slightly bent. Raise to sides.', alt:'Face Pull / Band Rear Delt' },
+          ]
+        },
+        {
+          title: 'Legs (Wed & Sat)', focus: 'Quads · Hamstrings · Glutes · Calves', muscles: ['Quads','Hamstrings','Glutes','Calves'],
+          exercises: [
+            { name:'Barbell Squat', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Competition depth. Bar path straight down.', alt:'Safety Bar Squat' },
+            { name:'Romanian Deadlift', type:'compound', sets:'4', reps:'10', rest:'90–120 sec', how:'Control all the way down. Maximum hamstring stretch.', alt:'Stiff-Leg Deadlift' },
+            { name:'Leg Press', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'High foot placement for glutes. Low for quads.', alt:'Hack Squat' },
+            { name:'Hip Thrust', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Barbell or machine. Hold contraction 2 seconds.', alt:'45° Hyperextension' },
+            { name:'Leg Extension', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Pause at top. Slow down on eccentric.', alt:'Terminal Knee Extension' },
+            { name:'Leg Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Seated or lying. Slow 3-sec negative.', alt:'Nordic Curl' },
+            { name:'Calf Raises', type:'isolation', sets:'5', reps:'15', rest:'60 sec', how:'Standing or seated. Full range always.', alt:'Single-Leg Raise' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 9 */ {
+      id: 9,
+      name: 'Bro Split — 5 Days',
+      short: 'Bro Split',
+      badge: 'intermediate',
+      desc: 'One muscle group per day. Classic bodybuilding split. Each muscle gets high volume but only once per week.',
+      days: 5, daysLabel: '5 days/week',
+      bestFor: 'Bodybuilding style / High volume',
+      schedule: ['Chest','Back','Shoulders','Arms','Legs','Rest','Rest'],
+      program: [
+        {
+          title: 'Monday — Chest', focus: 'Chest', muscles: ['Chest','Triceps'],
+          exercises: [
+            { name:'Flat Bench Press', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Primary chest builder. Full range. Slow down, explode up.', alt:'Push-Ups' },
+            { name:'Incline Barbell Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'30–45° angle. Upper chest focus.', alt:'Incline Dumbbell Press' },
+            { name:'Incline Dumbbell Fly', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Wide arc. Slight bend in elbows. Stretch at bottom.', alt:'Cable Crossover' },
+            { name:'Cable Crossover', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'High to low or low to high. Squeeze at the cross.', alt:'Pec Deck / Dumbbell Fly' },
+            { name:'Push-Ups Burnout', type:'compound', sets:'2', reps:'to failure', rest:'60 sec', how:'End of session finisher. Different hand positions.', alt:'Knee Push-Ups' },
+          ]
+        },
+        {
+          title: 'Tuesday — Back', focus: 'Back', muscles: ['Lats','Traps','Rhomboids','Biceps'],
+          exercises: [
+            { name:'Deadlift', type:'compound', sets:'4', reps:'6', rest:'90–120 sec', how:'The king of back exercises. Straight bar path. Lockout fully.', alt:'Trap Bar Deadlift' },
+            { name:'Pull-Ups', type:'compound', sets:'3', reps:'max', rest:'90 sec', how:'Vary grip weekly. Wide, neutral, close.', alt:'Lat Pulldown' },
+            { name:'Barbell Row', type:'compound', sets:'3', reps:'8', rest:'90–120 sec', how:'45° hinge. Pull to belly button.', alt:'T-Bar Row' },
+            { name:'Lat Pulldown', type:'compound', sets:'3', reps:'12', rest:'60 sec', how:'Full stretch at top. Squeeze at bottom.', alt:'Straight-Arm Pulldown' },
+            { name:'Seated Row', type:'compound', sets:'3', reps:'10', rest:'60 sec', how:'Pause at end. Full stretch at front.', alt:'Band Row' },
+          ]
+        },
+        {
+          title: 'Wednesday — Shoulders', focus: 'Shoulders', muscles: ['Front Delts','Side Delts','Rear Delts'],
+          exercises: [
+            { name:'Barbell Overhead Press', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Standing. Tight core. Push the bar up and slightly back over head.', alt:'Dumbbell Press' },
+            { name:'Lateral Raise', type:'isolation', sets:'4', reps:'12', rest:'60 sec', how:'The key to shoulder width. High reps, controlled movement.', alt:'Cable Lateral' },
+            { name:'Front Raise', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Alternate arms. Raise to eye level. Slow down.', alt:'Cable Front Raise' },
+            { name:'Rear Delt Fly', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Hinge forward. Arms out to sides. Retract shoulder blades.', alt:'Face Pull' },
+            { name:'Arnold Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Rotate palms as you press. Hits all three delt heads.', alt:'Dumbbell Press' },
+          ]
+        },
+        {
+          title: 'Thursday — Arms', focus: 'Biceps · Triceps · Forearms', muscles: ['Biceps','Triceps','Forearms'],
+          exercises: [
+            { name:'Barbell Bicep Curl', type:'isolation', sets:'4', reps:'10', rest:'60–90 sec', how:'Full range. Supinate wrist. Do not swing.', alt:'Dumbbell Curl' },
+            { name:'Incline Dumbbell Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Full stretch at bottom for peak bicep.', alt:'Preacher Curl' },
+            { name:'Hammer Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Neutral grip for brachialis thickness.', alt:'Reverse Curl' },
+            { name:'Close-Grip Bench Press', type:'compound', sets:'4', reps:'10', rest:'90 sec', how:'Elbows tucked in. Tricep dominant pressing.', alt:'Dips' },
+            { name:'Skull Crushers', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Bar or EZ-bar. Lower to forehead. Extend back up.', alt:'Overhead Extension' },
+            { name:'Tricep Pushdown', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Full lockout. Pause at bottom.', alt:'Bench Dips' },
+          ]
+        },
+        {
+          title: 'Friday — Legs', focus: 'Quads · Hamstrings · Glutes · Calves', muscles: ['Quads','Hamstrings','Glutes','Calves'],
+          exercises: [
+            { name:'Barbell Squat', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Go deep. Knees out. Explode from the hole.', alt:'Hack Squat' },
+            { name:'Leg Press', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Full range. Do not lock knees. Control negative.', alt:'Goblet Squat' },
+            { name:'Romanian Deadlift', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Hamstring stretch is the goal.', alt:'Dumbbell RDL' },
+            { name:'Leg Extension', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Full quad squeeze at top.', alt:'Lunge' },
+            { name:'Lying Leg Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Full range. Squeeze hamstrings.', alt:'Glute Bridge' },
+            { name:'Calf Raises', type:'isolation', sets:'4', reps:'15', rest:'60 sec', how:'Full range. Do not bounce.', alt:'Single-Leg Raise' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 10 */ {
+      id: 10,
+      name: 'PPLUL Hybrid — 5 Days',
+      short: 'PPLUL',
+      badge: 'hybrid',
+      desc: 'Combines PPL and Upper/Lower. Hits muscles roughly twice per week across different rep ranges. Best of both worlds.',
+      days: 5, daysLabel: '5 days/week',
+      bestFor: 'Intermediate / Hybrid approach',
+      schedule: ['Push','Pull','Legs','Rest','Upper','Lower','Rest'],
+      program: [
+        {
+          title: 'Monday — Push', focus: 'Chest · Shoulders · Triceps', muscles: ['Chest','Shoulders','Triceps'],
+          exercises: [
+            { name:'Bench Press', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Heavy push focus day.', alt:'Dumbbell Press' },
+            { name:'Overhead Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Standing or seated.', alt:'Arnold Press' },
+            { name:'Incline Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Upper chest.', alt:'Cable Fly' },
+            { name:'Lateral Raise', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Control movement.', alt:'Band Raise' },
+            { name:'Tricep Pushdown', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Full lockout.', alt:'Dips' },
+          ]
+        },
+        {
+          title: 'Tuesday — Pull', focus: 'Back · Biceps', muscles: ['Back','Biceps'],
+          exercises: [
+            { name:'Pull-Ups', type:'compound', sets:'4', reps:'max', rest:'90–120 sec', how:'Full range.', alt:'Lat Pulldown' },
+            { name:'Barbell Row', type:'compound', sets:'3', reps:'8', rest:'90 sec', how:'Hip hinge position.', alt:'Dumbbell Row' },
+            { name:'Face Pull', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Elbows high.', alt:'Band Rear Delt' },
+            { name:'Bicep Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Controlled reps.', alt:'Band Curl' },
+            { name:'Hammer Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Neutral grip.', alt:'Reverse Curl' },
+          ]
+        },
+        {
+          title: 'Wednesday — Legs', focus: 'Full Legs', muscles: ['Quads','Hamstrings','Glutes','Calves'],
+          exercises: [
+            { name:'Squat', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Full depth, controlled.', alt:'Goblet Squat' },
+            { name:'Romanian Deadlift', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Hip hinge, hamstring stretch.', alt:'Dumbbell RDL' },
+            { name:'Hip Thrust', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Glute squeeze at top.', alt:'Bridge' },
+            { name:'Leg Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Slow eccentric.', alt:'Nordic Curl' },
+            { name:'Calf Raises', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Full range.', alt:'Single-Leg' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        {
+          title: 'Saturday — Upper', focus: 'Full Upper Body', muscles: ['Chest','Back','Shoulders','Arms'],
+          exercises: [
+            { name:'Incline Dumbbell Press', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Higher reps, upper chest.', alt:'Push-Ups' },
+            { name:'Seated Row', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Mid-back focus.', alt:'Band Row' },
+            { name:'Lateral Raise', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'High-rep shoulder pump.', alt:'Cable Lateral' },
+            { name:'Hammer Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Arm thickness.', alt:'Neutral Curl' },
+            { name:'Dips', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Lean forward for chest.', alt:'Tricep Pushdown' },
+          ]
+        },
+        {
+          title: 'Sunday — Lower', focus: 'Lower Volume', muscles: ['Hamstrings','Glutes','Quads'],
+          exercises: [
+            { name:'Deadlift', type:'compound', sets:'3', reps:'6', rest:'90–120 sec', how:'Heavy, comp style.', alt:'Dumbbell Deadlift' },
+            { name:'Bulgarian Split Squat', type:'compound', sets:'3', reps:'10 each', rest:'90 sec', how:'Rear foot elevated. Front leg does the work.', alt:'Lunge' },
+            { name:'Leg Curl', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Hamstring isolation.', alt:'Glute Bridge' },
+            { name:'Calf Raises', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Full range.', alt:'Single-Leg' },
+          ]
+        },
+        { title: 'Rest', force: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 11 */ {
+      id: 11,
+      name: 'ULPPL Hybrid — 6 Days',
+      short: 'ULPPL',
+      badge: 'hybrid',
+      desc: 'Starts with Upper/Lower then transitions to PPL. High volume, high frequency hybrid. Each muscle trained 2x/week.',
+      days: 6, daysLabel: '6 days/week',
+      bestFor: 'Advanced / Hybrid',
+      schedule: ['Upper','Lower','Rest','Push','Pull','Legs','Rest'],
+      program: [
+        {
+          title: 'Monday — Upper', focus: 'Upper Body Power', muscles: ['Chest','Back','Shoulders'],
+          exercises: [
+            { name:'Bench Press', type:'compound', sets:'4', reps:'6', rest:'90–120 sec', how:'Heavier, strength focus.', alt:'Dumbbell Press' },
+            { name:'Weighted Pull-Ups', type:'compound', sets:'4', reps:'6', rest:'90–120 sec', how:'Add weight for strength.', alt:'Lat Pulldown' },
+            { name:'Overhead Press', type:'compound', sets:'3', reps:'8', rest:'90 sec', how:'Strict press.', alt:'DB Press' },
+            { name:'Dumbbell Row', type:'compound', sets:'3', reps:'8', rest:'90 sec', how:'Heavy row.', alt:'Barbell Row' },
+            { name:'Face Pull', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Shoulder health.', alt:'Band Pull-Apart' },
+          ]
+        },
+        {
+          title: 'Tuesday — Lower', focus: 'Lower Body Power', muscles: ['Quads','Hamstrings','Glutes'],
+          exercises: [
+            { name:'Barbell Squat', type:'compound', sets:'4', reps:'6', rest:'90–120 sec', how:'Heavy squats, strength focus.', alt:'Leg Press' },
+            { name:'Deadlift', type:'compound', sets:'3', reps:'5', rest:'90–120 sec', how:'Max weight effort.', alt:'Trap Bar' },
+            { name:'Romanian Deadlift', type:'compound', sets:'3', reps:'8', rest:'90 sec', how:'Controlled RDL.', alt:'Dumbbell RDL' },
+            { name:'Hip Thrust', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Glute strength.', alt:'Bridge' },
+            { name:'Calf Raises', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Controlled full range.', alt:'Single-Leg' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        {
+          title: 'Thursday — Push (Hypertrophy)', focus: 'Chest · Shoulders · Triceps', muscles: ['Chest','Shoulders','Triceps'],
+          exercises: [
+            { name:'Incline Dumbbell Press', type:'compound', sets:'4', reps:'10', rest:'90 sec', how:'Upper chest volume.', alt:'Incline Barbell' },
+            { name:'Cable Fly', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Chest isolation.', alt:'Dumbbell Fly' },
+            { name:'Lateral Raise', type:'isolation', sets:'4', reps:'15', rest:'60 sec', how:'Shoulder width.', alt:'Cable Lateral' },
+            { name:'Tricep Pushdown', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Tricep isolation.', alt:'Overhead Extension' },
+            { name:'Overhead Tricep Extension', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Long head stretch.', alt:'Skull Crushers' },
+          ]
+        },
+        {
+          title: 'Friday — Pull (Hypertrophy)', focus: 'Back · Biceps', muscles: ['Lats','Biceps','Rear Delts'],
+          exercises: [
+            { name:'Lat Pulldown', type:'compound', sets:'4', reps:'12', rest:'90 sec', how:'Full stretch, full squeeze.', alt:'Band Pulldown' },
+            { name:'Seated Cable Row', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Mid-back volume.', alt:'Band Row' },
+            { name:'Straight-Arm Pulldown', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Lat isolation at end range.', alt:'Band Pullover' },
+            { name:'Incline Dumbbell Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Bicep peak.', alt:'Preacher Curl' },
+            { name:'Rear Delt Fly', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Rear shoulder volume.', alt:'Band Rear Delt' },
+          ]
+        },
+        {
+          title: 'Saturday — Legs (Hypertrophy)', focus: 'Legs Volume', muscles: ['Quads','Hamstrings','Glutes','Calves'],
+          exercises: [
+            { name:'Leg Press', type:'compound', sets:'4', reps:'12', rest:'90 sec', how:'High volume quads.', alt:'Hack Squat' },
+            { name:'Bulgarian Split Squat', type:'compound', sets:'3', reps:'12 each', rest:'90 sec', how:'Unilateral leg strength.', alt:'Lunge' },
+            { name:'Leg Extension', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Quad isolation.', alt:'Terminal Extension' },
+            { name:'Leg Curl', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Hamstring isolation.', alt:'Nordic Curl' },
+            { name:'Calf Raises', type:'isolation', sets:'4', reps:'20', rest:'60 sec', how:'High rep calves.', alt:'Single-Leg' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 12 */ {
+      id: 12,
+      name: 'Upper/Lower/Full Hybrid — 5 Days',
+      short: 'ULF Hybrid',
+      badge: 'hybrid',
+      desc: 'Combines Upper, Lower, and Full Body days. Hits muscle groups 2–3x per week across various rep ranges and angles.',
+      days: 5, daysLabel: '5 days/week',
+      bestFor: 'Intermediate to advanced',
+      schedule: ['Upper','Lower','Rest','Full Body','Upper','Rest','Rest'],
+      program: [
+        {
+          title: 'Monday — Upper', focus: 'Upper Body Strength', muscles: ['Chest','Back','Shoulders'],
+          exercises: [
+            { name:'Bench Press', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Strength-focused pressing.', alt:'Dumbbell Press' },
+            { name:'Barbell Row', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Heavy row.', alt:'Dumbbell Row' },
+            { name:'Overhead Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Shoulder strength.', alt:'DB Press' },
+            { name:'Bicep Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Full range.', alt:'Band Curl' },
+            { name:'Tricep Dips', type:'compound', sets:'3', reps:'12', rest:'60 sec', how:'Tricep and chest finisher.', alt:'Pushdown' },
+          ]
+        },
+        {
+          title: 'Tuesday — Lower', focus: 'Lower Body Strength', muscles: ['Quads','Hamstrings','Glutes'],
+          exercises: [
+            { name:'Squat', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Strength squats.', alt:'Goblet Squat' },
+            { name:'Deadlift', type:'compound', sets:'3', reps:'6', rest:'90–120 sec', how:'Heavy deadlift.', alt:'Dumbbell DL' },
+            { name:'Hip Thrust', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Glute focus.', alt:'Bridge' },
+            { name:'Leg Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Hamstring isolation.', alt:'Nordic Curl' },
+            { name:'Calf Raises', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Full range.', alt:'Single-Leg' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        {
+          title: 'Thursday — Full Body', focus: 'Full Body Volume', muscles: ['Full Body'],
+          exercises: [
+            { name:'Goblet Squat', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Quad-focused squat.', alt:'Bodyweight Squat' },
+            { name:'Incline Push-Ups / Press', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Chest from different angle.', alt:'Push-Ups' },
+            { name:'Pull-Ups', type:'compound', sets:'3', reps:'max', rest:'90 sec', how:'Back volume.', alt:'Lat Pulldown' },
+            { name:'Romanian Deadlift', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Hamstring focus.', alt:'Glute Bridge' },
+            { name:'Lateral Raise', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Shoulder pump.', alt:'Band Raise' },
+            { name:'Core Circuit', type:'isolation', sets:'3', reps:'30 sec', rest:'60 sec', how:'Plank + leg raises.', alt:'Crunch' },
+          ]
+        },
+        {
+          title: 'Friday — Upper', focus: 'Upper Body Volume', muscles: ['Chest','Back','Shoulders','Arms'],
+          exercises: [
+            { name:'Cable Fly', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Chest pump.', alt:'Dumbbell Fly' },
+            { name:'Lat Pulldown', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Lat width.', alt:'Pull-Ups' },
+            { name:'Lateral Raise', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Shoulder width.', alt:'Cable Lateral' },
+            { name:'Hammer Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Arm thickness.', alt:'Reverse Curl' },
+            { name:'Tricep Pushdown', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Arm pump.', alt:'Dips' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 13 */ {
+      id: 13,
+      name: 'Arnold Split — 6 Days',
+      short: 'Arnold Split',
+      badge: 'advanced',
+      desc: "Popularized by Arnold Schwarzenegger. Chest + Back paired together, Shoulders + Arms together, then Legs. The chest/back superset creates an incredible pump.",
+      days: 6, daysLabel: '6 days/week',
+      bestFor: 'Advanced bodybuilders',
+      schedule: ['Chest+Back','Shoulders+Arms','Legs','Chest+Back','Shoulders+Arms','Legs','Rest'],
+      program: [
+        {
+          title: 'Day 1 & 4 — Chest + Back', focus: 'Chest · Back', muscles: ['Chest','Lats','Traps','Rhomboids'],
+          exercises: [
+            { name:'Bench Press', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Superset option with Rows for a chest/back pump.', alt:'Dumbbell Press' },
+            { name:'Barbell Row', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Opposite movement to bench. Opposing muscle superset.', alt:'Dumbbell Row' },
+            { name:'Incline Dumbbell Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Upper chest volume.', alt:'Incline Barbell' },
+            { name:'Pull-Ups', type:'compound', sets:'3', reps:'max', rest:'90 sec', how:'Back width.', alt:'Lat Pulldown' },
+            { name:'Cable Fly', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Chest finisher.', alt:'Dumbbell Fly' },
+            { name:'Seated Row', type:'compound', sets:'3', reps:'12', rest:'60 sec', how:'Mid-back thickness.', alt:'Band Row' },
+          ]
+        },
+        {
+          title: 'Day 2 & 5 — Shoulders + Arms', focus: 'Shoulders · Biceps · Triceps', muscles: ['Delts','Biceps','Triceps'],
+          exercises: [
+            { name:'Overhead Press', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Heavy shoulder press first.', alt:'Arnold Press' },
+            { name:'Barbell Curl', type:'isolation', sets:'4', reps:'10', rest:'60–90 sec', how:'Full bicep curl.', alt:'Dumbbell Curl' },
+            { name:'Lateral Raise', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Side delt width.', alt:'Cable Lateral' },
+            { name:'Close-Grip Bench', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Tricep compound movement.', alt:'Dips' },
+            { name:'Incline Dumbbell Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Bicep stretch and peak.', alt:'Preacher Curl' },
+            { name:'Skull Crushers', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Long head tricep.', alt:'Overhead Extension' },
+            { name:'Rear Delt Fly', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Complete delt development.', alt:'Face Pull' },
+          ]
+        },
+        {
+          title: 'Day 3 & 6 — Legs', focus: 'Quads · Hamstrings · Glutes · Calves', muscles: ['Quads','Hamstrings','Glutes','Calves'],
+          exercises: [
+            { name:'Barbell Squat', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Quad dominant squat.', alt:'Hack Squat' },
+            { name:'Deadlift', type:'compound', sets:'3', reps:'6', rest:'90–120 sec', how:'Full body strength.', alt:'Romanian DL' },
+            { name:'Lunges', type:'compound', sets:'3', reps:'10 each', rest:'90 sec', how:'Unilateral leg work.', alt:'Split Squat' },
+            { name:'Leg Press', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Quad volume.', alt:'Step-Ups' },
+            { name:'Leg Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Hamstring isolation.', alt:'Nordic Curl' },
+            { name:'Calf Raises', type:'isolation', sets:'4', reps:'15', rest:'60 sec', how:'Full range.', alt:'Single-Leg' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 14 */ {
+      id: 14,
+      name: 'PHUL — 4 Days',
+      short: 'PHUL',
+      badge: 'advanced',
+      desc: 'Power Hypertrophy Upper Lower. Two power days (heavy, low reps) and two hypertrophy days (moderate weight, higher reps). Best of strength and size.',
+      days: 4, daysLabel: '4 days/week',
+      bestFor: 'Advanced / Strength + Size',
+      schedule: ['Upper Power','Lower Power','Rest','Upper Hypertrophy','Lower Hypertrophy','Rest','Rest'],
+      program: [
+        {
+          title: 'Monday — Upper Power', focus: 'Upper Body Strength', muscles: ['Chest','Back','Shoulders'],
+          exercises: [
+            { name:'Bench Press', type:'compound', sets:'4', reps:'3–5', rest:'3–5 min', how:'Heavy. Maximum effort. 90% of 1RM. Controlled negative.', alt:'Dumbbell Press' },
+            { name:'Barbell Row', type:'compound', sets:'4', reps:'3–5', rest:'3–5 min', how:'Heavy row. Same principle as bench.', alt:'Pendlay Row' },
+            { name:'Incline Press', type:'compound', sets:'3', reps:'6–8', rest:'90 sec', how:'Strength accessory for upper chest.', alt:'Incline Dumbbell' },
+            { name:'Pull-Ups', type:'compound', sets:'3', reps:'6–8', rest:'90 sec', how:'Add weight if bodyweight is easy.', alt:'Lat Pulldown' },
+            { name:'Overhead Press', type:'compound', sets:'3', reps:'6', rest:'90–120 sec', how:'Standing strength press.', alt:'DB Press' },
+          ]
+        },
+        {
+          title: 'Tuesday — Lower Power', focus: 'Lower Body Strength', muscles: ['Quads','Hamstrings','Glutes'],
+          exercises: [
+            { name:'Barbell Squat', type:'compound', sets:'4', reps:'3–5', rest:'3–5 min', how:'Max effort squats. Low bar or high bar.', alt:'Safety Bar Squat' },
+            { name:'Deadlift', type:'compound', sets:'4', reps:'3–5', rest:'3–5 min', how:'Conventional or sumo. Max effort.', alt:'Trap Bar DL' },
+            { name:'Leg Press', type:'compound', sets:'3', reps:'6–8', rest:'90–120 sec', how:'Strength accessory for legs.', alt:'Bulgarian Split Squat' },
+            { name:'Romanian Deadlift', type:'compound', sets:'3', reps:'6', rest:'90 sec', how:'Hamstring strength.', alt:'Stiff-Leg DL' },
+            { name:'Calf Raises', type:'isolation', sets:'3', reps:'8', rest:'90 sec', how:'Heavy calf raises.', alt:'Single-Leg Heavy' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        {
+          title: 'Thursday — Upper Hypertrophy', focus: 'Upper Body Volume', muscles: ['Chest','Back','Shoulders','Arms'],
+          exercises: [
+            { name:'Incline Dumbbell Press', type:'compound', sets:'4', reps:'8–12', rest:'90 sec', how:'Moderate weight, full range.', alt:'Cable Fly' },
+            { name:'Lat Pulldown', type:'compound', sets:'4', reps:'8–12', rest:'90 sec', how:'Full stretch and squeeze.', alt:'Pull-Ups' },
+            { name:'Lateral Raise', type:'isolation', sets:'3', reps:'12–15', rest:'60 sec', how:'Shoulder width volume.', alt:'Cable Lateral' },
+            { name:'Seated Cable Row', type:'compound', sets:'3', reps:'12', rest:'60 sec', how:'Mid-back hypertrophy.', alt:'Band Row' },
+            { name:'Bicep Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Full range.', alt:'Hammer Curl' },
+            { name:'Skull Crushers', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Tricep hypertrophy.', alt:'Overhead Extension' },
+          ]
+        },
+        {
+          title: 'Friday — Lower Hypertrophy', focus: 'Lower Body Volume', muscles: ['Quads','Hamstrings','Glutes','Calves'],
+          exercises: [
+            { name:'Hack Squat / Leg Press', type:'compound', sets:'4', reps:'10–12', rest:'90 sec', how:'Quad volume work.', alt:'Goblet Squat' },
+            { name:'Romanian Deadlift', type:'compound', sets:'4', reps:'10–12', rest:'90 sec', how:'Hamstring hypertrophy.', alt:'Dumbbell RDL' },
+            { name:'Leg Extension', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Quad isolation pump.', alt:'Lunge' },
+            { name:'Leg Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Hamstring isolation.', alt:'Glute Bridge' },
+            { name:'Hip Thrust', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Glute hypertrophy.', alt:'Bridge' },
+            { name:'Calf Raises', type:'isolation', sets:'4', reps:'15', rest:'60 sec', how:'High-rep calves.', alt:'Single-Leg Seated' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 15 */ {
+      id: 15,
+      name: 'PHAT — 5 Days',
+      short: 'PHAT',
+      badge: 'advanced',
+      desc: 'Power Hypertrophy Adaptive Training by Dr. Layne Norton. 2 power days + 3 hypertrophy days. Trains strength and size simultaneously.',
+      days: 5, daysLabel: '5 days/week',
+      bestFor: 'Advanced / Powerbuilding',
+      schedule: ['Upper Power','Lower Power','Rest','Back+Shoulders Hyp','Lower Hyp','Chest+Arms Hyp','Rest'],
+      program: [
+        {
+          title: 'Monday — Upper Power', focus: 'Upper Strength', muscles: ['Chest','Back','Shoulders'],
+          exercises: [
+            { name:'Bench Press', type:'compound', sets:'3', reps:'3–5', rest:'3–5 min', how:'Competition-style heavy bench.', alt:'Dumbbell Press' },
+            { name:'Barbell Row', type:'compound', sets:'3', reps:'3–5', rest:'3–5 min', how:'Heavy row to match bench strength.', alt:'Pendlay Row' },
+            { name:'Weighted Pull-Ups', type:'compound', sets:'2', reps:'6–8', rest:'90 sec', how:'Accessory pull.', alt:'Lat Pulldown' },
+            { name:'Overhead Press', type:'compound', sets:'2', reps:'6', rest:'90 sec', how:'Shoulder strength accessory.', alt:'DB Press' },
+            { name:'Dumbbell Row', type:'compound', sets:'2', reps:'8', rest:'90 sec', how:'Unilateral back strength.', alt:'Cable Row' },
+          ]
+        },
+        {
+          title: 'Tuesday — Lower Power', focus: 'Lower Strength', muscles: ['Quads','Hamstrings'],
+          exercises: [
+            { name:'Barbell Squat', type:'compound', sets:'3', reps:'3–5', rest:'3–5 min', how:'Heavy squats. Sub-maximal effort.', alt:'Front Squat' },
+            { name:'Deadlift', type:'compound', sets:'3', reps:'3–5', rest:'3–5 min', how:'Heavy conventional deadlift.', alt:'Sumo Deadlift' },
+            { name:'Leg Press', type:'compound', sets:'2', reps:'8', rest:'90 sec', how:'Quad accessory.', alt:'Hack Squat' },
+            { name:'Romanian Deadlift', type:'compound', sets:'2', reps:'8', rest:'90 sec', how:'Hamstring strength.', alt:'Dumbbell RDL' },
+            { name:'Calf Raises', type:'isolation', sets:'3', reps:'10', rest:'60 sec', how:'Heavy calf.', alt:'Seated Calf' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+        {
+          title: 'Thursday — Back & Shoulders Hypertrophy', focus: 'Back · Shoulders Volume', muscles: ['Back','Shoulders'],
+          exercises: [
+            { name:'Lat Pulldown', type:'compound', sets:'3', reps:'8–12', rest:'90 sec', how:'Full range lat isolation.', alt:'Pull-Ups' },
+            { name:'Seated Row', type:'compound', sets:'3', reps:'8–12', rest:'90 sec', how:'Mid-back hypertrophy.', alt:'Band Row' },
+            { name:'Lateral Raise', type:'isolation', sets:'4', reps:'12–15', rest:'60 sec', how:'Side delt hypertrophy.', alt:'Cable Lateral' },
+            { name:'Face Pull', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Rear delt and shoulder health.', alt:'Band Pull-Apart' },
+            { name:'Rear Delt Fly', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Complete delt training.', alt:'Band Rear Delt' },
+            { name:'Shrugs', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Trap hypertrophy.', alt:'Dumbbell Shrug' },
+          ]
+        },
+        {
+          title: 'Friday — Lower Hypertrophy', focus: 'Full Legs Volume', muscles: ['Quads','Hamstrings','Glutes','Calves'],
+          exercises: [
+            { name:'Hack Squat', type:'compound', sets:'4', reps:'10–15', rest:'90 sec', how:'High-rep quads.', alt:'Leg Press' },
+            { name:'Leg Extension', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Quad isolation.', alt:'Bodyweight Squat' },
+            { name:'Romanian Deadlift', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Hamstring volume.', alt:'Dumbbell RDL' },
+            { name:'Leg Curl', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Hamstring isolation.', alt:'Nordic Curl' },
+            { name:'Hip Thrust', type:'compound', sets:'3', reps:'15', rest:'90 sec', how:'Glute volume.', alt:'Bridge' },
+            { name:'Seated Calf Raises', type:'isolation', sets:'4', reps:'15', rest:'60 sec', how:'Soleus focus.', alt:'Standing Calf' },
+          ]
+        },
+        {
+          title: 'Saturday — Chest & Arms Hypertrophy', focus: 'Chest · Biceps · Triceps Volume', muscles: ['Chest','Biceps','Triceps'],
+          exercises: [
+            { name:'Incline Dumbbell Press', type:'compound', sets:'4', reps:'10–15', rest:'90 sec', how:'Chest volume.', alt:'Cable Fly' },
+            { name:'Cable Fly', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Chest isolation and stretch.', alt:'Pec Deck' },
+            { name:'Incline Dumbbell Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Bicep peak contraction.', alt:'Preacher Curl' },
+            { name:'Hammer Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Brachialis volume.', alt:'Reverse Curl' },
+            { name:'Skull Crushers', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Tricep long head.', alt:'Overhead Extension' },
+            { name:'Tricep Pushdown', type:'isolation', sets:'3', reps:'15', rest:'60 sec', how:'Tricep pump finisher.', alt:'Bench Dips' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+
+    /* 16 */ {
+      id: 16,
+      name: 'Body Part 2x/Week — 6 Days',
+      short: 'Body Part 2x',
+      badge: 'advanced',
+      desc: 'Bro split frequency boosted to twice per week. Higher frequency than traditional bro split, more volume than PPL. Best of both.',
+      days: 6, daysLabel: '6 days/week',
+      bestFor: 'Advanced bodybuilders',
+      schedule: ['Chest+Tri','Back+Bi','Legs','Chest+Tri','Back+Bi','Legs','Rest'],
+      program: [
+        {
+          title: 'Day 1 & 4 — Chest + Triceps', focus: 'Chest · Triceps', muscles: ['Chest','Triceps'],
+          exercises: [
+            { name:'Flat Bench Press', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Primary chest press.', alt:'Dumbbell Press' },
+            { name:'Incline Dumbbell Press', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Upper chest.', alt:'Incline Barbell' },
+            { name:'Cable Crossover', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Chest finisher.', alt:'Dumbbell Fly' },
+            { name:'Dips', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Chest and tricep compound.', alt:'Bench Dips' },
+            { name:'Skull Crushers', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Tricep mass.', alt:'Overhead Extension' },
+            { name:'Tricep Pushdown', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Tricep pump.', alt:'Band Pushdown' },
+          ]
+        },
+        {
+          title: 'Day 2 & 5 — Back + Biceps', focus: 'Back · Biceps', muscles: ['Lats','Traps','Biceps'],
+          exercises: [
+            { name:'Deadlift', type:'compound', sets:'3', reps:'6', rest:'90–120 sec', how:'Back thickness and strength.', alt:'Trap Bar' },
+            { name:'Pull-Ups', type:'compound', sets:'3', reps:'max', rest:'90 sec', how:'Back width.', alt:'Lat Pulldown' },
+            { name:'Barbell Row', type:'compound', sets:'3', reps:'8', rest:'90–120 sec', how:'Horizontal back.', alt:'T-Bar Row' },
+            { name:'Seated Row', type:'compound', sets:'3', reps:'12', rest:'60 sec', how:'Mid-back pump.', alt:'Band Row' },
+            { name:'Barbell Curl', type:'isolation', sets:'4', reps:'10', rest:'60 sec', how:'Full bicep curl.', alt:'Dumbbell Curl' },
+            { name:'Hammer Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Brachialis thickness.', alt:'Reverse Curl' },
+          ]
+        },
+        {
+          title: 'Day 3 & 6 — Legs', focus: 'Full Legs', muscles: ['Quads','Hamstrings','Glutes','Calves'],
+          exercises: [
+            { name:'Barbell Squat', type:'compound', sets:'4', reps:'8', rest:'90–120 sec', how:'Quad dominant squat.', alt:'Hack Squat' },
+            { name:'Leg Press', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Quad volume.', alt:'Goblet Squat' },
+            { name:'Romanian Deadlift', type:'compound', sets:'3', reps:'10', rest:'90 sec', how:'Hamstring focus.', alt:'Dumbbell RDL' },
+            { name:'Hip Thrust', type:'compound', sets:'3', reps:'12', rest:'90 sec', how:'Glute mass.', alt:'Bridge' },
+            { name:'Leg Curl', type:'isolation', sets:'3', reps:'12', rest:'60 sec', how:'Hamstring isolation.', alt:'Nordic Curl' },
+            { name:'Calf Raises', type:'isolation', sets:'4', reps:'15', rest:'60 sec', how:'Full range.', alt:'Single-Leg' },
+          ]
+        },
+        { title: 'Rest', focus: 'Recovery', muscles: [], exercises: [], isRest: true },
+      ]
+    },
+  ];
+
+  /* ===== RECOMMENDATION ENGINE ===== */
+  function getRecommendedSplit() {
+    const p = currentUser.profile || {};
+    const freq = p.workoutFreq || 3;
+    const exp = p.trainingExp || 'never';
+    const dur = p.trainingDuration || 'less-1mo';
+    const goal = p.goal || 'overall-fitness';
+
+    // Determine level
+    let level = 'beginner';
+    if (exp === 'regular' || exp === 'coming-back') {
+      if (dur === '6-12mo' || dur === '1-2yr' || dur === '2yr+') level = 'intermediate';
+      if (dur === '2yr+') level = 'advanced';
+    }
+    if (exp === 'on-and-off' && (dur === '1-2yr' || dur === '2yr+')) level = 'intermediate';
+
+    // Pick split based on freq + level + goal
+    let splitIndex = 0;
+    let reason = '';
+
+    if (freq <= 2) {
+      splitIndex = 1; // Full Body 2 Days
+      reason = `You train ${freq}x/week — Full Body 2 Days maximizes your gains per session.`;
+    } else if (freq === 3 && level === 'beginner') {
+      splitIndex = 0; // Full Body 3 Days
+      reason = `Perfect for beginners — Full Body 3 Days trains every muscle 3x/week for fast results.`;
+    } else if (freq === 3 && level !== 'beginner') {
+      splitIndex = 6; // PPL 3 Days
+      reason = `3 days + your experience level = PPL 3x is the sweet spot for your progression.`;
+    } else if (freq === 4 && level === 'beginner') {
+      splitIndex = 3; // Upper/Lower 4 Days
+      reason = `4 training days — Upper/Lower hits each muscle twice per week. Optimal frequency.`;
+    } else if (freq === 4 && level !== 'beginner') {
+      if (goal === 'build-strength') {
+        splitIndex = 13; // PHUL
+        reason = `Your goal is strength and ${freq} days fits PHUL perfectly — power + hypertrophy combo.`;
+      } else {
+        splitIndex = 3; // Upper/Lower 4 Days
+        reason = `4 days + intermediate level — Upper/Lower is the most evidence-backed split for muscle growth.`;
+      }
+    } else if (freq === 5) {
+      if (level === 'advanced' && goal === 'build-strength') {
+        splitIndex = 14; // PHAT
+        reason = `5 days + strength goal + your experience = PHAT by Layne Norton is ideal.`;
+      } else if (level === 'advanced') {
+        splitIndex = 9; // PPLUL
+        reason = `5 days + advanced level — PPLUL hybrid gives you the best frequency and volume balance.`;
+      } else {
+        splitIndex = 8; // Bro Split
+        reason = `5 days per week — Bro Split gives each muscle group dedicated high-volume attention.`;
+      }
+    } else if (freq >= 6) {
+      if (level === 'advanced' && goal === 'build-strength') {
+        splitIndex = 12; // Arnold Split
+        reason = `6 days + advanced + strength goal — Arnold Split is built for this exact profile.`;
+      } else if (level === 'advanced') {
+        splitIndex = 7; // PPL 6 Days
+        reason = `6 days + advanced level — PPL 6x is the gold standard for serious muscle building.`;
+      } else {
+        splitIndex = 4; // Upper/Lower 6 Days
+        reason = `6 training days — Upper/Lower 6x keeps volume high with adequate recovery per session.`;
+      }
+    }
+
+    return { splitIndex, reason };
+  }
+
+  /* ===== RENDER ===== */
+  function renderSidebar() {
+    const p = currentUser.profile || {};
+    document.getElementById('sbName').textContent = ((currentUser.firstName || '') + ' ' + (currentUser.lastName || '')).trim().toUpperCase() || 'MEMBER';
+    document.getElementById('sbMeta').textContent = `${p.age || '—'} yrs · ${p.weightKg || '—'} kg · ${p.heightCm || '—'} cm`;
+    const goalLabels = { 'build-strength':'Build Strength','lose-weight':'Lose Weight','get-lean':'Get Lean','get-in-shape':'Get in Shape','build-muscle':'Build Muscle','overall-fitness':'Overall Fitness' };
+    document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalLabels[p.goal] || 'Set Your Goal');
+    const initial = (currentUser.firstName || '?').charAt(0).toUpperCase();
+    document.getElementById('sbAvatar').childNodes[0].textContent = initial;
+    if (currentUser.photoUrl) {
+      const img = document.getElementById('sbAvatarImg');
+      img.src = currentUser.photoUrl;
+      img.style.display = 'block';
+    }
+  }
+
+  function renderRecommended() {
+    const { splitIndex, reason } = getRecommendedSplit();
+    const split = SPLITS[splitIndex];
+    document.getElementById('recSplitName').textContent = split.name;
+    document.getElementById('recReason').textContent = reason;
+    document.getElementById('recBtn').dataset.splitIndex = splitIndex;
+  }
+
+  function renderActiveProgramBar() {
+    const saved = GS.storage.get('activeSplit_' + currentUser.id);
+    if (saved !== null && saved !== undefined) {
+      activeSplitIndex = saved;
+      const split = SPLITS[activeSplitIndex];
+      document.getElementById('activeProgramBar').style.display = 'flex';
+      document.getElementById('activeProgramName').textContent = split.name;
+      document.getElementById('activeProgramSub').textContent = split.daysLabel + ' · ' + split.bestFor;
+      document.getElementById('recommendedBanner').style.display = 'none';
+    }
+  }
+
+  /* ── SPLIT PHOTOS (Unsplash — one per category vibe) ── */
+  const SPLIT_PHOTOS = [
+    'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=75', // 0 Full Body 3x
+    'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&q=75', // 1 Full Body 2x
+    'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=600&q=75', // 2 Minimalist
+    'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=600&q=75', // 3 Upper/Lower 4x
+    'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&q=75', // 4 Upper/Lower 6x
+    'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=600&q=75', // 5 Push/Pull 4x
+    'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=75', // 6 PPL 3x
+    'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=600&q=75', // 7 PPL 6x
+    'https://images.unsplash.com/photo-1594737625785-a6cbdabd333c?w=600&q=75', // 8 Bro Split
+    'https://images.unsplash.com/photo-1584466977773-e625c37cdd50?w=600&q=75', // 9 PPLUL
+    'https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=600&q=75', // 10 ULPPL
+    'https://images.unsplash.com/photo-1598971639058-fab3c3109a00?w=600&q=75', // 11 ULF Hybrid
+    'https://images.unsplash.com/photo-1567598508481-65985588e295?w=600&q=75', // 12 Arnold Split
+    'https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=600&q=75', // 13 PHUL — heavy barbell
+    'https://images.unsplash.com/photo-1583454155184-870a1f63aebc?w=600&q=75', // 14 PHAT — heavy lifting
+    'https://images.unsplash.com/photo-1558611848-73f7eb4001a1?w=600&q=75', // 15 Body Part 2x — dumbbell rack
+  ];
+
+  function renderSplitsGrid(filter = 'all') {
+    const grid = document.getElementById('splitsGrid');
+    const saved = GS.storage.get('activeSplit_' + currentUser.id);
+    const { splitIndex: recIdx } = getRecommendedSplit();
+    const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+    grid.innerHTML = SPLITS
+      .filter(s => filter === 'all' || s.badge === filter)
+      .map((split, arrIdx) => {
+        const realIdx = SPLITS.indexOf(split);
+        const isActive = saved === realIdx;
+        const isRec = realIdx === recIdx;
+        const badgeClass = { beginner:'badge-beginner', intermediate:'badge-intermediate', advanced:'badge-advanced', hybrid:'badge-hybrid' }[split.badge];
+        const badgeLabel = { beginner:'🟢 Beginner', intermediate:'🔵 Intermediate', advanced:'🔴 Advanced', hybrid:'🟣 Hybrid' }[split.badge];
+        const photoUrl = SPLIT_PHOTOS[realIdx] || SPLIT_PHOTOS[0];
+
+        const dayPills = split.schedule.map((day, i) =>
+          `<span class="day-pill ${day === 'Rest' ? 'rest' : 'train'}">${DAYS[i]}: ${day === 'Rest' ? 'Rest' : day}</span>`
+        ).join('');
+
+        return `
+          <div class="split-card ${isActive ? 'active-split' : ''}" id="splitCard${realIdx}">
+            <div class="split-card-photo">
+              <img class="split-card-photo-img" src="${photoUrl}" alt="${split.name}" loading="lazy" />
+              <div class="split-card-photo-overlay"></div>
+              <div class="split-card-photo-badges">
+                <span class="split-badge ${badgeClass}">${badgeLabel}</span>
+                ${isRec ? '<span class="split-badge" style="background:rgba(253,203,110,0.12);color:#fdcb6e;border:1px solid rgba(253,203,110,0.22);">⭐ For You</span>' : ''}
+                ${isActive ? '<span class="split-badge" style="background:rgba(255,26,94,0.18);color:var(--pink);border:1px solid rgba(255,26,94,0.3);">✓ Active</span>' : ''}
+              </div>
+              <div class="split-num-overlay">${String(realIdx + 1).padStart(2,'0')}</div>
+            </div>
+            <div class="split-card-header">
+              <div class="split-name">${split.name}</div>
+              <div class="split-sub">${split.bestFor}</div>
+              <div class="split-meta" style="margin-top:8px;">
+                <span class="split-tag">📅 ${split.daysLabel}</span>
+              </div>
+            </div>
+            <div class="split-card-schedule">
+              <div class="schedule-label">Weekly Schedule</div>
+              <div class="schedule-days">${dayPills}</div>
+            </div>
+            <div class="split-card-footer">
+              <button class="view-split-btn" onclick="openModal(${realIdx})">View Full Program →</button>
+              <button class="select-split-btn ${isActive ? 'selected' : ''}" onclick="selectSplit(${realIdx}, event)">
+                ${isActive ? '✓ Active' : 'Select'}
+              </button>
+            </div>
+          </div>`;
+      }).join('');
+
+  }
+
+  /* ===== FILTER ===== */
+  function filterSplits(level, tabEl) {
+    document.querySelectorAll('.level-tab').forEach(t => t.classList.remove('active'));
+    tabEl.classList.add('active');
+    renderSplitsGrid(level);
+  }
+
+  /* ===== SELECT SPLIT ===== */
+  function selectSplit(idx, e) {
+    if (e) e.stopPropagation();
+    activeSplitIndex = idx;
+    GS.storage.set('activeSplit_' + currentUser.id, idx);
+
+    // Update dashboard workout plan too
+    const split = SPLITS[idx];
+    currentUser.activeSplit = idx;
+    const users = GS.storage.get('users') || [];
+    const ui = users.findIndex(u => u.id === currentUser.id);
+    if (ui >= 0) users[ui] = { ...users[ui], activeSplit: idx };
+    GS.storage.set('users', users);
+    GS.storage.set('currentUser', { ...currentUser, activeSplit: idx });
+
+    // Update UI
+    document.getElementById('activeProgramBar').style.display = 'flex';
+    document.getElementById('activeProgramName').textContent = split.name;
+    document.getElementById('activeProgramSub').textContent = split.daysLabel + ' · ' + split.bestFor;
+    document.getElementById('recommendedBanner').style.display = 'none';
+
+    renderSplitsGrid(document.querySelector('.level-tab.active')?.textContent.toLowerCase().includes('all') ? 'all' :
+      document.querySelector('.level-tab.active')?.textContent.toLowerCase().split(' ')[1] || 'all');
+
+    GS.showToast(`${split.name} set as your active program! 💪`, '✅');
+  }
+
+  function clearActiveProgram() {
+    GS.storage.remove('activeSplit_' + currentUser.id);
+    activeSplitIndex = null;
+    document.getElementById('activeProgramBar').style.display = 'none';
+    document.getElementById('recommendedBanner').style.display = 'flex';
+    renderSplitsGrid('all');
+    document.querySelectorAll('.level-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+  }
+
+  function openRecommended() {
+    const idx = parseInt(document.getElementById('recBtn').dataset.splitIndex || '0');
+    openModal(idx);
+  }
+
+  /* ===== MODAL ===== */
+  function openModal(splitIdx) {
+    currentModalSplitIndex = splitIdx;
+    const split = SPLITS[splitIdx];
+    const saved = GS.storage.get('activeSplit_' + currentUser.id);
+    const isActive = saved === splitIdx;
+
+    const badgeClass = { beginner:'badge-beginner', intermediate:'badge-intermediate', advanced:'badge-advanced', hybrid:'badge-hybrid' }[split.badge];
+    const badgeLabel = { beginner:'🟢 Beginner', intermediate:'🔵 Intermediate', advanced:'🔴 Advanced', hybrid:'🟣 Hybrid' }[split.badge];
+
+    // Set modal photo
+    const photoBg = document.getElementById('modalPhotoBg');
+    if (photoBg) {
+      photoBg.src = SPLIT_PHOTOS[splitIdx] || SPLIT_PHOTOS[0];
+      photoBg.alt = split.name;
+    }
+
+    document.getElementById('modalBadge').innerHTML = `<span class="split-badge ${badgeClass}">${badgeLabel}</span>`;
+    document.getElementById('modalName').textContent = split.name;
+    document.getElementById('modalDesc').textContent = split.desc;
+    document.getElementById('modalMeta').innerHTML = `
+      <div class="modal-meta-item"><div class="modal-meta-label">Training Days</div><div class="modal-meta-val">${split.daysLabel}</div></div>
+      <div class="modal-meta-item"><div class="modal-meta-label">Best For</div><div class="modal-meta-val">${split.bestFor}</div></div>
+    `;
+
+    // Build day tabs (unique days only)
+    const seen = new Set();
+    const uniqueDays = [];
+    split.program.forEach((day, i) => {
+      const key = day.repeatOf !== undefined ? `repeat_${day.repeatOf}` : `day_${i}`;
+      if (!seen.has(day.title)) {
+        seen.add(day.title);
+        uniqueDays.push({ day, originalIdx: i });
+      }
+    });
+
+    const tabsEl = document.getElementById('modalDayTabs');
+    tabsEl.innerHTML = uniqueDays.map((ud, ti) =>
+      `<button class="modal-day-tab ${ud.day.isRest ? 'rest-tab' : ''} ${ti === 0 ? 'active' : ''}"
+        onclick="switchDay(${ti}, this)">${ud.day.title}</button>`
+    ).join('');
+
+    // Build day content
+    const bodyEl = document.getElementById('modalBody');
+    bodyEl.innerHTML = uniqueDays.map((ud, ti) => {
+      const day = ud.day;
+      if (day.isRest) {
+        return `<div class="day-content ${ti === 0 ? 'active' : ''}">
+          <div class="rest-day-content">
+            <div class="rest-day-emoji">😴</div>
+            <div class="rest-day-title">Rest & Recovery</div>
+            <div class="rest-day-desc">Your muscles grow during rest, not during the workout. Sleep well, eat well, hydrate. Light walking or stretching is fine.</div>
+          </div>
+        </div>`;
+      }
+
+      const exercises = day.repeatOf !== undefined
+        ? split.program[day.repeatOf]?.exercises || []
+        : day.exercises || [];
+
+      const muscleTags = (day.muscles || []).map(m => `<span class="muscle-tag">${m}</span>`).join('');
+
+      const exList = exercises.map((ex, ei) => `
+        <div class="exercise-item" id="ex_${ti}_${ei}">
+          <div class="exercise-header" onclick="toggleExercise('ex_${ti}_${ei}')">
+            <div class="exercise-num">${ei + 1}</div>
+            <div class="exercise-info">
+              <div class="exercise-name">${ex.name}</div>
+              <div class="exercise-sets-reps"><strong>${ex.sets} sets</strong> × <strong>${ex.reps} reps</strong> · Rest: ${ex.rest}</div>
+            </div>
+            <span class="exercise-type-tag type-${ex.type}">${ex.type}</span>
+            <span class="exercise-chevron">▼</span>
+          </div>
+          <div class="exercise-detail">
+            <div class="exercise-detail-inner">
+              <div class="detail-block">
+                <div class="detail-label">How To Do It</div>
+                <div class="detail-val">${ex.how}</div>
+              </div>
+              <div class="detail-block">
+                <div class="detail-label">Sets · Reps · Rest</div>
+                <div class="detail-val">${ex.sets} sets × ${ex.reps} reps<br>Rest: ${ex.rest}</div>
+                <div class="detail-label" style="margin-top:10px;">No Equipment? Use:</div>
+                <div class="detail-alt"><strong>→</strong> ${ex.alt}</div>
+              </div>
+            </div>
+            <!-- HIIT TIMER -->
+            <div class="hiit-timer" id="ht_${ti}_${ei}">
+              <div class="ht-header">
+                <div class="ht-title">⏱ HIIT Timer</div>
+                <div class="ht-set-label" id="htSet_${ti}_${ei}">Set 1 of ${ex.sets}</div>
+              </div>
+              <div class="ht-ring-wrap">
+                <svg class="ht-svg" viewBox="0 0 130 130">
+                  <circle class="ht-ring-bg" cx="65" cy="65" r="54"/>
+                  <circle class="ht-ring-fg" id="htRing_${ti}_${ei}" cx="65" cy="65" r="54"
+                    stroke-dasharray="339.29" stroke-dashoffset="0" stroke="#2ed573"/>
+                </svg>
+                <div class="ht-time-display" id="htTime_${ti}_${ei}">--:--</div>
+                <div class="ht-phase-label work" id="htPhase_${ti}_${ei}">Ready</div>
+              </div>
+              <div class="ht-durations">
+                <div class="ht-dur-block">
+                  <div class="ht-dur-label">💪 Work</div>
+                  <div class="ht-dur-val work-col" id="htWorkVal_${ti}_${ei}">${parseWorkSecs(ex.reps)}s</div>
+                </div>
+                <div class="ht-dur-block">
+                  <div class="ht-dur-label">😮‍💨 Rest</div>
+                  <div class="ht-dur-val rest-col" id="htRestVal_${ti}_${ei}">${parseRestSecs(ex.rest)}s</div>
+                </div>
+                <div class="ht-dur-block">
+                  <div class="ht-dur-label">📋 Sets</div>
+                  <div class="ht-dur-val" id="htSetsVal_${ti}_${ei}">${ex.sets}</div>
+                </div>
+              </div>
+              <div class="ht-controls">
+                <button class="ht-btn" onclick="htReset('${ti}_${ei}')" title="Reset">↺</button>
+                <button class="ht-btn primary" id="htPlayBtn_${ti}_${ei}" onclick="htToggle('${ti}_${ei}')">▶ Start</button>
+                <button class="ht-btn" onclick="htSkip('${ti}_${ei}')" title="Skip phase">⏭</button>
+              </div>
+            </div>
+          </div>
+        </div>`).join('');
+
+      return `<div class="day-content ${ti === 0 ? 'active' : ''}">
+        <div class="day-header">
+          <div class="day-focus-label">Focus</div>
+          <div class="day-focus-title">${day.focus}</div>
+          <div class="day-muscle-tags">${muscleTags}</div>
+        </div>
+        <div class="exercise-list">${exList || '<p style="color:var(--gray-3);font-size:13px;">Same as previous day.</p>'}</div>
+      </div>`;
+    }).join('');
+
+    // Update select button
+    const btn = document.getElementById('modalSelectBtn');
+    btn.textContent = isActive ? '✓ Currently Active' : 'Select This Program →';
+    btn.className = 'modal-select-btn' + (isActive ? ' selected' : '');
+
+    document.getElementById('splitModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    document.getElementById('splitModal').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  function handleModalClick(e) {
+    if (e.target === document.getElementById('splitModal')) closeModal();
+  }
+
+  function switchDay(tabIdx, tabEl) {
+    document.querySelectorAll('.modal-day-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.day-content').forEach(c => c.classList.remove('active'));
+    tabEl.classList.add('active');
+    document.querySelectorAll('.day-content')[tabIdx]?.classList.add('active');
+    // Scroll tab into view smoothly
+    tabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+
+  function toggleExercise(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('open');
+
+    // Init timer display when card first opens
+    if (el.classList.contains('open')) {
+      // Extract key from id: "ex_0_2" → "0_2"
+      const key = id.replace('ex_', '');
+      if (!htState[key]) {
+        htState[key] = htBuildState(key);
+      }
+      const s = htState[key];
+      if (s && s.phase === 'idle') {
+        const mins = String(Math.floor(s.workSecs / 60)).padStart(2, '0');
+        const secs = String(s.workSecs % 60).padStart(2, '0');
+        const timeEl = document.getElementById('htTime_' + key);
+        if (timeEl) timeEl.textContent = mins + ':' + secs;
+        htUpdateUI(s);
+      }
+    }
+  }
+
+  function selectThisSplit() {
+    if (currentModalSplitIndex === null) return;
+    selectSplit(currentModalSplitIndex, null);
+    const btn = document.getElementById('modalSelectBtn');
+    btn.textContent = '✓ Currently Active';
+    btn.classList.add('selected');
+    setTimeout(closeModal, 800);
+  }
+
+  /* ===== LOGOUT / SESSION ===== */
+  function confirmLogout() {
+    if (confirm('Are you sure you want to log out?')) {
+      GS.logout();
+    }
+  }
+  function openSidebar() {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('show');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+  }
+  function extendSession() {
+    clearTimeout(autoLogoutTimer);
+    clearInterval(autoLogoutCountdown);
+    GS.storage.set('loginTime', Date.now());
+    document.getElementById('autoLogoutBar').classList.remove('show');
+    GS.showToast('Session extended by 3 hours ✅', '⏱');
+  }
+
+  /* ===== INIT ===== */
+  document.addEventListener('DOMContentLoaded', () => {
+    renderSidebar();
+    renderRecommended();
+    renderActiveProgramBar();
+    renderSplitsGrid('all');
+  });
+
+
+  /* ═══════════════════════════════════════════════════════════
+     HIIT TIMER ENGINE
+     Each exercise card gets its own independent timer instance
+     stored in htState[key] where key = "ti_ei"
+  ═══════════════════════════════════════════════════════════ */
+
+  const htState = {};   // all timer instances
+  const CIRCUM  = 339.29; // 2π × 54 (SVG circle r=54)
+
+  /* ── Parse helpers ── */
+  function parseWorkSecs(repsStr) {
+    // If string contains "sec" or "min" use that value directly
+    if (/sec/i.test(repsStr)) {
+      const n = parseInt(repsStr);
+      return isNaN(n) ? 45 : n;
+    }
+    if (/min/i.test(repsStr)) {
+      const n = parseFloat(repsStr);
+      return isNaN(n) ? 60 : Math.round(n * 60);
+    }
+    // Otherwise it's a rep number — take the first number × 4 sec
+    const n = parseInt(repsStr);
+    return isNaN(n) ? 45 : n * 4;
+  }
+
+  function parseRestSecs(restStr) {
+    if (!restStr) return 60;
+    // Handle ranges like "90–120 sec" → take lower bound
+    const match = restStr.match(/(\d+)/);
+    if (!match) return 60;
+    const n = parseInt(match[1]);
+    if (/min/i.test(restStr)) return n * 60;
+    return n;
+  }
+
+  /* ── Build a fresh state object ── */
+  function htBuildState(key) {
+    const el    = document.getElementById('ht_' + key);
+    if (!el) return null;
+    const workEl = document.getElementById('htWorkVal_' + key);
+    const restEl = document.getElementById('htRestVal_' + key);
+    const setsEl = document.getElementById('htSetsVal_' + key);
+
+    const workSecs = workEl ? parseInt(workEl.textContent) : 45;
+    const restSecs = restEl ? parseInt(restEl.textContent) : 60;
+    const totalSets = setsEl ? parseInt(setsEl.textContent) : 3;
+
+    return {
+      key,
+      workSecs,
+      restSecs,
+      totalSets,
+      currentSet:  1,
+      phase:       'idle',   // idle | work | rest | done
+      remaining:   workSecs,
+      phaseDur:    workSecs,
+      running:     false,
+      intervalId:  null,
+    };
+  }
+
+  function htGetOrCreate(key) {
+    if (!htState[key]) htState[key] = htBuildState(key);
+    return htState[key];
+  }
+
+  /* ── Web Audio beep ── */
+  let _audioCtx = null;
+  function getAudioCtx() {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return _audioCtx;
+  }
+
+  function htBeep(freq = 880, dur = 0.12, vol = 0.4) {
+    try {
+      const ctx  = getAudioCtx();
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type            = 'sine';
+      gain.gain.setValueAtTime(vol, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + dur);
+    } catch(e) {}
+  }
+
+  function htBeepSequence(type) {
+    // 'start'  — 3 quick high beeps
+    // 'rest'   — 2 medium beeps
+    // 'done'   — 1 long low + 1 long high
+    // 'count'  — 1 soft tick (last 3 sec countdown)
+    if (type === 'start') {
+      htBeep(880, 0.10); setTimeout(() => htBeep(880, 0.10), 130); setTimeout(() => htBeep(1046, 0.18), 260);
+    } else if (type === 'rest') {
+      htBeep(660, 0.15); setTimeout(() => htBeep(660, 0.22), 200);
+    } else if (type === 'done') {
+      htBeep(523, 0.35, 0.5); setTimeout(() => htBeep(880, 0.5, 0.5), 400);
+    } else if (type === 'count') {
+      htBeep(1046, 0.08, 0.25);
+    }
+  }
+
+  function htVibrate(pattern) {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  }
+
+  /* ── UI updater ── */
+  function htUpdateUI(s) {
+    const { key, remaining, phaseDur, phase, currentSet, totalSets, running } = s;
+
+    // Time display
+    const mins = String(Math.floor(remaining / 60)).padStart(2, '0');
+    const secs = String(remaining % 60).padStart(2, '0');
+    const timeEl = document.getElementById('htTime_' + key);
+    if (timeEl) timeEl.textContent = mins + ':' + secs;
+
+    // Ring
+    const ring = document.getElementById('htRing_' + key);
+    if (ring) {
+      const pct    = phaseDur > 0 ? remaining / phaseDur : 0;
+      const offset = CIRCUM * (1 - pct);
+      ring.style.strokeDashoffset = offset;
+
+      // Color: work=green, rest=blue, last 10s of work=red
+      if (phase === 'done') {
+        ring.style.stroke = 'var(--pink)';
+      } else if (phase === 'rest') {
+        ring.style.stroke = '#74b9ff';
+      } else if (phase === 'work' && remaining <= 10) {
+        ring.style.stroke = '#ff6b6b';
+      } else {
+        ring.style.stroke = '#2ed573';
+      }
+    }
+
+    // Phase label
+    const phaseEl = document.getElementById('htPhase_' + key);
+    if (phaseEl) {
+      if (phase === 'idle') { phaseEl.textContent = 'Ready'; phaseEl.className = 'ht-phase-label work'; }
+      else if (phase === 'work') { phaseEl.textContent = '💪 Work'; phaseEl.className = 'ht-phase-label work'; }
+      else if (phase === 'rest') { phaseEl.textContent = '😮‍💨 Rest'; phaseEl.className = 'ht-phase-label rest'; }
+      else if (phase === 'done') { phaseEl.textContent = '✅ Done!'; phaseEl.className = 'ht-phase-label done'; }
+    }
+
+    // Set label
+    const setEl = document.getElementById('htSet_' + key);
+    if (setEl) {
+      if (phase === 'done') {
+        setEl.textContent = 'Complete! 🎉';
+      } else {
+        setEl.textContent = 'Set ' + currentSet + ' of ' + totalSets;
+      }
+    }
+
+    // Play button
+    const btn = document.getElementById('htPlayBtn_' + key);
+    if (btn) {
+      if (phase === 'done') {
+        btn.textContent = '↺ Restart';
+        btn.onclick = () => htReset(key);
+      } else {
+        btn.innerHTML = running ? '⏸ Pause' : '▶ ' + (phase === 'idle' ? 'Start' : 'Resume');
+      }
+    }
+  }
+
+  /* ── Tick ── */
+  function htTick(key) {
+    const s = htState[key];
+    if (!s || !s.running) return;
+
+    // Last-3-seconds countdown beep
+    if (s.phase === 'work' && s.remaining <= 3 && s.remaining > 0) {
+      htBeepSequence('count');
+    }
+
+    s.remaining--;
+
+    if (s.remaining < 0) {
+      // Phase ended
+      if (s.phase === 'work') {
+        // Switch to rest (unless last set)
+        htVibrate([100, 50, 100]);
+        htBeepSequence('rest');
+        if (s.currentSet >= s.totalSets) {
+          // All sets done — skip rest, go straight to done
+          s.running = false;
+          clearInterval(s.intervalId);
+          s.phase = 'done';
+          s.remaining = 0;
+          htVibrate([200, 100, 200, 100, 400]);
+          htBeepSequence('done');
+        } else {
+          s.phase     = 'rest';
+          s.remaining = s.restSecs;
+          s.phaseDur  = s.restSecs;
+        }
+      } else if (s.phase === 'rest') {
+        // Switch to next work set
+        htVibrate([150, 50, 150]);
+        htBeepSequence('start');
+        s.currentSet++;
+        s.phase     = 'work';
+        s.remaining = s.workSecs;
+        s.phaseDur  = s.workSecs;
+      }
+    }
+
+    htUpdateUI(s);
+  }
+
+  /* ── Controls ── */
+  function htToggle(key) {
+    const s = htGetOrCreate(key);
+    if (!s) return;
+
+    if (s.phase === 'done') { htReset(key); return; }
+
+    if (!s.running) {
+      // Start / Resume
+      if (s.phase === 'idle') {
+        s.phase    = 'work';
+        s.phaseDur = s.workSecs;
+        s.remaining = s.workSecs;
+        htBeepSequence('start');
+        htVibrate([80, 40, 80]);
+      }
+      s.running    = true;
+      s.intervalId = setInterval(() => htTick(key), 1000);
+    } else {
+      // Pause
+      s.running = false;
+      clearInterval(s.intervalId);
+    }
+
+    htUpdateUI(s);
+  }
+
+  function htSkip(key) {
+    const s = htState[key];
+    if (!s || s.phase === 'idle' || s.phase === 'done') return;
+
+    clearInterval(s.intervalId);
+    s.running = false;
+
+    if (s.phase === 'work') {
+      if (s.currentSet >= s.totalSets) {
+        s.phase = 'done'; s.remaining = 0;
+        htVibrate([200, 100, 200, 100, 400]);
+        htBeepSequence('done');
+      } else {
+        s.phase     = 'rest';
+        s.remaining = s.restSecs;
+        s.phaseDur  = s.restSecs;
+        htBeepSequence('rest');
+        htVibrate([100, 50, 100]);
+        s.running    = true;
+        s.intervalId = setInterval(() => htTick(key), 1000);
+      }
+    } else if (s.phase === 'rest') {
+      s.currentSet++;
+      s.phase     = 'work';
+      s.remaining = s.workSecs;
+      s.phaseDur  = s.workSecs;
+      htBeepSequence('start');
+      htVibrate([80, 40, 80]);
+      s.running    = true;
+      s.intervalId = setInterval(() => htTick(key), 1000);
+    }
+
+    htUpdateUI(s);
+  }
+
+  function htReset(key) {
+    const s = htState[key];
+    if (s) {
+      clearInterval(s.intervalId);
+    }
+    // Rebuild fresh from DOM values (in case card re-rendered)
+    htState[key] = htBuildState(key);
+    const fresh = htState[key];
+    if (!fresh) return;
+    fresh.remaining = fresh.workSecs;
+    fresh.phaseDur  = fresh.workSecs;
+    // Reset ring to full
+    const ring = document.getElementById('htRing_' + key);
+    if (ring) { ring.style.strokeDashoffset = '0'; ring.style.stroke = '#2ed573'; }
+    // Reset time display
+    const mins = String(Math.floor(fresh.workSecs / 60)).padStart(2, '0');
+    const secs = String(fresh.workSecs % 60).padStart(2, '0');
+    const timeEl = document.getElementById('htTime_' + key);
+    if (timeEl) timeEl.textContent = mins + ':' + secs;
+    htUpdateUI(fresh);
+  }
+
+  /* ── toggleExercise now handles timer init directly (see definition above) ── */
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+  </script>
+</body>
+</html>
