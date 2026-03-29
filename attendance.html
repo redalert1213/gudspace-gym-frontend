@@ -876,56 +876,78 @@
     }
 
     /* ---- TIME IN / OUT ---- */
-    function doTimeIn() {
-      const now     = new Date();
-      sessionStart  = now;
+    async function doTimeIn() {
+      const now = new Date();
+      sessionStart = now;
 
-      const todayStr = now.toDateString();
-      currentUser.attendance = currentUser.attendance || [];
-      // Remove any existing incomplete record for today
-      currentUser.attendance = currentUser.attendance.filter(s => new Date(s.date).toDateString() !== todayStr);
-      currentUser.attendance.push({ date: now.toISOString(), timeIn: now.toISOString(), timeOut: null });
-      saveUser();
+      try {
+        const result = await window.GudAPI.checkIn();
+        if (result.error) throw new Error(result.error);
 
-      setStatusUI('active', 'Currently Timed In');
-      document.getElementById('attTodayIn').textContent = formatTime12(now);
-      document.getElementById('attTodayIn').className   = 'atb-val active';
-      document.getElementById('attTodayDur').textContent = 'Ongoing';
-      document.getElementById('attInBtn').disabled  = true;
-      document.getElementById('attOutBtn').disabled = false;
-      document.getElementById('sessionActiveBadge').classList.add('show');
-      document.getElementById('sessionActiveMsg').textContent = 'You\'re timed in at ' + formatTime12(now);
-      startSessionTimer(now);
-      scheduleAutoTimeOut(now);
+        currentUser.currentAttendanceId = result.attendance.id;
+        currentUser.attendance = currentUser.attendance || [];
+        const todayStr = now.toDateString();
+        currentUser.attendance = currentUser.attendance.filter(s => new Date(s.date).toDateString() !== todayStr);
+        currentUser.attendance.push({ date: now.toISOString(), timeIn: now.toISOString(), timeOut: null, id: result.attendance.id });
+        saveUser();
 
-      window.GudSpace.showToast(`Timed in at ${formatTime12(now)} 💪`, '✅');
+        setStatusUI('active', 'Currently Timed In');
+        document.getElementById('attTodayIn').textContent  = formatTime12(now);
+        document.getElementById('attTodayIn').className    = 'atb-val active';
+        document.getElementById('attTodayDur').textContent = 'Ongoing';
+        document.getElementById('attInBtn').disabled  = true;
+        document.getElementById('attOutBtn').disabled = false;
+        document.getElementById('sessionActiveBadge').classList.add('show');
+        document.getElementById('sessionActiveMsg').textContent = 'You\'re timed in at ' + formatTime12(now);
+        startSessionTimer(now);
+        scheduleAutoTimeOut(now);
+
+        window.GudSpace.showToast(`Timed in at ${formatTime12(now)} 💪`, '✅');
+      } catch(e) {
+        window.GudSpace.showToast('Time In failed. Please try again.', '❌');
+        console.error(e);
+      }
     }
 
-    function doTimeOut() {
+    async function doTimeOut() {
       const now      = new Date();
       const todayStr = now.toDateString();
       const sessions = currentUser.attendance || [];
       const idx      = sessions.findIndex(s => new Date(s.date).toDateString() === todayStr && !s.timeOut);
+      const attId    = currentUser.currentAttendanceId || (idx >= 0 ? sessions[idx].id : null);
 
-      if (idx >= 0) {
-        sessions[idx].timeOut  = now.toISOString();
-        sessions[idx].duration = Math.round((now - new Date(sessions[idx].timeIn)) / 60000);
-        saveUser();
+      if (!attId) {
+        window.GudSpace.showToast('No active session found.', '❌');
+        return;
       }
 
-      updateStreak();
-      clearInterval(sessionTimerInterval);
-      clearTimeout(autoTimeOutTimer);
-      setStatusUI('done', 'Session Complete');
-      document.getElementById('attTodayOut').textContent = formatTime12(now);
-      document.getElementById('attTodayDur').textContent = (sessions[idx]?.duration || 0) + ' min';
-      document.getElementById('attOutBtn').disabled      = true;
-      document.getElementById('sessionActiveBadge').classList.remove('show');
+      try {
+        const result = await window.GudAPI.checkOut(attId);
+        if (result.error) throw new Error(result.error);
 
-      // Refresh stats + table
-      loadStats();
-      renderAttTable();
-      window.GudSpace.showToast(`Timed out at ${formatTime12(now)}. Great session! 🔥`, '✅');
+        if (idx >= 0) {
+          sessions[idx].timeOut  = now.toISOString();
+          sessions[idx].duration = Math.round((now - new Date(sessions[idx].timeIn)) / 60000);
+        }
+        delete currentUser.currentAttendanceId;
+        saveUser();
+
+        updateStreak();
+        clearInterval(sessionTimerInterval);
+        clearTimeout(autoTimeOutTimer);
+        setStatusUI('done', 'Session Complete');
+        document.getElementById('attTodayOut').textContent = formatTime12(now);
+        document.getElementById('attTodayDur').textContent = (sessions[idx]?.duration || 0) + ' min';
+        document.getElementById('attOutBtn').disabled      = true;
+        document.getElementById('sessionActiveBadge').classList.remove('show');
+
+        loadStats();
+        renderAttTable();
+        window.GudSpace.showToast(`Timed out at ${formatTime12(now)}. Great session! 🔥`, '✅');
+      } catch(e) {
+        window.GudSpace.showToast('Time Out failed. Please try again.', '❌');
+        console.error(e);
+      }
     }
 
     function updateStreak() {
