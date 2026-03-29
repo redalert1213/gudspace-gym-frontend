@@ -1428,31 +1428,65 @@
 
   async function fetchAdmUsers() {
     try {
-      const res = await fetch(`${API_BASE}/admin/users`, {
-        headers: { 'Authorization': 'Bearer ' + (window.GudAPI ? window.GudAPI.getToken() : '') }
-      });
+      const token   = window.GudAPI ? window.GudAPI.getToken() : '';
+      const headers = { 'Authorization': 'Bearer ' + token };
+
+      const res  = await fetch(`${API_BASE}/admin/users`, { headers });
       const data = await res.json();
+
       if (Array.isArray(data)) {
-        // Normalize fields to match what the rest of the admin UI expects
-        admUsers = data.map(u => ({
-          ...u,
-          firstName: (u.name || '').split(' ')[0] || '',
-          lastName:  (u.name || '').split(' ').slice(1).join(' ') || '',
-          isAdmin:   u.is_admin || false,
-          profile: {
-            weightKg:  u.weight,
-            heightCm:  u.height,
-            age:       u.age,
-            goal:      u.goal,
-            bmi:       u.weight && u.height ? Math.round((u.weight / Math.pow(u.height/100, 2)) * 10) / 10 : null,
-          },
-          attendance: [],
-          membership: u.membership || null,
-          renewalRequest: u.renewalRequest || false,
-        }));
+        admUsers = data.map(u => {
+          // /api/admin/users already attaches attendance[] per user
+          // with fields: id, date(=check_in), timeIn, timeOut, duration, autoTimeout
+          const userAtt = (u.attendance || []).map(a => ({
+            id:          a.id,
+            date:        a.timeIn  || a.date,
+            timeIn:      a.timeIn  || a.date,
+            timeOut:     a.timeOut || null,
+            duration:    a.duration != null
+              ? a.duration
+              : (a.timeOut
+                  ? Math.round((new Date(a.timeOut) - new Date(a.timeIn || a.date)) / 60000)
+                  : null),
+            autoTimeout: a.autoTimeout || false,
+          }));
+
+          const bmiRaw = u.weight && u.height
+            ? Math.round((u.weight / Math.pow(u.height / 100, 2)) * 10) / 10
+            : null;
+
+          let bmiClass = '';
+          if (bmiRaw) {
+            if      (bmiRaw < 18.5) bmiClass = 'Underweight';
+            else if (bmiRaw < 25)   bmiClass = 'Normal';
+            else if (bmiRaw < 30)   bmiClass = 'Overweight';
+            else                    bmiClass = 'Obese';
+          }
+
+          return {
+            ...u,
+            firstName:      (u.name || '').split(' ')[0] || '',
+            lastName:       (u.name || '').split(' ').slice(1).join(' ') || '',
+            isAdmin:        u.is_admin || false,
+            profile: {
+              weightKg: u.weight,
+              heightCm: u.height,
+              age:      u.age,
+              goal:     u.goal,
+              bmi:      bmiRaw,
+              bmiClass,
+              calories: u.calories || null,
+              protein:  u.protein  || null,
+              carbs:    u.carbs    || null,
+            },
+            attendance:     userAtt,
+            membership:     u.membership     || null,
+            renewalRequest: u.renewalRequest || false,
+          };
+        });
       }
     } catch(e) {
-      console.warn('Could not fetch users from API, using empty list.', e);
+      console.warn('Could not fetch users from API:', e);
       admUsers = [];
     }
   }
@@ -1546,6 +1580,14 @@
     renderAttendance();
     renderTimeouts();
     renderAdminNotifications();
+
+    // Auto-refresh every 30 seconds so "Currently In Gym" stays live
+    setInterval(async () => {
+      await fetchAdmUsers();
+      if (activeTab === 'overview')    renderOverview();
+      if (activeTab === 'members')     renderMembers();
+      if (activeTab === 'attendance')  renderAttendance();
+    }, 30000);
   }
 
   function adminLogout() {
@@ -1563,12 +1605,14 @@
       document.getElementById('view-' + t).style.display = t === tab ? 'block' : 'none';
       document.getElementById('tab-' + t).classList.toggle('active', t === tab);
     });
-    if (tab === 'members' || tab === 'overview' || tab === 'memberships') await fetchAdmUsers();
+    // Always refetch fresh data when switching to data tabs
+    if (['overview','members','memberships','attendance'].includes(tab)) await fetchAdmUsers();
     if (tab === 'progress')    renderProgressPhotos();
     if (tab === 'announce')    renderAnnouncements();
     if (tab === 'messages')    renderMsgMemberList();
     if (tab === 'memberships') renderMemberships();
     if (tab === 'members')     renderMembers();
+    if (tab === 'attendance')  renderAttendance();
     if (tab === 'overview')    renderOverview();
   }
 
