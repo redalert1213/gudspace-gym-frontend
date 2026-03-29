@@ -1639,6 +1639,7 @@
   </div><!-- end page-main -->
 
   <script src="script.js"></script>
+  <script src="api.js"></script>
   <script>
     'use strict';
 
@@ -1743,65 +1744,51 @@
     const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
     /* ---- INIT ---- */
-    document.addEventListener('DOMContentLoaded', () => {
-      currentUser = window.GudSpace.storage.get('currentUser');
-      if (!currentUser) { window.location.href = 'login.html'; return; }
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = window.GudSpace.requireAuth();
+      if (!currentUser) return;
+      try {
+        const res = await window.GudAPI.getProfile();
+        if (res.user) {
+          currentUser = { ...currentUser, ...res.user };
+          window.GudSpace.storage.set('currentUser', currentUser);
+        }
+      } catch(e) { console.warn('Could not refresh profile.'); }
       initPage();
     });
 
-    function initPage() {
+    async function initPage() {
       loadSidebar();
       loadTopBar();
-      recalcStreakOnLoad();
       loadBMI();
       loadMacros();
-      loadWater();
+      await loadWater();
       renderMealCards('all');
       startAutoLogoutTimer();
     }
 
-    function recalcStreakOnLoad() {
-      const attended = new Set(
-        (currentUser.attendance || [])
-          .filter(s => s.timeIn)
-          .map(s => new Date(s.date).toDateString())
-      );
-      const today = new Date();
-      let streak = 0;
-      for (let i = 0; i < 365; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        if (attended.has(d.toDateString())) streak++;
-        else break;
-      }
-      if (streak !== (currentUser.streak || 0)) {
-        currentUser.streak = streak;
-        saveUser();
-      }
-      document.getElementById('topStreakNum').textContent = streak;
-    }
+
 
     /* ---- SIDEBAR ---- */
     function loadSidebar() {
-      const u = currentUser;
-      const p = u.profile || {};
-      const name = u.firstName || u.name || 'Champ';
+      const u    = currentUser;
+      const name = u.name || 'Champ';
 
       document.getElementById('sbAvatarLetter').textContent = name.charAt(0).toUpperCase();
-      document.getElementById('sbName').textContent = ((u.firstName || '') + ' ' + (u.lastName || '')).trim().toUpperCase();
+      document.getElementById('sbName').textContent = name.toUpperCase();
 
       const genderLabel = { male:'Male', female:'Female', 'non-binary':'Non-Binary', 'prefer-not-to-say':'—' };
-      document.getElementById('sbMeta').textContent = `${genderLabel[p.gender] || '—'} · ${p.weightKg || '--'} kg · ${p.heightCm || '--'} cm`;
+      document.getElementById('sbMeta').textContent = `${genderLabel[u.gender] || '—'} · ${u.weight || '--'} kg · ${u.height || '--'} cm`;
 
       const goalMap = {
         'build-strength':'Build Strength','lose-weight':'Lose Weight','get-lean':'Get Lean',
         'get-in-shape':'Get in Shape','build-muscle':'Build Muscle','overall-fitness':'Overall Fitness'
       };
-      document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalMap[p.goal] || 'Set Goal');
+      document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalMap[u.goal] || 'Set Goal');
 
-      if (u.photoUrl) {
+      if (u.avatar_url) {
         const img = document.getElementById('sbAvatarImg');
-        img.src = u.photoUrl;
+        img.src = u.avatar_url;
         img.style.display = 'block';
       }
     }
@@ -1811,30 +1798,32 @@
       const now = new Date();
       const dateStr = DAYS[now.getDay()] + ', ' + MONTHS[now.getMonth()] + ' ' + now.getDate();
       document.getElementById('topDate').textContent = dateStr.toUpperCase();
-      document.getElementById('topStreakNum').textContent = currentUser.streak || 0;
+      document.getElementById('topStreakNum').textContent = '—';
     }
 
     /* ---- BMI ---- */
     function loadBMI() {
-      const p = currentUser.profile || {};
-      if (!p.bmi) return;
+      const u = currentUser;
+      if (!u.weight || !u.height) return;
 
-      const bmi = parseFloat(p.bmi);
+      const bmiResult = window.GudSpace.calculateBMI(u.weight, u.height);
+      const bmi = bmiResult.bmi;
+
       document.getElementById('bmiRingValue').textContent = bmi;
-      document.getElementById('bmiWt').textContent  = (p.weightKg || '--') + ' kg';
-      document.getElementById('bmiHt').textContent  = (p.heightCm || '--') + ' cm';
-      document.getElementById('bmiAge').textContent = (p.age || '--') + ' y';
+      document.getElementById('bmiWt').textContent  = (u.weight || '--') + ' kg';
+      document.getElementById('bmiHt').textContent  = (u.height || '--') + ' cm';
+      document.getElementById('bmiAge').textContent = (u.age    || '--') + ' y';
 
-      const cls    = (p.bmiClass || '').toLowerCase();
+      const cls    = bmiResult.classification.toLowerCase();
       const clsKey = cls.includes('normal') ? 'normal' : cls.includes('over') ? 'overweight' : cls.includes('obese') ? 'obese' : 'underweight';
       const badge  = document.getElementById('bmiClassBadge');
-      badge.textContent  = p.bmiClass || '--';
-      badge.className    = 'bmi-class-badge ' + clsKey;
+      badge.textContent = bmiResult.classification;
+      badge.className   = 'bmi-class-badge ' + clsKey;
 
       const colors = { normal:'#2ed573', underweight:'#74b9ff', overweight:'#fdcb6e', obese:'#ff6b6b' };
       const ring = document.getElementById('bmiRingFg');
       ring.style.stroke = colors[clsKey] || '#FF1A5E';
-      const pct    = Math.min(Math.max((bmi - 10) / 30, 0), 1);
+      const pct = Math.min(Math.max((bmi - 10) / 30, 0), 1);
       setTimeout(() => { ring.style.strokeDashoffset = 314 - (314 * pct); }, 100);
 
       const markerPct = Math.min(Math.max((bmi - 15) / 25, 0), 1) * 100;
@@ -1843,26 +1832,30 @@
 
     /* ---- MACROS ---- */
     function loadMacros() {
-      const p = currentUser.profile || {};
-      if (!p.calories) return;
+      const u = currentUser;
+      if (!u.weight || !u.height || !u.age || !u.gender) return;
+
+      // Calculate live from backend profile data
+      const nut = window.GudSpace.calculateNutrition({
+        gender: u.gender, age: u.age, weightKg: u.weight, heightCm: u.height
+      });
 
       const goalMap = {
         'build-muscle':'Build Muscle','lose-weight':'Lose Weight','get-lean':'Get Lean',
         'build-strength':'Build Strength','get-in-shape':'Get in Shape','overall-fitness':'Overall Fitness'
       };
-      document.getElementById('macroGoalNote').textContent = 'Calculated for goal: ' + (goalMap[p.goal] || 'Overall Fitness');
+      document.getElementById('macroGoalNote').textContent = 'Calculated for goal: ' + (goalMap[u.goal] || 'Overall Fitness');
 
-      // Start values at 0, then animate up with staggered delay
       document.getElementById('macroCal').textContent  = '0';
       document.getElementById('macroProt').textContent = '0';
       document.getElementById('macroCarb').textContent = '0';
       document.getElementById('macroFat').textContent  = '0';
 
       const targets = [
-        { elId: 'macroCal',  ringId: 'macroCalRing',  val: p.calories,         max: 4000, delay: 100  },
-        { elId: 'macroProt', ringId: 'macroProtRing', val: p.protein || 0,     max: 300,  delay: 220  },
-        { elId: 'macroCarb', ringId: 'macroCarbRing', val: p.carbs   || 0,     max: 300,  delay: 340  },
-        { elId: 'macroFat',  ringId: 'macroFatRing',  val: p.fat     || 0,     max: 120,  delay: 460  },
+        { elId: 'macroCal',  ringId: 'macroCalRing',  val: nut.tdee,    max: 4000, delay: 100 },
+        { elId: 'macroProt', ringId: 'macroProtRing', val: nut.protein, max: 300,  delay: 220 },
+        { elId: 'macroCarb', ringId: 'macroCarbRing', val: nut.carbs,   max: 300,  delay: 340 },
+        { elId: 'macroFat',  ringId: 'macroFatRing',  val: nut.fat,     max: 120,  delay: 460 },
       ];
 
       targets.forEach(({ elId, ringId, val, max, delay }) => {
@@ -1897,17 +1890,20 @@
     }
 
     /* ---- WATER ---- */
-    function loadWater() {
-      const today = new Date().toDateString();
-      waterCount = window.GudSpace.storage.get('water_' + currentUser.id + '_' + today) || 0;
+    async function loadWater() {
+      try {
+        const res = await window.GudAPI.getWater();
+        waterCount = res.glasses || 0;
+      } catch(e) { waterCount = 0; }
       renderWater();
     }
 
-    function changeWater(delta) {
+    async function changeWater(delta) {
       waterCount = Math.min(MAX_GLASSES, Math.max(0, waterCount + delta));
       renderWater();
-      const today = new Date().toDateString();
-      window.GudSpace.storage.set('water_' + currentUser.id + '_' + today, waterCount);
+      try {
+        await window.GudAPI.updateWater(waterCount);
+      } catch(e) { console.warn('Could not sync water.'); }
       if (waterCount === MAX_GLASSES) window.GudSpace.showToast('Hydration goal reached! 💧', '🎉');
     }
 
@@ -2074,19 +2070,29 @@
 
     /* ---- PHOTO UPLOAD ---- */
     function triggerPhotoUpload() { document.getElementById('photoInput').click(); }
-    function handlePhotoUpload(e) {
+    async function handlePhotoUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
+      // Instant preview
       const reader = new FileReader();
       reader.onload = ev => {
         const img = document.getElementById('sbAvatarImg');
-        img.src = ev.target.result;
-        img.style.display = 'block';
-        currentUser.photoUrl = ev.target.result;
-        saveUser();
-        window.GudSpace.showToast('Profile photo updated! 📸', '✅');
+        img.src = ev.target.result; img.style.display = 'block';
       };
       reader.readAsDataURL(file);
+      window.GudSpace.showToast('Uploading photo...', '⏳', 8000);
+      try {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        const res = await window.GudAPI.uploadAvatar(formData);
+        if (res.error) { window.GudSpace.showToast(res.error, '❌'); }
+        else {
+          currentUser.avatar_url = res.avatar_url;
+          window.GudSpace.storage.set('currentUser', currentUser);
+          document.getElementById('sbAvatarImg').src = res.avatar_url;
+          window.GudSpace.showToast('Profile photo updated! 📸', '✅');
+        }
+      } catch(err) { window.GudSpace.showToast('Photo upload failed. Try again.', '❌'); }
     }
 
     /* ---- LOGOUT ---- */
@@ -2129,10 +2135,6 @@
 
     /* ---- HELPER ---- */
     function saveUser() {
-      const users = window.GudSpace.storage.get('users') || [];
-      const idx   = users.findIndex(u => u.id === currentUser.id);
-      if (idx >= 0) users[idx] = currentUser;
-      window.GudSpace.storage.set('users', users);
       window.GudSpace.storage.set('currentUser', currentUser);
     }
 
@@ -2241,11 +2243,12 @@
     }
 
     function ftRender() {
-      const p             = currentUser.profile || {};
-      const targetKcal    = p.calories || 2000;
-      const targetProtein = p.protein  || 150;
-      const targetCarbs   = p.carbs    || 200;
-      const targetFat     = p.fat      || Math.round(targetKcal * 0.25 / 9);
+      const u = currentUser;
+      let targetKcal = 2000, targetProtein = 150, targetCarbs = 200, targetFat = 55;
+      if (u.weight && u.height && u.age && u.gender) {
+        const nut = window.GudSpace.calculateNutrition({ gender: u.gender, age: u.age, weightKg: u.weight, heightCm: u.height });
+        targetKcal = nut.tdee; targetProtein = nut.protein; targetCarbs = nut.carbs; targetFat = nut.fat;
+      }
 
       const consumed = ftTodayLog.reduce((acc, e) => ({
         kcal:    acc.kcal    + e.kcal,
@@ -2352,11 +2355,12 @@
     /* ===== ENHANCED ftRender — rings + badges + grouped list ===== */
     const _origFtRender = ftRender;
     ftRender = function() {
-      const p             = currentUser.profile || {};
-      const targetKcal    = p.calories || 2000;
-      const targetProtein = p.protein  || 150;
-      const targetCarbs   = p.carbs    || 200;
-      const targetFat     = p.fat      || Math.round(targetKcal * 0.25 / 9);
+      const u = currentUser;
+      let targetKcal = 2000, targetProtein = 150, targetCarbs = 200, targetFat = 55;
+      if (u.weight && u.height && u.age && u.gender) {
+        const nut = window.GudSpace.calculateNutrition({ gender: u.gender, age: u.age, weightKg: u.weight, heightCm: u.height });
+        targetKcal = nut.tdee; targetProtein = nut.protein; targetCarbs = nut.carbs; targetFat = nut.fat;
+      }
 
       const consumed = ftTodayLog.reduce((acc, e) => ({
         kcal:    acc.kcal    + e.kcal,
@@ -2497,11 +2501,12 @@
     let ftAiLastLog = '';
 
     function ftAskAI() {
-      const p = currentUser.profile || {};
-      const targetKcal    = p.calories || 2000;
-      const targetProtein = p.protein  || 150;
-      const targetCarbs   = p.carbs    || 200;
-      const targetFat     = p.fat      || Math.round(targetKcal * 0.25 / 9);
+      const u = currentUser;
+      let targetKcal = 2000, targetProtein = 150, targetCarbs = 200, targetFat = 55;
+      if (u.weight && u.height && u.age && u.gender) {
+        const nut = window.GudSpace.calculateNutrition({ gender: u.gender, age: u.age, weightKg: u.weight, heightCm: u.height });
+        targetKcal = nut.tdee; targetProtein = nut.protein; targetCarbs = nut.carbs; targetFat = nut.fat;
+      }
       const consumed = ftTodayLog.reduce((acc, e) => ({
         kcal: acc.kcal+e.kcal, protein: acc.protein+e.protein,
         carbs: acc.carbs+e.carbs, fat: acc.fat+e.fat
@@ -2515,22 +2520,25 @@
 Today's food log: ${logSummary}
 Consumed: ${Math.round(consumed.kcal)} kcal, ${consumed.protein}g protein, ${consumed.carbs}g carbs, ${consumed.fat}g fat.
 Daily targets: ${targetKcal} kcal, ${targetProtein}g protein, ${targetCarbs}g carbs, ${targetFat}g fat.
-Member goal: ${p.goal || 'overall fitness'}.
+Member goal: ${u.goal || 'overall fitness'}.
 Give 2-3 specific, practical Filipino or common food suggestions to fill the remaining macros. Be concise, friendly, and specific (include kcal/protein amounts). Max 4 sentences.`;
 
       ftCallAI(prompt);
     }
 
     function ftAskAIPrompt(customPrompt) {
-      const p = currentUser.profile || {};
-      const targetKcal    = p.calories || 2000;
-      const targetProtein = p.protein  || 150;
+      const u = currentUser;
+      let targetKcal = 2000, targetProtein = 150;
+      if (u.weight && u.height && u.age && u.gender) {
+        const nut = window.GudSpace.calculateNutrition({ gender: u.gender, age: u.age, weightKg: u.weight, heightCm: u.height });
+        targetKcal = nut.tdee; targetProtein = nut.protein;
+      }
       const consumed = ftTodayLog.reduce((acc, e) => ({
         kcal: acc.kcal+e.kcal, protein: acc.protein+e.protein,
         carbs: acc.carbs+e.carbs, fat: acc.fat+e.fat
       }), { kcal:0, protein:0, carbs:0, fat:0 });
 
-      const context = `Context: Filipino gym member. Consumed today: ${Math.round(consumed.kcal)}/${targetKcal} kcal, ${consumed.protein}/${targetProtein}g protein. Goal: ${p.goal || 'overall fitness'}. `;
+      const context = `Context: Filipino gym member. Consumed today: ${Math.round(consumed.kcal)}/${targetKcal} kcal, ${consumed.protein}/${targetProtein}g protein. Goal: ${u.goal || 'overall fitness'}. `;
       ftCallAI(context + customPrompt + ' Be concise and specific, max 3-4 sentences.');
     }
 
