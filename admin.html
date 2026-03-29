@@ -1409,6 +1409,7 @@
   </div>
 
   <script src="script.js"></script>
+  <script src="api.js"></script>
   <script>
   /* =====================================================
      ADMIN PORTAL LOGIC
@@ -1431,13 +1432,15 @@
       const token   = window.GudAPI ? window.GudAPI.getToken() : '';
       const headers = { 'Authorization': 'Bearer ' + token };
 
+      // Fetch users
       const res  = await fetch(`${API_BASE}/admin/users`, { headers });
       const data = await res.json();
 
+      // Fetch all memberships
+      const memRes   = await fetch(`${API_BASE}/memberships/admin/assign`, { headers }).catch(() => null);
+
       if (Array.isArray(data)) {
         admUsers = data.map(u => {
-          // /api/admin/users already attaches attendance[] per user
-          // with fields: id, date(=check_in), timeIn, timeOut, duration, autoTimeout
           const userAtt = (u.attendance || []).map(a => ({
             id:          a.id,
             date:        a.timeIn  || a.date,
@@ -1463,11 +1466,24 @@
             else                    bmiClass = 'Obese';
           }
 
+          // membership from Supabase — stored in u.membership if admin/users returns it
+          // otherwise null
+          const membership = u.membership
+            ? {
+                name:       u.membership.name,
+                price:      u.membership.price,
+                startDate:  u.membership.start_date,
+                endDate:    u.membership.end_date,
+                assignedAt: u.membership.assigned_at,
+              }
+            : null;
+
           return {
             ...u,
             firstName:      (u.name || '').split(' ')[0] || '',
             lastName:       (u.name || '').split(' ').slice(1).join(' ') || '',
             isAdmin:        u.is_admin || false,
+            avatar_url:     u.avatar_url || null,
             profile: {
               weightKg: u.weight,
               heightCm: u.height,
@@ -1480,8 +1496,8 @@
               carbs:    u.carbs    || null,
             },
             attendance:     userAtt,
-            membership:     u.membership     || null,
-            renewalRequest: u.renewalRequest || false,
+            membership,
+            renewalRequest: u.renewal_request || false,
           };
         });
       }
@@ -1719,7 +1735,7 @@
         .map(s => ({ ...s, user: u }))
     );
     const currentlyIn = todayAtt.filter(s => s.timeIn && !s.timeOut);
-    const timeouts = window.GudSpace.storage.get('autoTimeouts') || [];
+    const timeoutCount = admUsers.flatMap(u => (u.attendance || []).filter(s => s.autoTimeout)).length;
 
     // Stats
     document.getElementById('admStatsRow').innerHTML = `
@@ -1743,7 +1759,7 @@
       </div>
       <div class="adm-stat-card">
         <div class="asc-icon" style="background:rgba(255,59,48,0.08);">⏰</div>
-        <div class="asc-value" style="color:#ff6b6b;">${timeouts.length}</div>
+        <div class="asc-value" style="color:#ff6b6b;">${timeoutCount}</div>
         <div class="asc-label">Auto Timeouts</div>
         <div class="asc-change neutral">Total recorded</div>
       </div>
@@ -1976,8 +1992,14 @@
 
   /* ---- AUTO TIMEOUTS LOG ---- */
   function renderTimeouts() {
-    const timeouts = window.GudSpace.storage.get('autoTimeouts') || [];
     const tbody = document.getElementById('timeoutsTbody');
+
+    // Get auto timeouts from attendance data — sessions with auto_timeout = true
+    const timeouts = admUsers.flatMap(u =>
+      (u.attendance || [])
+        .filter(s => s.autoTimeout)
+        .map(s => ({ ...s, userName: u.name || u.email, userId: u.email }))
+    ).sort((a, b) => new Date(b.timeOut) - new Date(a.timeOut));
 
     if (!timeouts.length) {
       tbody.innerHTML = `<tr><td colspan="4"><div class="adm-empty">
@@ -1988,27 +2010,24 @@
       return;
     }
 
-    tbody.innerHTML = [...timeouts].reverse().map(t => {
-      const d = new Date(t.timeoutAt);
-      return `
-        <tr class="timeout-row">
-          <td>
-            <div class="member-cell">
-              <div class="member-av" style="background:#ff6b6b;width:32px;height:32px;font-size:13px;">
-                ${(t.name || '?').charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <div class="member-name">${(t.name || 'Unknown').toUpperCase()}</div>
-                <div class="member-email">${t.userId || ''}</div>
-              </div>
+    tbody.innerHTML = timeouts.map(t => `
+      <tr class="timeout-row">
+        <td>
+          <div class="member-cell">
+            <div class="member-av" style="background:#ff6b6b;width:32px;height:32px;font-size:13px;">
+              ${(t.userName || '?').charAt(0).toUpperCase()}
             </div>
-          </td>
-          <td>${fmtDate(t.timeoutAt)}</td>
-          <td style="font-family:var(--font-cond);font-weight:700;color:#ff6b6b;">${fmt12(t.timeoutAt)}</td>
-          <td><span class="status-badge auto">⏰ Auto Timeout (3h)</span></td>
-        </tr>
-      `;
-    }).join('');
+            <div>
+              <div class="member-name">${(t.userName || 'Unknown').toUpperCase()}</div>
+              <div class="member-email">${t.userId || ''}</div>
+            </div>
+          </div>
+        </td>
+        <td>${fmtDate(t.timeOut)}</td>
+        <td style="font-family:var(--font-cond);font-weight:700;color:#ff6b6b;">${fmt12(t.timeOut)}</td>
+        <td><span class="status-badge auto">⏰ Auto Timeout (3h)</span></td>
+      </tr>
+    `).join('');
   }
 
   /* ---- MEMBER DETAIL MODAL ---- */
@@ -2119,11 +2138,9 @@
   }
 
   /* ============================================================
-     ANNOUNCEMENTS
+     ANNOUNCEMENTS — API
   ============================================================ */
-  const ANN_KEY = 'announcements';
-
-  function postAnnouncement() {
+  async function postAnnouncement() {
     const title    = document.getElementById('annTitle').value.trim();
     const body     = document.getElementById('annBody').value.trim();
     const priority = document.getElementById('annPriority').value;
@@ -2133,89 +2150,106 @@
       window.GudSpace.showToast('Please fill in both Title and Message.', '⚠️'); return;
     }
 
-    const ann = {
-      id:       Date.now(),
-      title,
-      body,
-      priority,
-      postedAt:  new Date().toISOString(),
-      expiresAt: expDays > 0 ? new Date(Date.now() + expDays * 86400000).toISOString() : null,
-    };
+    const expires_at = expDays > 0 ? new Date(Date.now() + expDays * 86400000).toISOString() : null;
 
-    const list = window.GudSpace.storage.get(ANN_KEY) || [];
-    list.unshift(ann);
-    window.GudSpace.storage.set(ANN_KEY, list);
-
-    document.getElementById('annTitle').value = '';
-    document.getElementById('annBody').value  = '';
-    window.GudSpace.showToast('Announcement posted!', '📢');
-    renderAnnouncements();
-  }
-
-  function deleteAnnouncement(id) {
-    const list = (window.GudSpace.storage.get(ANN_KEY) || []).filter(a => a.id !== id);
-    window.GudSpace.storage.set(ANN_KEY, list);
-    renderAnnouncements();
-  }
-
-  function clearExpiredAnnouncements() {
-    const now  = Date.now();
-    const list = (window.GudSpace.storage.get(ANN_KEY) || []).filter(a => !a.expiresAt || new Date(a.expiresAt).getTime() > now);
-    window.GudSpace.storage.set(ANN_KEY, list);
-    window.GudSpace.showToast('Expired announcements cleared.', '🗑');
-    renderAnnouncements();
-  }
-
-  function renderAnnouncements() {
-    const list    = window.GudSpace.storage.get(ANN_KEY) || [];
-    const el      = document.getElementById('annList');
-    if (!el) return;
-    const now     = Date.now();
-    const ICONS   = { urgent:'🚨', warning:'⚠️', info:'ℹ️' };
-
-    if (!list.length) {
-      el.innerHTML = '<div class="ann-empty">No announcements posted yet.</div>';
-      return;
+    try {
+      const res = await window.GudAPI.postAnnouncement({ title, body, priority, expires_at });
+      if (res.error) { window.GudSpace.showToast(res.error, '❌'); return; }
+      document.getElementById('annTitle').value = '';
+      document.getElementById('annBody').value  = '';
+      window.GudSpace.showToast('Announcement posted!', '📢');
+      renderAnnouncements();
+    } catch (err) {
+      console.error('postAnnouncement error:', err);
+      window.GudSpace.showToast('Failed to post announcement.', '❌');
     }
+  }
 
-    el.innerHTML = list.map(a => {
-      const isExpired = a.expiresAt && new Date(a.expiresAt).getTime() <= now;
-      const expiryStr = a.expiresAt
-        ? (isExpired ? 'Expired' : 'Expires ' + new Date(a.expiresAt).toLocaleDateString('en-PH', { month:'short', day:'numeric' }))
-        : 'Never expires';
-      const postedStr = new Date(a.postedAt).toLocaleDateString('en-PH', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-      return `
-        <div class="ann-item priority-${a.priority}${isExpired ? ' style="opacity:.5"' : ''}">
-          <div class="ann-priority-badge">${ICONS[a.priority] || 'ℹ️'}</div>
-          <div class="ann-content">
-            <div class="ann-title">${a.title}</div>
-            <div class="ann-body">${a.body}</div>
-            <div class="ann-meta">
-              <span class="ann-meta-tag">📅 ${postedStr}</span>
-              <span class="ann-meta-tag ${isExpired ? 'expired' : 'expiry'}">${expiryStr}</span>
-              <span class="ann-meta-tag" style="text-transform:capitalize;">${a.priority}</span>
+  async function deleteAnnouncement(id) {
+    try {
+      await window.GudAPI.deleteAnnouncement(id);
+      renderAnnouncements();
+    } catch (err) {
+      console.error('deleteAnnouncement error:', err);
+    }
+  }
+
+  async function clearExpiredAnnouncements() {
+    try {
+      const res  = await window.GudAPI.getAnnouncements();
+      const list = res.announcements || [];
+      const now  = Date.now();
+      const expired = list.filter(a => a.expires_at && new Date(a.expires_at).getTime() <= now);
+      await Promise.all(expired.map(a => window.GudAPI.deleteAnnouncement(a.id)));
+      window.GudSpace.showToast('Expired announcements cleared.', '🗑');
+      renderAnnouncements();
+    } catch (err) {
+      console.error('clearExpiredAnnouncements error:', err);
+    }
+  }
+
+  async function renderAnnouncements() {
+    const el = document.getElementById('annList');
+    if (!el) return;
+    el.innerHTML = '<div class="ann-empty">Loading...</div>';
+
+    try {
+      const res  = await window.GudAPI.getAnnouncements();
+      const list = res.announcements || [];
+      const now  = Date.now();
+      const ICONS = { urgent:'🚨', warning:'⚠️', info:'ℹ️' };
+
+      if (!list.length) {
+        el.innerHTML = '<div class="ann-empty">No announcements posted yet.</div>';
+        return;
+      }
+
+      el.innerHTML = list.map(a => {
+        const isExpired = a.expires_at && new Date(a.expires_at).getTime() <= now;
+        const expiryStr = a.expires_at
+          ? (isExpired ? 'Expired' : 'Expires ' + new Date(a.expires_at).toLocaleDateString('en-PH', { month:'short', day:'numeric' }))
+          : 'Never expires';
+        const postedStr = new Date(a.created_at).toLocaleDateString('en-PH', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+        return `
+          <div class="ann-item priority-${a.priority}" ${isExpired ? 'style="opacity:.5"' : ''}>
+            <div class="ann-priority-badge">${ICONS[a.priority] || 'ℹ️'}</div>
+            <div class="ann-content">
+              <div class="ann-title">${a.title}</div>
+              <div class="ann-body">${a.body}</div>
+              <div class="ann-meta">
+                <span class="ann-meta-tag">📅 ${postedStr}</span>
+                <span class="ann-meta-tag ${isExpired ? 'expired' : 'expiry'}">${expiryStr}</span>
+                <span class="ann-meta-tag" style="text-transform:capitalize;">${a.priority}</span>
+              </div>
             </div>
-          </div>
-          <button class="ann-delete-btn" onclick="deleteAnnouncement(${a.id})" title="Delete">✕</button>
-        </div>`;
-    }).join('');
+            <button class="ann-delete-btn" onclick="deleteAnnouncement('${a.id}')" title="Delete">✕</button>
+          </div>`;
+      }).join('');
+    } catch (err) {
+      console.error('renderAnnouncements error:', err);
+      el.innerHTML = '<div class="ann-empty">Failed to load announcements.</div>';
+    }
   }
 
   /* ============================================================
-     DIRECT MESSAGES
+     DIRECT MESSAGES — API
   ============================================================ */
-  const MSG_KEY   = 'dm_messages';
-  let activeMsgId = null;
+  let activeMsgId   = null;
+  let msgThreads    = {}; // cache: { user_id: { user, messages: [] } }
 
-  function getMsgs() { return window.GudSpace.storage.get(MSG_KEY) || {}; }
-  function saveMsgs(msgs) { window.GudSpace.storage.set(MSG_KEY, msgs); }
-
-  function renderMsgMemberList() {
+  async function renderMsgMemberList() {
     const users  = admUsers.filter(u => !u.isAdmin);
-    const msgs   = getMsgs();
     const query  = (document.getElementById('msgMemberSearch')?.value || '').toLowerCase();
     const el     = document.getElementById('msgMemberList');
     if (!el) return;
+
+    // Fetch all threads from API
+    try {
+      const res  = await window.GudAPI.adminGetAllThreads();
+      msgThreads = res.threads || {};
+    } catch (err) {
+      console.error('renderMsgMemberList error:', err);
+    }
 
     const filtered = users.filter(u => (u.name || u.email || '').toLowerCase().includes(query));
     if (!filtered.length) {
@@ -2224,17 +2258,18 @@
     }
 
     el.innerHTML = filtered.map(u => {
-      const thread   = msgs[u.id] || [];
-      const last     = thread[thread.length - 1];
-      const preview  = last ? last.text.substring(0, 36) + (last.text.length > 36 ? '…' : '') : 'No messages yet';
-      const unread   = thread.some(m => m.from === 'member' && !m.read);
-      const initials = (u.name || u.email || '?').charAt(0).toUpperCase();
-      const avatar   = u.photoURL
-        ? `<img src="${u.photoURL}" alt="" />`
-        : initials;
+      const thread  = msgThreads[u.id];
+      const msgs    = thread?.messages || [];
+      const last    = msgs[msgs.length - 1];
+      const preview = last ? last.text.substring(0, 36) + (last.text.length > 36 ? '…' : '') : 'No messages yet';
+      const unread  = msgs.some(m => m.from_role === 'member' && !m.is_read);
+      const initial = (u.name || u.email || '?').charAt(0).toUpperCase();
+      const avatarHTML = u.avatar_url
+        ? `<img src="${u.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`
+        : initial;
       return `
         <div class="msg-member-item${activeMsgId === u.id ? ' active' : ''}" onclick="openMsgThread('${u.id}')">
-          <div class="msg-member-avatar">${avatar}</div>
+          <div class="msg-member-avatar">${avatarHTML}</div>
           <div class="msg-member-info">
             <div class="msg-member-name">${u.name || u.email}</div>
             <div class="msg-member-preview">${preview}</div>
@@ -2244,37 +2279,44 @@
     }).join('');
   }
 
-  function openMsgThread(userId) {
+  async function openMsgThread(userId) {
     activeMsgId = userId;
-    const users  = admUsers;
-    const user   = users.find(u => u.id === userId);
-    const msgs   = getMsgs();
-    const thread = msgs[userId] || [];
+    const user  = admUsers.find(u => u.id === userId);
 
-    // Mark all member messages as read
-    thread.forEach(m => { if (m.from === 'member') m.read = true; });
-    msgs[userId] = thread;
-    saveMsgs(msgs);
+    // Mark member messages as read
+    try {
+      await window.GudAPI.adminMarkRead(userId);
+    } catch(err) { console.error(err); }
+
+    // Refresh threads
+    try {
+      const res  = await window.GudAPI.adminGetAllThreads();
+      msgThreads = res.threads || {};
+    } catch(err) { console.error(err); }
+
     renderMsgMemberList();
 
     // Header
-    const header = document.getElementById('msgChatHeader');
-    const initials = (user?.name || user?.email || '?').charAt(0).toUpperCase();
-    const avatarHTML = user?.photoURL
-      ? `<img src="${user.photoURL}" alt="" style="width:100%;height:100%;object-fit:cover;">`
-      : initials;
+    const header   = document.getElementById('msgChatHeader');
+    const initial  = (user?.name || user?.email || '?').charAt(0).toUpperCase();
+    const avatarHTML = user?.avatar_url
+      ? `<img src="${user.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;">`
+      : initial;
     header.innerHTML = `
       <div class="msg-chat-header-avatar">${avatarHTML}</div>
       <div class="msg-chat-header-name">${user?.name || user?.email || 'Unknown'}</div>`;
 
     // Messages
-    const body = document.getElementById('msgChatBody');
-    if (!thread.length) {
+    const body   = document.getElementById('msgChatBody');
+    const thread = msgThreads[userId];
+    const msgs   = thread?.messages || [];
+
+    if (!msgs.length) {
       body.innerHTML = '<div class="msg-empty-state"><div style="font-size:28px;margin-bottom:10px;">💬</div><div>No messages yet. Say hi!</div></div>';
     } else {
-      body.innerHTML = thread.map(m => {
-        const side = m.from === 'admin' ? 'from-admin' : 'from-member';
-        const time = new Date(m.at).toLocaleTimeString('en-PH', { hour:'2-digit', minute:'2-digit', hour12:true });
+      body.innerHTML = msgs.map(m => {
+        const side = m.from_role === 'admin' ? 'from-admin' : 'from-member';
+        const time = new Date(m.created_at).toLocaleTimeString('en-PH', { hour:'2-digit', minute:'2-digit', hour12:true });
         return `<div class="msg-bubble-wrap ${side}">
           <div class="msg-bubble">${m.text}</div>
           <div class="msg-bubble-time">${time}</div>
@@ -2286,27 +2328,26 @@
     document.getElementById('msgComposer').style.display = 'flex';
   }
 
-  function sendAdminMsg() {
+  async function sendAdminMsg() {
     if (!activeMsgId) return;
     const input = document.getElementById('msgInput');
     const text  = input.value.trim();
     if (!text) return;
 
-    const msgs   = getMsgs();
-    if (!msgs[activeMsgId]) msgs[activeMsgId] = [];
-    msgs[activeMsgId].push({ from:'admin', text, at: new Date().toISOString(), read: false });
-    saveMsgs(msgs);
-
-    input.value = '';
-    openMsgThread(activeMsgId);
-    renderMsgMemberList();
+    try {
+      await window.GudAPI.adminSendMessage(activeMsgId, text);
+      input.value = '';
+      await openMsgThread(activeMsgId);
+    } catch(err) {
+      console.error('sendAdminMsg error:', err);
+      window.GudSpace.showToast('Failed to send message.', '❌');
+    }
   }
 
   /* ---- EXPORT DATA ---- */
   function exportData() {
     const data = {
       users:    admUsers,
-      timeouts: window.GudSpace.storage.get('autoTimeouts') || [],
       exported: new Date().toISOString(),
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -2319,11 +2360,7 @@
 
   /* ---- CLEAR TIMEOUTS ---- */
   function clearTimeouts() {
-    if (!confirm('Clear all auto timeout records? This cannot be undone.')) return;
-    window.GudSpace.storage.set('autoTimeouts', []);
-    renderTimeouts();
-    renderOverview();
-    window.GudSpace.showToast('Auto timeout log cleared.', '🗑');
+    window.GudSpace.showToast('Auto timeout records are now stored in Supabase and cannot be cleared from here.', '⚠️');
   }
 
   /* ---- KEYBOARD ESC ---- */
@@ -2558,17 +2595,17 @@
     selectedPreset = null;
   }
 
-  /* ---- save plan ---- */
-  function saveMemberPlan() {
+  /* ---- save plan — API ---- */
+  async function saveMemberPlan() {
     if (!assigningUserId) return;
 
-    const startDate = document.getElementById('memStartDate').value;
-    const endDate   = document.getElementById('memEndDate').value;
+    const start_date = document.getElementById('memStartDate').value;
+    const end_date   = document.getElementById('memEndDate').value;
 
-    if (!startDate || !endDate) {
+    if (!start_date || !end_date) {
       window.GudSpace.showToast('Please set both Start and End dates.', '⚠️'); return;
     }
-    if (new Date(endDate) <= new Date(startDate)) {
+    if (new Date(end_date) <= new Date(start_date)) {
       window.GudSpace.showToast('End date must be after Start date.', '⚠️'); return;
     }
 
@@ -2583,44 +2620,61 @@
       if (!planPrice || isNaN(planPrice)) { window.GudSpace.showToast('Please enter a valid price.', '⚠️'); return; }
     }
 
-    const idx = admUsers.findIndex(u => u.id === assigningUserId);
-    if (idx === -1) return;
+    try {
+      const res = await window.GudAPI.adminAssignPlan({
+        user_id: assigningUserId,
+        name:    planName,
+        price:   parseInt(planPrice),
+        start_date,
+        end_date
+      });
+      if (res.error) { window.GudSpace.showToast(res.error, '❌'); return; }
 
-    admUsers[idx].membership = {
-      name:      planName,
-      price:     parseInt(planPrice),
-      startDate,
-      endDate,
-      assignedAt: new Date().toISOString(),
-    };
-    admUsers[idx].renewalRequest = false;
+      // Update local cache
+      const idx = admUsers.findIndex(u => u.id === assigningUserId);
+      if (idx !== -1) {
+        admUsers[idx].membership     = res.membership;
+        admUsers[idx].renewalRequest = false;
+      }
 
-    closeMemModal();
-    renderMemberships();
-    renderAdminNotifications();
-    window.GudSpace.showToast(`Plan "${planName}" assigned successfully! 🎫`, '✅');
+      closeMemModal();
+      renderMemberships();
+      renderAdminNotifications();
+      window.GudSpace.showToast(`Plan "${planName}" assigned successfully! 🎫`, '✅');
+    } catch(err) {
+      console.error('saveMemberPlan error:', err);
+      window.GudSpace.showToast('Failed to assign plan.', '❌');
+    }
   }
 
-  /* ---- clear plan ---- */
-  function clearMemberPlan(userId, name) {
+  /* ---- clear plan — API ---- */
+  async function clearMemberPlan(userId, name) {
     if (!confirm(`Remove membership plan for "${name}"?`)) return;
-    const idx = admUsers.findIndex(u => u.id === userId);
-    if (idx === -1) return;
-    delete admUsers[idx].membership;
-    admUsers[idx].renewalRequest = false;
-    renderMemberships();
-    renderAdminNotifications();
-    window.GudSpace.showToast(`Plan removed for "${name}".`, '🗑');
+    try {
+      await window.GudAPI.adminRemovePlan(userId);
+      const idx = admUsers.findIndex(u => u.id === userId);
+      if (idx !== -1) { delete admUsers[idx].membership; admUsers[idx].renewalRequest = false; }
+      renderMemberships();
+      renderAdminNotifications();
+      window.GudSpace.showToast(`Plan removed for "${name}".`, '🗑');
+    } catch(err) {
+      console.error('clearMemberPlan error:', err);
+      window.GudSpace.showToast('Failed to remove plan.', '❌');
+    }
   }
 
-  /* ---- dismiss renewal request ---- */
-  function dismissRenewal(userId) {
-    const idx = admUsers.findIndex(u => u.id === userId);
-    if (idx === -1) return;
-    admUsers[idx].renewalRequest = false;
-    renderMemberships();
-    renderAdminNotifications();
-    window.GudSpace.showToast('Renewal request dismissed.', '✅');
+  /* ---- dismiss renewal — API ---- */
+  async function dismissRenewal(userId) {
+    try {
+      await window.GudAPI.adminDismissRenewal(userId);
+      const idx = admUsers.findIndex(u => u.id === userId);
+      if (idx !== -1) admUsers[idx].renewalRequest = false;
+      renderMemberships();
+      renderAdminNotifications();
+      window.GudSpace.showToast('Renewal request dismissed.', '✅');
+    } catch(err) {
+      console.error('dismissRenewal error:', err);
+    }
   }
 
   /* ---- admin notification bell ---- */

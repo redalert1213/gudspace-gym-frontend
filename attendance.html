@@ -719,29 +719,60 @@
     'use strict';
 
     /* ---- STATE ---- */
-    let currentUser         = null;
-    let sessionStart        = null;
+    let currentUser          = null;
+    let allAttendance        = []; // loaded from Supabase via API
+    let activeAttendanceId   = null;
+    let sessionStart         = null;
     let sessionTimerInterval = null;
-    let calMonthOffset      = 0;
-    let autoLogoutTimer     = null;
-    let autoLogoutCountdown = null;
+    let autoTimeOutTimer     = null;
+    let calMonthOffset       = 0;
+    let autoLogoutTimer      = null;
+    let autoLogoutCountdown  = null;
 
-    const DAYS_SHORT  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    const DAYS_FULL   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const MONTHS      = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const DAYS_SHORT   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const MONTHS       = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
     /* ---- INIT ---- */
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       currentUser = window.GudSpace.storage.get('currentUser');
       if (!currentUser) { window.location.href = 'login.html'; return; }
+      await loadAttendanceFromAPI();
       initPage();
     });
+
+    /* ---- LOAD ATTENDANCE FROM API ---- */
+    async function loadAttendanceFromAPI() {
+      try {
+        const result = await window.GudAPI.getAttendance();
+        // API returns { attendance: [...] }
+        // each row: { id, user_id, check_in, check_out, auto_timeout }
+        const rows = result.attendance || [];
+        allAttendance = rows.map(a => ({
+          id:          a.id,
+          date:        a.check_in,
+          timeIn:      a.check_in,
+          timeOut:     a.check_out || null,
+          duration:    a.check_out
+            ? Math.round((new Date(a.check_out) - new Date(a.check_in)) / 60000)
+            : null,
+          autoTimeout: a.auto_timeout || false,
+        }));
+
+        // Check if there's an active session today (timed in, not yet timed out)
+        const today = new Date().toDateString();
+        const active = allAttendance.find(s => new Date(s.date).toDateString() === today && s.timeIn && !s.timeOut);
+        if (active) activeAttendanceId = active.id;
+
+      } catch(e) {
+        console.error('Failed to load attendance:', e);
+        allAttendance = [];
+      }
+    }
 
     function initPage() {
       loadSidebar();
       loadTopBar();
-      recalcStreakOnLoad();
       loadStats();
       loadTodaySession();
       renderStreakCalendar();
@@ -749,47 +780,27 @@
       startAutoLogoutTimer();
     }
 
-    function recalcStreakOnLoad() {
-      const attended = new Set(
-        (currentUser.attendance || [])
-          .filter(s => s.timeIn)
-          .map(s => new Date(s.date).toDateString())
-      );
-      const today = new Date();
-      let streak = 0;
-      for (let i = 0; i < 365; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        if (attended.has(d.toDateString())) streak++;
-        else break;
-      }
-      if (streak !== (currentUser.streak || 0)) {
-        currentUser.streak = streak;
-        saveUser();
-      }
-    }
-
     /* ---- SIDEBAR ---- */
     function loadSidebar() {
-      const u = currentUser;
-      const p = u.profile || {};
-      const name = u.firstName || u.name || 'Champ';
+      const u    = currentUser;
+      const name = u.name || 'Champ';
 
       document.getElementById('sbAvatarLetter').textContent = name.charAt(0).toUpperCase();
-      document.getElementById('sbName').textContent = ((u.firstName || '') + ' ' + (u.lastName || '')).trim().toUpperCase();
+      document.getElementById('sbName').textContent = name.toUpperCase();
 
       const genderLabel = { male:'Male', female:'Female', 'non-binary':'Non-Binary', 'prefer-not-to-say':'—' };
-      document.getElementById('sbMeta').textContent = `${genderLabel[p.gender] || '—'} · ${p.weightKg || '--'} kg · ${p.heightCm || '--'} cm`;
+      document.getElementById('sbMeta').textContent =
+        `${genderLabel[u.gender] || '—'} · ${u.weight || '--'} kg · ${u.height || '--'} cm`;
 
       const goalMap = {
         'build-strength':'Build Strength','lose-weight':'Lose Weight','get-lean':'Get Lean',
         'get-in-shape':'Get in Shape','build-muscle':'Build Muscle','overall-fitness':'Overall Fitness'
       };
-      document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalMap[p.goal] || 'Set Goal');
+      document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalMap[u.goal] || 'Set Goal');
 
-      if (u.photoUrl) {
+      if (u.avatar_url) {
         const img = document.getElementById('sbAvatarImg');
-        img.src = u.photoUrl;
+        img.src = u.avatar_url;
         img.style.display = 'block';
       }
     }
@@ -799,36 +810,46 @@
       const now = new Date();
       document.getElementById('topDate').textContent =
         (DAYS_SHORT[now.getDay()] + ', ' + MONTHS[now.getMonth()] + ' ' + now.getDate()).toUpperCase();
-      document.getElementById('topStreakNum').textContent = currentUser.streak || 0;
+      document.getElementById('topStreakNum').textContent = calcStreak();
+    }
+
+    /* ---- STREAK CALCULATION ---- */
+    function calcStreak() {
+      const attended = new Set(allAttendance.filter(s => s.timeIn).map(s => new Date(s.date).toDateString()));
+      const today = new Date();
+      let streak = 0;
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        if (attended.has(d.toDateString())) streak++;
+        else break;
+      }
+      return streak;
     }
 
     /* ---- STATS ---- */
     function loadStats() {
-      const att         = currentUser.attendance || [];
-      const allSessions = att.filter(s => s.timeIn);
+      const allSessions = allAttendance.filter(s => s.timeIn);
+      const streak      = calcStreak();
 
       document.getElementById('attTotalSessions').textContent = allSessions.length;
-      document.getElementById('attCurStreak').textContent     = currentUser.streak || 0;
+      document.getElementById('attCurStreak').textContent     = streak;
+      document.getElementById('topStreakNum').textContent     = streak;
 
       // Best streak
       let bestStreak = 0, cur = 0;
       const sortedDates = [...new Set(allSessions.map(s => new Date(s.date).toDateString()))]
         .map(d => new Date(d)).sort((a, b) => a - b);
-
       for (let i = 0; i < sortedDates.length; i++) {
-        if (i === 0) { cur = 1; }
-        else {
-          const diff = (sortedDates[i] - sortedDates[i-1]) / 86400000;
-          cur = diff <= 1 ? cur + 1 : 1;
-        }
+        cur = (i === 0 || (sortedDates[i] - sortedDates[i-1]) / 86400000 > 1) ? 1 : cur + 1;
         bestStreak = Math.max(bestStreak, cur);
       }
       document.getElementById('attBestStreak').textContent = bestStreak;
 
       // Hours + avg
       const totalMin = allSessions.reduce((acc, s) => acc + (s.duration || 0), 0);
-      document.getElementById('attTotalHours').textContent   = Math.floor(totalMin / 60) + 'h';
-      document.getElementById('attAvgDuration').textContent  = (allSessions.length ? Math.round(totalMin / allSessions.length) : 0) + 'm';
+      document.getElementById('attTotalHours').textContent  = Math.floor(totalMin / 60) + 'h';
+      document.getElementById('attAvgDuration').textContent = (allSessions.length ? Math.round(totalMin / allSessions.length) : 0) + 'm';
 
       // This month
       const now = new Date();
@@ -841,11 +862,11 @@
     /* ---- TODAY SESSION ---- */
     function loadTodaySession() {
       const today    = new Date().toDateString();
-      const todaySess = (currentUser.attendance || []).find(s => new Date(s.date).toDateString() === today);
+      const todaySess = allAttendance.find(s => new Date(s.date).toDateString() === today);
 
       if (todaySess?.timeIn && !todaySess?.timeOut) {
-        // Active session
         sessionStart = new Date(todaySess.timeIn);
+        activeAttendanceId = todaySess.id;
         setStatusUI('active', 'Currently Timed In');
         document.getElementById('attTodayIn').textContent  = formatTime12(sessionStart);
         document.getElementById('attTodayIn').className    = 'atb-val active';
@@ -856,9 +877,8 @@
         document.getElementById('sessionActiveBadge').classList.add('show');
         document.getElementById('sessionActiveMsg').textContent = 'You\'re timed in at ' + formatTime12(sessionStart);
         startSessionTimer(sessionStart);
-        scheduleAutoTimeOut(sessionStart); // ← auto time-out based on original Time In
+        scheduleAutoTimeOut(sessionStart);
       } else if (todaySess?.timeIn && todaySess?.timeOut) {
-        // Completed
         const dur = todaySess.duration || Math.round((new Date(todaySess.timeOut) - new Date(todaySess.timeIn)) / 60000);
         setStatusUI('done', 'Session Complete');
         document.getElementById('attTodayIn').textContent  = formatTime12(new Date(todaySess.timeIn));
@@ -867,7 +887,6 @@
         document.getElementById('attInBtn').disabled  = true;
         document.getElementById('attOutBtn').disabled = true;
       }
-      // else: idle — default state already set in HTML
     }
 
     function setStatusUI(state, label) {
@@ -875,22 +894,27 @@
       el.innerHTML = `<div class="att-status-dot ${state}"></div><span>${label}</span>`;
     }
 
-    /* ---- TIME IN / OUT ---- */
+    /* ---- TIME IN ---- */
     async function doTimeIn() {
-      const now = new Date();
-      sessionStart = now;
-
+      document.getElementById('attInBtn').disabled = true;
       try {
         const result = await window.GudAPI.checkIn();
         if (result.error) throw new Error(result.error);
 
-        currentUser.currentAttendanceId = result.attendance.id;
-        currentUser.attendance = currentUser.attendance || [];
-        const todayStr = now.toDateString();
-        currentUser.attendance = currentUser.attendance.filter(s => new Date(s.date).toDateString() !== todayStr);
-        currentUser.attendance.push({ date: now.toISOString(), timeIn: now.toISOString(), timeOut: null, id: result.attendance.id });
-        saveUser();
+        const now  = new Date(result.attendance.check_in);
+        activeAttendanceId = result.attendance.id;
 
+        // Add to local allAttendance array
+        allAttendance.unshift({
+          id:          result.attendance.id,
+          date:        result.attendance.check_in,
+          timeIn:      result.attendance.check_in,
+          timeOut:     null,
+          duration:    null,
+          autoTimeout: false,
+        });
+
+        sessionStart = now;
         setStatusUI('active', 'Currently Timed In');
         document.getElementById('attTodayIn').textContent  = formatTime12(now);
         document.getElementById('attTodayIn').className    = 'atb-val active';
@@ -901,73 +925,55 @@
         document.getElementById('sessionActiveMsg').textContent = 'You\'re timed in at ' + formatTime12(now);
         startSessionTimer(now);
         scheduleAutoTimeOut(now);
+        renderAttTable();
 
         window.GudSpace.showToast(`Timed in at ${formatTime12(now)} 💪`, '✅');
       } catch(e) {
+        document.getElementById('attInBtn').disabled = false;
         window.GudSpace.showToast('Time In failed. Please try again.', '❌');
         console.error(e);
       }
     }
 
+    /* ---- TIME OUT ---- */
     async function doTimeOut() {
-      const now      = new Date();
-      const todayStr = now.toDateString();
-      const sessions = currentUser.attendance || [];
-      const idx      = sessions.findIndex(s => new Date(s.date).toDateString() === todayStr && !s.timeOut);
-      const attId    = currentUser.currentAttendanceId || (idx >= 0 ? sessions[idx].id : null);
-
-      if (!attId) {
+      if (!activeAttendanceId) {
         window.GudSpace.showToast('No active session found.', '❌');
         return;
       }
-
+      document.getElementById('attOutBtn').disabled = true;
       try {
-        const result = await window.GudAPI.checkOut(attId);
+        const result = await window.GudAPI.checkOut(activeAttendanceId);
         if (result.error) throw new Error(result.error);
 
-        if (idx >= 0) {
-          sessions[idx].timeOut  = now.toISOString();
-          sessions[idx].duration = Math.round((now - new Date(sessions[idx].timeIn)) / 60000);
-        }
-        delete currentUser.currentAttendanceId;
-        saveUser();
+        const now = new Date(result.attendance.check_out);
+        const dur = Math.round((now - new Date(result.attendance.check_in)) / 60000);
 
-        updateStreak();
+        // Update local allAttendance
+        const idx = allAttendance.findIndex(s => s.id === activeAttendanceId);
+        if (idx >= 0) {
+          allAttendance[idx].timeOut  = result.attendance.check_out;
+          allAttendance[idx].duration = dur;
+        }
+        activeAttendanceId = null;
+
         clearInterval(sessionTimerInterval);
         clearTimeout(autoTimeOutTimer);
         setStatusUI('done', 'Session Complete');
         document.getElementById('attTodayOut').textContent = formatTime12(now);
-        document.getElementById('attTodayDur').textContent = (sessions[idx]?.duration || 0) + ' min';
+        document.getElementById('attTodayDur').textContent = dur + ' min';
         document.getElementById('attOutBtn').disabled      = true;
         document.getElementById('sessionActiveBadge').classList.remove('show');
 
         loadStats();
         renderAttTable();
+        renderStreakCalendar();
         window.GudSpace.showToast(`Timed out at ${formatTime12(now)}. Great session! 🔥`, '✅');
       } catch(e) {
+        document.getElementById('attOutBtn').disabled = false;
         window.GudSpace.showToast('Time Out failed. Please try again.', '❌');
         console.error(e);
       }
-    }
-
-    function updateStreak() {
-      const attended = new Set(
-        (currentUser.attendance || [])
-          .filter(s => s.timeIn)
-          .map(s => new Date(s.date).toDateString())
-      );
-      const today = new Date();
-      let streak = 0;
-      for (let i = 0; i < 365; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        if (attended.has(d.toDateString())) streak++;
-        else break;
-      }
-      currentUser.streak = streak;
-      saveUser();
-      document.getElementById('topStreakNum').textContent = streak;
-      document.getElementById('attCurStreak').textContent = streak;
     }
 
     function startSessionTimer(startTime) {
@@ -980,100 +986,35 @@
       }, 1000);
     }
 
-    /* ---- AUTO TIME-OUT (3hrs after Time In) ---- */
-    let autoTimeOutTimer = null;
-
+    /* ---- AUTO TIME-OUT (3hrs) ---- */
     function scheduleAutoTimeOut(timeInDate) {
       clearTimeout(autoTimeOutTimer);
-
-      const AUTO_LIMIT = 3 * 60 * 60 * 1000; // 3 hours in ms
+      const AUTO_LIMIT = 3 * 60 * 60 * 1000;
       const elapsed    = Date.now() - timeInDate.getTime();
       const remaining  = AUTO_LIMIT - elapsed;
-
-      // Already past 3hrs — time out immediately
-      if (remaining <= 0) {
-        doAutoTimeOut(timeInDate);
-        return;
-      }
-
-      // Warn 10 minutes before auto time-out
+      if (remaining <= 0) { doTimeOut(); return; }
       const warnAt = remaining - 10 * 60 * 1000;
       if (warnAt > 0) {
         setTimeout(() => {
-          window.GudSpace.showToast('⚠️ Auto Time-Out in 10 minutes! Time Out manually if you\'re leaving.', '⏰', 8000);
+          window.GudSpace.showToast('⚠️ Auto Time-Out in 10 minutes!', '⏰', 8000);
         }, warnAt);
       }
-
-      // Schedule the actual auto time-out
-      autoTimeOutTimer = setTimeout(() => {
-        doAutoTimeOut(timeInDate);
-      }, remaining);
-    }
-
-    function doAutoTimeOut(timeInDate) {
-      const todayStr = new Date().toDateString();
-      const sessions = currentUser.attendance || [];
-      const idx      = sessions.findIndex(s => new Date(s.date).toDateString() === todayStr && !s.timeOut);
-
-      if (idx < 0) return; // Already timed out manually
-
-      // Time Out = exactly 3hrs after Time In
-      const autoOutTime = new Date(timeInDate.getTime() + 3 * 60 * 60 * 1000);
-
-      sessions[idx].timeOut     = autoOutTime.toISOString();
-      sessions[idx].duration    = 180; // exactly 3 hours = 180 min
-      sessions[idx].autoTimeout = true;
-      saveUser();
-
-      // Log to autoTimeouts for admin panel
-      const timeoutLog = {
-        userId:    currentUser.email || currentUser.id,
-        name:      ((currentUser.firstName || '') + ' ' + (currentUser.lastName || '')).trim(),
-        timeIn:    timeInDate.toISOString(),
-        timeoutAt: autoOutTime.toISOString(),
-        reason:    'auto_timeout_3h'
-      };
-      const logs = window.GudSpace.storage.get('autoTimeouts') || [];
-      logs.push(timeoutLog);
-      window.GudSpace.storage.set('autoTimeouts', logs);
-
-      // Update UI
-      clearInterval(sessionTimerInterval);
-      setStatusUI('done', 'Auto Timed Out');
-      document.getElementById('attTodayOut').textContent = formatTime12(autoOutTime);
-      document.getElementById('attTodayDur').textContent = '180 min';
-      document.getElementById('attInBtn').disabled  = true;
-      document.getElementById('attOutBtn').disabled = true;
-      document.getElementById('sessionActiveBadge').classList.remove('show');
-
-      loadStats();
-      renderAttTable();
-
-      window.GudSpace.showToast(
-        `Auto Timed Out at ${formatTime12(autoOutTime)} — 3-hour session limit reached.`,
-        '⏰', 6000
-      );
+      autoTimeOutTimer = setTimeout(() => doTimeOut(), remaining);
     }
 
     /* ---- STREAK CALENDAR ---- */
     function renderStreakCalendar() {
       const now      = new Date();
       const viewDate = new Date(now.getFullYear(), now.getMonth() + calMonthOffset, 1);
-      const label    = MONTHS_SHORT[viewDate.getMonth()] + ' ' + viewDate.getFullYear();
-      document.getElementById('calMonthLabel').textContent = label;
+      document.getElementById('calMonthLabel').textContent = MONTHS_SHORT[viewDate.getMonth()] + ' ' + viewDate.getFullYear();
 
       const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
       const firstDay    = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
 
-      const attendedDates = new Set(
-        (currentUser.attendance || [])
-          .filter(s => s.timeIn)
-          .map(s => new Date(s.date).toDateString())
-      );
+      const attendedDates = new Set(allAttendance.filter(s => s.timeIn).map(s => new Date(s.date).toDateString()));
 
       const DAYS_HDR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
       let html = DAYS_HDR.map(d => `<div class="scg-day-header">${d}</div>`).join('');
-
       for (let i = 0; i < firstDay; i++) html += '<div class="scg-day empty"></div>';
 
       for (let d = 1; d <= daysInMonth; d++) {
@@ -1082,16 +1023,13 @@
         const isFuture = cell > now && !isToday;
         const attended = attendedDates.has(cell.toDateString());
         const isPast   = cell < now && !isToday;
-
         let cls = 'scg-day ';
-        if      (isToday)       cls += 'today';
-        else if (attended)      cls += 'attended';
-        else if (isFuture)      cls += 'future';
-        else if (isPast)        cls += 'missed';
-
+        if      (isToday)  cls += 'today';
+        else if (attended) cls += 'attended';
+        else if (isFuture) cls += 'future';
+        else if (isPast)   cls += 'missed';
         html += `<div class="${cls}" title="${cell.toDateString()}">${d}</div>`;
       }
-
       document.getElementById('streakCalGrid').innerHTML = html;
     }
 
@@ -1104,13 +1042,11 @@
     function renderAttTable() {
       const tbody = document.getElementById('attTableBody');
       if (!tbody) return;
-
-      const all = (currentUser.attendance || []).filter(s => s.timeIn).reverse();
+      const all = allAttendance.filter(s => s.timeIn);
       if (!all.length) {
         tbody.innerHTML = '<tr><td colspan="6" class="att-empty">No sessions yet. Head to the gym! 💪</td></tr>';
         return;
       }
-
       tbody.innerHTML = all.map(s => {
         const d    = new Date(s.date);
         const dout = s.timeOut ? new Date(s.timeOut) : null;
@@ -1153,8 +1089,6 @@
         const img = document.getElementById('sbAvatarImg');
         img.src = ev.target.result;
         img.style.display = 'block';
-        currentUser.photoUrl = ev.target.result;
-        saveUser();
         window.GudSpace.showToast('Profile photo updated! 📸', '✅');
       };
       reader.readAsDataURL(file);
@@ -1163,15 +1097,6 @@
     /* ---- LOGOUT ---- */
     function confirmLogout() {
       if (confirm('Are you sure you want to log out?')) {
-        // Auto time-out if still timed in
-        const todayStr = new Date().toDateString();
-        const sessions = currentUser.attendance || [];
-        const idx      = sessions.findIndex(s => new Date(s.date).toDateString() === todayStr && !s.timeOut);
-        if (idx >= 0) {
-          sessions[idx].timeOut      = new Date().toISOString();
-          sessions[idx].manualLogout = true;
-          saveUser();
-        }
         window.GudSpace.logout();
       }
     }
@@ -1210,14 +1135,6 @@
     }
 
     /* ---- HELPERS ---- */
-    function saveUser() {
-      const users = window.GudSpace.storage.get('users') || [];
-      const idx   = users.findIndex(u => u.id === currentUser.id);
-      if (idx >= 0) users[idx] = currentUser;
-      window.GudSpace.storage.set('users', users);
-      window.GudSpace.storage.set('currentUser', currentUser);
-    }
-
     function formatTime12(date) {
       let h      = date.getHours();
       const m    = String(date.getMinutes()).padStart(2, '0');

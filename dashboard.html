@@ -1313,6 +1313,7 @@
   </script>
 
   <script src="script.js"></script>
+  <script src="api.js"></script>
   <script>
     'use strict';
 
@@ -1377,65 +1378,55 @@
       loadWorkoutPlan();
       loadWaterTracker();
       loadTodayQuote();
-      loadPresence();
       loadPreworkout();
       loadAnnouncementBanners();
       loadInboxUnread();
-      checkTodaySession();
-      recalcStreakOnLoad();
+      checkTodaySession(); // loads presence + streak from API
       startAutoLogoutTimer();
       initMembership();
       setInterval(loadDateAndGreeting, 60000);
-      setInterval(loadInboxUnread, 5000);       // poll for new messages every 5s
-      setInterval(loadAnnouncementBanners, 10000); // poll announcements every 10s
+      setInterval(loadInboxUnread, 5000);
+      setInterval(loadAnnouncementBanners, 10000);
     }
 
-    function recalcStreakOnLoad() {
-      const attended = new Set(
-        (currentUser.attendance || [])
-          .filter(s => s.timeIn)
-          .map(s => new Date(s.date).toDateString())
-      );
-      const today = new Date();
-      let streak = 0;
-      for (let i = 0; i < 365; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        if (attended.has(d.toDateString())) streak++;
-        else break;
-      }
-      if (streak !== (currentUser.streak || 0)) {
-        currentUser.streak = streak;
-        saveUser();
-      }
-      document.getElementById('topStreakNum').textContent = streak;
-    }
 
     /* ---- USER PROFILE ---- */
-    function loadUserProfile() {
-      const u = currentUser;
-      const p = u.profile || {};
-      const name = u.firstName || u.name || 'Champ';
+    async function loadUserProfile() {
+      try {
+        const res = await window.GudAPI.getProfile();
+        const u = res.user || {};
+        const name = u.name || 'Champ';
 
-      document.getElementById('sbAvatarLetter').textContent = name.charAt(0).toUpperCase();
-      document.getElementById('sbName').textContent = ((u.firstName || '') + ' ' + (u.lastName || '')).trim().toUpperCase();
+        document.getElementById('sbAvatarLetter').textContent = name.charAt(0).toUpperCase();
+        document.getElementById('sbName').textContent = name.toUpperCase();
 
-      const genderLabel = { male:'Male', female:'Female', 'non-binary':'Non-Binary', 'prefer-not-to-say':'—' };
-      document.getElementById('sbMeta').textContent =
-        `${genderLabel[p.gender] || '—'} · ${p.weightKg || '--'} kg · ${p.heightCm || '--'} cm`;
+        const genderLabel = { male:'Male', female:'Female', 'non-binary':'Non-Binary', 'prefer-not-to-say':'—' };
+        document.getElementById('sbMeta').textContent =
+          `${genderLabel[u.gender] || '—'} · ${u.weight || '--'} kg · ${u.height || '--'} cm`;
 
-      const goalMap = {
-        'build-strength':'Build Strength','lose-weight':'Lose Weight','get-lean':'Get Lean',
-        'get-in-shape':'Get in Shape','build-muscle':'Build Muscle','overall-fitness':'Overall Fitness'
-      };
-      document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalMap[p.goal] || 'Set Goal');
-      document.getElementById('topName').textContent     = name;
+        const goalMap = {
+          'build-strength':'Build Strength','lose-weight':'Lose Weight','get-lean':'Get Lean',
+          'get-in-shape':'Get in Shape','build-muscle':'Build Muscle','overall-fitness':'Overall Fitness'
+        };
+        document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalMap[u.goal] || 'Set Goal');
+        document.getElementById('topName').textContent = name.split(' ')[0];
 
-      // BMI and macro refs removed (cards moved to other pages)
+        if (u.avatar_url) {
+          const img = document.getElementById('sbAvatarImg');
+          img.src = u.avatar_url; img.style.display = 'block';
+        }
 
-      if (u.photoUrl) {
-        const img = document.getElementById('sbAvatarImg');
-        img.src = u.photoUrl; img.style.display = 'block';
+        // Update currentUser with fresh API data
+        currentUser = { ...currentUser, ...u };
+
+      } catch (err) {
+        console.error('loadUserProfile error:', err);
+        // Fallback to localStorage
+        const u = currentUser;
+        const name = u.name || 'Champ';
+        document.getElementById('sbAvatarLetter').textContent = name.charAt(0).toUpperCase();
+        document.getElementById('sbName').textContent = name.toUpperCase();
+        document.getElementById('topName').textContent = name.split(' ')[0];
       }
     }
 
@@ -1448,9 +1439,7 @@
 
     /* ---- WORKOUT PLAN ---- */
     function loadWorkoutPlan() {
-      const freshUser = window.GudSpace.storage.get('currentUser');
-      if (freshUser) currentUser = freshUser;
-      const goal  = currentUser?.profile?.goal || 'overall-fitness';
+      const goal  = currentUser?.goal || currentUser?.profile?.goal || 'overall-fitness';
       const plan  = WORKOUT_PLANS[goal] || WORKOUT_PLANS['overall-fitness'];
       const today = new Date().getDay();
 
@@ -1490,67 +1479,103 @@
     }
 
     /* ---- SESSION: TIME IN / OUT ---- */
-    function checkTodaySession() {
-      const today     = new Date().toDateString();
-      const sessions  = currentUser.attendance || [];
-      const todaySess = sessions.find(s => new Date(s.date).toDateString() === today);
+    let activeSessionId = null; // stores the attendance record ID from Supabase
 
-      if (todaySess?.timeIn && !todaySess?.timeOut) {
-        sessionStart = new Date(todaySess.timeIn);
-        setTimeInUI(sessionStart);
-        startSessionTimer(sessionStart);
-        document.getElementById('timeInBtn').disabled  = true;
+    async function checkTodaySession() {
+      try {
+        const res = await window.GudAPI.getAttendance();
+        const attendance = res.attendance || [];
+        const today = new Date().toDateString();
+        const todaySess = attendance.find(s => new Date(s.check_in).toDateString() === today);
+
+        if (todaySess && todaySess.check_in && !todaySess.check_out) {
+          activeSessionId = todaySess.id;
+          sessionStart = new Date(todaySess.check_in);
+          setTimeInUI(sessionStart);
+          startSessionTimer(sessionStart);
+          document.getElementById('timeInBtn').disabled  = true;
+          document.getElementById('timeOutBtn').disabled = false;
+          document.getElementById('sessionCard').classList.add('active-session');
+        } else if (todaySess && todaySess.check_in && todaySess.check_out) {
+          setTimeInUI(new Date(todaySess.check_in));
+          setTimeOutUI(new Date(todaySess.check_out));
+          document.getElementById('timeInBtn').disabled  = true;
+          document.getElementById('timeOutBtn').disabled = true;
+        }
+
+        // Compute streak from API data
+        calcAndShowStreak(attendance);
+        // Load presence after getting attendance
+        loadPresence(attendance);
+      } catch (err) {
+        console.error('checkTodaySession error:', err);
+      }
+    }
+
+    async function doTimeIn() {
+      document.getElementById('timeInBtn').disabled = true;
+      try {
+        const res = await window.GudAPI.checkIn();
+        if (res.error) {
+          window.GudSpace.showToast(res.error, '❌');
+          document.getElementById('timeInBtn').disabled = false;
+          return;
+        }
+        const now = new Date(res.attendance.check_in);
+        activeSessionId = res.attendance.id;
+        sessionStart = now;
+        setTimeInUI(now);
+        startSessionTimer(now);
         document.getElementById('timeOutBtn').disabled = false;
         document.getElementById('sessionCard').classList.add('active-session');
-      } else if (todaySess?.timeIn && todaySess?.timeOut) {
-        setTimeInUI(new Date(todaySess.timeIn));
-        setTimeOutUI(new Date(todaySess.timeOut));
-        document.getElementById('timeInBtn').disabled  = true;
-        document.getElementById('timeOutBtn').disabled = true;
+        window.GudSpace.showToast(`Timed in at ${formatTime12(now)} 💪`, '✅');
+        // Refresh presence and streak
+        const attRes = await window.GudAPI.getAttendance();
+        calcAndShowStreak(attRes.attendance || []);
+        loadPresence(attRes.attendance || []);
+      } catch (err) {
+        console.error('doTimeIn error:', err);
+        window.GudSpace.showToast('Time in failed. Try again.', '❌');
+        document.getElementById('timeInBtn').disabled = false;
       }
     }
 
-    function doTimeIn() {
-      const now = new Date();
-      sessionStart = now;
-      const todayStr = now.toDateString();
-      currentUser.attendance = currentUser.attendance || [];
-      currentUser.attendance = currentUser.attendance.filter(s => new Date(s.date).toDateString() !== todayStr);
-      currentUser.attendance.push({ date: now.toISOString(), timeIn: now.toISOString(), timeOut: null });
-      saveUser();
-      setTimeInUI(now);
-      startSessionTimer(now);
-      document.getElementById('timeInBtn').disabled  = true;
-      document.getElementById('timeOutBtn').disabled = false;
-      document.getElementById('sessionCard').classList.add('active-session');
-      loadPresence();
-      window.GudSpace.showToast(`Timed in at ${formatTime12(now)} 💪`, '✅');
-    }
-
-    function doTimeOut() {
-      const now      = new Date();
-      const todayStr = now.toDateString();
-      const sessions = currentUser.attendance || [];
-      const idx      = sessions.findIndex(s => new Date(s.date).toDateString() === todayStr && !s.timeOut);
-      if (idx >= 0) {
-        sessions[idx].timeOut  = now.toISOString();
-        sessions[idx].duration = Math.round((now - new Date(sessions[idx].timeIn)) / 60000);
-        saveUser();
+    async function doTimeOut() {
+      if (!activeSessionId) {
+        window.GudSpace.showToast('No active session found.', '❌');
+        return;
       }
-      updateStreak();
-      setTimeOutUI(now);
-      clearInterval(sessionTimerInterval);
-      document.getElementById('sessionActiveBadge').classList.remove('show');
-      document.getElementById('sessionCard').classList.remove('active-session');
       document.getElementById('timeOutBtn').disabled = true;
-      window.GudSpace.showToast(`Timed out at ${formatTime12(now)}. Great session! 🔥`, '✅');
+      try {
+        const res = await window.GudAPI.checkOut(activeSessionId);
+        if (res.error) {
+          window.GudSpace.showToast(res.error, '❌');
+          document.getElementById('timeOutBtn').disabled = false;
+          return;
+        }
+        const now = new Date(res.attendance.check_out);
+        setTimeOutUI(now);
+        clearInterval(sessionTimerInterval);
+        document.getElementById('sessionActiveBadge').classList.remove('show');
+        document.getElementById('sessionCard').classList.remove('active-session');
+        activeSessionId = null;
+        window.GudSpace.showToast(`Timed out at ${formatTime12(now)}. Great session! 🔥`, '✅');
+        // Refresh streak
+        const attRes = await window.GudAPI.getAttendance();
+        calcAndShowStreak(attRes.attendance || []);
+        loadPresence(attRes.attendance || []);
+      } catch (err) {
+        console.error('doTimeOut error:', err);
+        window.GudSpace.showToast('Time out failed. Try again.', '❌');
+        document.getElementById('timeOutBtn').disabled = false;
+      }
     }
 
-    function updateStreak() {
+    function calcAndShowStreak(attendance) {
       const attended = new Set(
-        (currentUser.attendance || [])
-          .filter(s => s.timeIn)
-          .map(s => new Date(s.date).toDateString())
+        attendance
+          .filter(s => s.check_in)
+          .map(s => new Date(s.check_in).toDateString())
       );
       const today = new Date();
       let streak = 0;
@@ -1560,8 +1585,6 @@
         if (attended.has(d.toDateString())) streak++;
         else break;
       }
-      currentUser.streak = streak;
-      saveUser();
       document.getElementById('topStreakNum').textContent = streak;
     }
 
@@ -1584,12 +1607,27 @@
     }
 
     /* ---- WATER TRACKER ---- */
-    function loadWaterTracker() {
-      const today = new Date().toDateString();
-      waterGlasses = window.GudSpace.storage.get('water_' + currentUser.id + '_' + today) || 0;
+    async function loadWaterTracker() {
+      try {
+        const res = await window.GudAPI.getWater();
+        waterGlasses = res.glasses || 0;
+      } catch (err) {
+        console.error('loadWaterTracker error:', err);
+        waterGlasses = 0;
+      }
       renderWaterDrops();
     }
-    function renderWaterDrops() {
+
+    async function changeWater(delta) {
+      waterGlasses = Math.min(MAX_GLASSES, Math.max(0, waterGlasses + delta));
+      renderWaterDrops();
+      try {
+        await window.GudAPI.updateWater(waterGlasses);
+      } catch (err) {
+        console.error('changeWater error:', err);
+      }
+      if (waterGlasses === MAX_GLASSES) window.GudSpace.showToast('Hydration goal reached! 💧', '🎉');
+    }
       const el = document.getElementById('waterDrops');
       el.innerHTML = '';
       for (let i = 0; i < MAX_GLASSES; i++) {
@@ -1627,13 +1665,7 @@
       document.getElementById('waterMinus').disabled = waterGlasses <= 0;
       document.getElementById('waterPlus').disabled  = waterGlasses >= MAX_GLASSES;
     }
-    function changeWater(delta) {
-      waterGlasses = Math.min(MAX_GLASSES, Math.max(0, waterGlasses + delta));
-      renderWaterDrops();
-      const today = new Date().toDateString();
-      window.GudSpace.storage.set('water_' + currentUser.id + '_' + today, waterGlasses);
-      if (waterGlasses === MAX_GLASSES) window.GudSpace.showToast('Hydration goal reached! 💧', '🎉');
-    }
+
 
     /* ---- PRE-WORKOUT ---- */
     /* ---- PRE-WORKOUT MULTI-SELECT ---- */
@@ -1814,30 +1846,30 @@
     }
 
     /* ---- GYM PRESENCE ---- */
-    function loadPresence() {
+    function loadPresence(attendance) {
       const today = new Date().toDateString();
-      const users = window.GudSpace.storage.get('users') || [];
-      const present = users.filter(u => {
-        const att = (u.attendance || []).find(s => new Date(s.date).toDateString() === today);
-        return att?.timeIn && !att?.timeOut;
-      });
+      // Filter to only currently checked-in (has check_in, no check_out)
+      const present = (attendance || []).filter(s =>
+        s.check_in && !s.check_out && new Date(s.check_in).toDateString() === today
+      );
       const el = document.getElementById('presenceList');
       if (!present.length) {
         el.innerHTML = '<div style="font-size:12px;color:var(--text-dim);">No one checked in yet. Be the first! 💪</div>';
         return;
       }
       const colors = ['#FF1A5E','#a29bfe','#74b9ff','#fd79a8','#fdcb6e','#6c5ce7'];
-      el.innerHTML = present.map(u => {
-        const isYou   = u.id === currentUser.id;
-        const att     = (u.attendance || []).find(s => new Date(s.date).toDateString() === today);
-        const timeIn  = att ? formatTime12(new Date(att.timeIn)) : '--';
-        const initial = (u.firstName || u.name || '?').charAt(0).toUpperCase();
-        const color   = colors[u.id?.charCodeAt(4) % colors.length] || '#FF1A5E';
+      const user = window.GudSpace.storage.get('currentUser');
+      el.innerHTML = present.map(s => {
+        const isYou   = s.user_id === user?.id;
+        const name    = s.users?.name || 'Member';
+        const initial = name.charAt(0).toUpperCase();
+        const color   = colors[(s.user_id || '').charCodeAt(0) % colors.length] || '#FF1A5E';
+        const timeIn  = formatTime12(new Date(s.check_in));
         return `
           <div class="presence-item">
             <div class="presence-avatar" style="background:${color}">${initial}</div>
             <div>
-              <div class="presence-name">${u.firstName || u.name}</div>
+              <div class="presence-name">${name}</div>
               <div class="presence-time">Timed in at ${timeIn}</div>
             </div>
             ${isYou ? '<span class="you-badge">YOU</span>' : '<div class="presence-dot"></div>'}
@@ -1877,13 +1909,6 @@
       startAutoLogoutTimer();
     }
     function doAutoLogout() {
-      const timeouts = window.GudSpace.storage.get('autoTimeouts') || [];
-      timeouts.push({ userId: currentUser.id, name: currentUser.firstName || currentUser.name, timeoutAt: new Date().toISOString(), reason: 'auto_timeout_3h' });
-      window.GudSpace.storage.set('autoTimeouts', timeouts);
-      const today = new Date().toDateString();
-      const sessions = currentUser.attendance || [];
-      const idx = sessions.findIndex(s => new Date(s.date).toDateString() === today && !s.timeOut);
-      if (idx >= 0) { sessions[idx].timeOut = new Date().toISOString(); sessions[idx].autoTimeout = true; saveUser(); }
       window.GudSpace.storage.remove('currentUser');
       window.GudSpace.storage.remove('loginTime');
       window.location.href = 'login.html?reason=timeout';
@@ -1895,27 +1920,31 @@
 
     /* ---- PHOTO UPLOAD ---- */
     function triggerPhotoUpload() { document.getElementById('photoInput').click(); }
-    function handlePhotoUpload(e) {
+    async function handlePhotoUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = ev => {
-        const img = document.getElementById('sbAvatarImg');
-        img.src = ev.target.result; img.style.display = 'block';
-        currentUser.photoUrl = ev.target.result;
-        saveUser();
-        window.GudSpace.showToast('Profile photo updated! 📸', '✅');
-      };
-      reader.readAsDataURL(file);
+      const formData = new FormData();
+      formData.append('avatar', file);
+      try {
+        const res = await window.GudAPI.uploadAvatar(formData);
+        if (res.avatar_url) {
+          const img = document.getElementById('sbAvatarImg');
+          img.src = res.avatar_url; img.style.display = 'block';
+          currentUser.avatar_url = res.avatar_url;
+          window.GudSpace.storage.set('currentUser', currentUser);
+          window.GudSpace.showToast('Profile photo updated! 📸', '✅');
+        } else {
+          window.GudSpace.showToast(res.error || 'Upload failed.', '❌');
+        }
+      } catch (err) {
+        console.error('handlePhotoUpload error:', err);
+        window.GudSpace.showToast('Upload failed. Try again.', '❌');
+      }
     }
 
     /* ---- LOGOUT ---- */
     function confirmLogout() {
       if (confirm('Are you sure you want to log out?')) {
-        const today = new Date().toDateString();
-        const sessions = currentUser.attendance || [];
-        const idx = sessions.findIndex(s => new Date(s.date).toDateString() === today && !s.timeOut);
-        if (idx >= 0) { sessions[idx].timeOut = new Date().toISOString(); sessions[idx].manualLogout = true; saveUser(); }
         window.GudSpace.logout();
       }
     }
