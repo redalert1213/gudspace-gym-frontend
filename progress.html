@@ -610,6 +610,7 @@
     </div><!-- end page-content -->
 
   <script src="script.js"></script>
+  <script src="api.js"></script>
   <!-- Chart.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <script>
@@ -627,17 +628,33 @@
     const DAYS_SHORT   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     const DAYS_FULL    = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
+    /* ---- STATE (backend data) ---- */
+    let attendanceLogs = [];
+
     /* ---- INIT ---- */
-    document.addEventListener('DOMContentLoaded', () => {
-      currentUser = window.GudSpace.storage.get('currentUser');
-      if (!currentUser) { window.location.href = 'login.html'; return; }
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = window.GudSpace.requireAuth();
+      if (!currentUser) return;
+
+      // Fetch fresh profile + attendance from backend
+      try {
+        const [profRes, attRes] = await Promise.all([
+          window.GudAPI.getProfile(),
+          window.GudAPI.getAttendance()
+        ]);
+        if (profRes.user) {
+          currentUser = { ...currentUser, ...profRes.user };
+          window.GudSpace.storage.set('currentUser', currentUser);
+        }
+        attendanceLogs = attRes.attendance || [];
+      } catch(e) { console.warn('Could not fetch data from server.'); }
+
       initPage();
     });
 
     function initPage() {
       loadSidebar();
       loadTopBar();
-      recalcStreakOnLoad();
       renderWeightChart();
       renderMilestones();
       renderStreakCalendar();
@@ -646,11 +663,11 @@
       startAutoLogoutTimer();
     }
 
-    function recalcStreakOnLoad() {
+    function calcStreak() {
       const attended = new Set(
-        (currentUser.attendance || [])
-          .filter(s => s.timeIn)
-          .map(s => new Date(s.date).toDateString())
+        attendanceLogs
+          .filter(a => a.check_in)
+          .map(a => new Date(a.check_in).toDateString())
       );
       const today = new Date();
       let streak = 0;
@@ -660,35 +677,30 @@
         if (attended.has(d.toDateString())) streak++;
         else break;
       }
-      if (streak !== (currentUser.streak || 0)) {
-        currentUser.streak = streak;
-        saveUser();
-      }
-      document.getElementById('topStreakNum').textContent = streak;
+      return streak;
     }
 
     /* ---- SIDEBAR ---- */
     function loadSidebar() {
-      const u = currentUser;
-      const p = u.profile || {};
-      const name = u.firstName || u.name || 'Champ';
+      const u    = currentUser;
+      const name = u.name || 'Champ';
 
       document.getElementById('sbAvatarLetter').textContent = name.charAt(0).toUpperCase();
-      document.getElementById('sbName').textContent = ((u.firstName || '') + ' ' + (u.lastName || '')).trim().toUpperCase();
+      document.getElementById('sbName').textContent = name.toUpperCase();
 
       const genderLabel = { male:'Male', female:'Female', 'non-binary':'Non-Binary', 'prefer-not-to-say':'—' };
       document.getElementById('sbMeta').textContent =
-        `${genderLabel[p.gender] || '—'} · ${p.weightKg || '--'} kg · ${p.heightCm || '--'} cm`;
+        `${genderLabel[u.gender] || '—'} · ${u.weight || '--'} kg · ${u.height || '--'} cm`;
 
       const goalMap = {
         'build-strength':'Build Strength', 'lose-weight':'Lose Weight', 'get-lean':'Get Lean',
         'get-in-shape':'Get in Shape', 'build-muscle':'Build Muscle', 'overall-fitness':'Overall Fitness'
       };
-      document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalMap[p.goal] || 'Set Goal');
+      document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalMap[u.goal] || 'Set Goal');
 
-      if (u.photoUrl) {
+      if (u.avatar_url) {
         const img = document.getElementById('sbAvatarImg');
-        img.src = u.photoUrl;
+        img.src = u.avatar_url;
         img.style.display = 'block';
       }
     }
@@ -698,10 +710,10 @@
       const now = new Date();
       document.getElementById('topDate').textContent =
         (DAYS_SHORT[now.getDay()] + ', ' + MONTHS_FULL[now.getMonth()] + ' ' + now.getDate()).toUpperCase();
-      document.getElementById('topStreakNum').textContent = currentUser.streak || 0;
+      document.getElementById('topStreakNum').textContent = calcStreak();
     }
 
-    /* ---- WEIGHT CHART ---- */
+    /* ---- WEIGHT LOG (localStorage — no backend table yet) ---- */
     function logWeight() {
       const val = parseFloat(document.getElementById('wlogInput').value);
       if (!val || val < 20 || val > 300) {
@@ -709,23 +721,22 @@
         return;
       }
 
-      currentUser.weightLog = currentUser.weightLog || [];
+      // Store weight log locally
+      const weightLog = window.GudSpace.storage.get('weightLog_' + currentUser.id) || [];
       const today = new Date().toDateString();
-      const idx   = currentUser.weightLog.findIndex(w => new Date(w.date).toDateString() === today);
+      const idx   = weightLog.findIndex(w => new Date(w.date).toDateString() === today);
+      if (idx >= 0) weightLog[idx].kg = val;
+      else weightLog.push({ date: new Date().toISOString(), kg: val });
+      window.GudSpace.storage.set('weightLog_' + currentUser.id, weightLog);
 
-      if (idx >= 0) currentUser.weightLog[idx].kg = val;
-      else currentUser.weightLog.push({ date: new Date().toISOString(), kg: val });
+      // Sync updated weight to backend profile
+      window.GudAPI.updateProfile({ weight: val }).then(res => {
+        if (res.user) {
+          currentUser = { ...currentUser, ...res.user };
+          window.GudSpace.storage.set('currentUser', currentUser);
+        }
+      }).catch(() => {});
 
-      // Update profile weight + recalculate BMI
-      currentUser.profile        = currentUser.profile || {};
-      currentUser.profile.weightKg = val;
-      if (currentUser.profile.heightCm) {
-        const result = window.GudSpace.calculateBMI(val, currentUser.profile.heightCm);
-        currentUser.profile.bmi      = result.bmi;
-        currentUser.profile.bmiClass = result.classification;
-      }
-
-      saveUser();
       document.getElementById('wlogInput').value = '';
       window.GudSpace.showToast('Weight logged: ' + val + ' kg 📊', '✅');
       renderWeightChart();
@@ -736,7 +747,7 @@
       const emptyEl = document.getElementById('weightChartEmpty');
       if (!canvas) return;
 
-      const logs = (currentUser.weightLog || []).slice(-30);
+      const logs = (window.GudSpace.storage.get('weightLog_' + currentUser.id) || []).slice(-30);
 
       if (!logs.length) {
         canvas.style.display  = 'none';
@@ -799,9 +810,8 @@
 
     /* ---- MILESTONES ---- */
     function renderMilestones() {
-      const att      = currentUser.attendance || [];
-      const streak   = currentUser.streak || 0;
-      const sessions = att.filter(s => s.timeIn).length;
+      const streak   = calcStreak();
+      const sessions = attendanceLogs.filter(a => a.check_in).length;
 
       const milestones = [
         { icon:'🏁', title:'First Check-In',  sub:'You showed up. That matters.',     achieved: sessions >= 1   },
@@ -835,9 +845,9 @@
       const firstDay    = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
 
       const attendedDates = new Set(
-        (currentUser.attendance || [])
-          .filter(s => s.timeIn)
-          .map(s => new Date(s.date).toDateString())
+        attendanceLogs
+          .filter(a => a.check_in)
+          .map(a => new Date(a.check_in).toDateString())
       );
 
       const HDR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -871,7 +881,7 @@
 
     /* ---- WORKOUT HISTORY ---- */
     function renderWorkoutHistory() {
-      const sessions = (currentUser.attendance || []).filter(s => s.timeIn).reverse();
+      const sessions = [...attendanceLogs].reverse();
       const el       = document.getElementById('whList');
       if (!el) return;
 
@@ -881,13 +891,11 @@
       }
 
       el.innerHTML = sessions.slice(0, 30).map(s => {
-        const d    = new Date(s.date);
-        const dout = s.timeOut ? new Date(s.timeOut) : null;
-        const dur  = s.duration
-          ? s.duration + ' min'
-          : dout
-            ? Math.round((dout - new Date(s.timeIn)) / 60000) + ' min'
-            : 'Ongoing';
+        const d    = new Date(s.check_in);
+        const dout = s.check_out ? new Date(s.check_out) : null;
+        const dur  = dout
+          ? Math.round((dout - d) / 60000) + ' min'
+          : 'Ongoing';
         return `
           <div class="wh-item">
             <div class="wh-date-block">
@@ -897,7 +905,7 @@
             <div class="wh-info">
               <div class="wh-day-name">${DAYS_FULL[d.getDay()]}</div>
               <div class="wh-times">
-                In: ${formatTime12(new Date(s.timeIn))}${dout ? '  ·  Out: ' + formatTime12(dout) : ''}
+                In: ${formatTime12(d)}${dout ? '  ·  Out: ' + formatTime12(dout) : ''}
               </div>
             </div>
             <div class="wh-dur">${dur}</div>
@@ -918,24 +926,33 @@
 
     /* ---- PHOTO UPLOAD ---- */
     function triggerPhotoUpload() { document.getElementById('photoInput').click(); }
-    function handlePhotoUpload(e) {
+    async function handlePhotoUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = ev => {
         const img = document.getElementById('sbAvatarImg');
-        img.src = ev.target.result;
-        img.style.display = 'block';
-        currentUser.photoUrl = ev.target.result;
-        saveUser();
-        window.GudSpace.showToast('Profile photo updated! 📸', '✅');
+        img.src = ev.target.result; img.style.display = 'block';
       };
       reader.readAsDataURL(file);
+      window.GudSpace.showToast('Uploading photo...', '⏳', 8000);
+      try {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        const res = await window.GudAPI.uploadAvatar(formData);
+        if (res.error) { window.GudSpace.showToast(res.error, '❌'); }
+        else {
+          currentUser.avatar_url = res.avatar_url;
+          window.GudSpace.storage.set('currentUser', currentUser);
+          document.getElementById('sbAvatarImg').src = res.avatar_url;
+          window.GudSpace.showToast('Profile photo updated! 📸', '✅');
+        }
+      } catch(err) { window.GudSpace.showToast('Photo upload failed. Try again.', '❌'); }
     }
 
-    /* ---- BEFORE / AFTER PHOTOS ---- */
+    /* ---- BEFORE / AFTER PHOTOS (stored locally per user) ---- */
     function baInit() {
-      const photos = currentUser.progressPhotos || {};
+      const photos = window.GudSpace.storage.get('progressPhotos_' + currentUser.id) || {};
       if (photos.before) baRenderSlot('before', photos.before.url, photos.before.date);
       if (photos.after)  baRenderSlot('after',  photos.after.url,  photos.after.date);
     }
@@ -952,11 +969,11 @@
       }
       const reader = new FileReader();
       reader.onload = ev => {
-        const url  = ev.target.result;
-        const date = new Date().toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' });
-        currentUser.progressPhotos = currentUser.progressPhotos || {};
-        currentUser.progressPhotos[type] = { url, date, uploadedAt: new Date().toISOString() };
-        saveUser();
+        const url   = ev.target.result;
+        const date  = new Date().toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' });
+        const photos = window.GudSpace.storage.get('progressPhotos_' + currentUser.id) || {};
+        photos[type] = { url, date, uploadedAt: new Date().toISOString() };
+        window.GudSpace.storage.set('progressPhotos_' + currentUser.id, photos);
         baRenderSlot(type, url, date);
         window.GudSpace.showToast((type === 'before' ? 'Before' : 'After') + ' photo saved! 📸', '✅');
       };
@@ -1018,10 +1035,6 @@
 
     /* ---- HELPERS ---- */
     function saveUser() {
-      const users = window.GudSpace.storage.get('users') || [];
-      const idx   = users.findIndex(u => u.id === currentUser.id);
-      if (idx >= 0) users[idx] = currentUser;
-      window.GudSpace.storage.set('users', users);
       window.GudSpace.storage.set('currentUser', currentUser);
     }
 
