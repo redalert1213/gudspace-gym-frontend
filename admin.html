@@ -1422,6 +1422,41 @@
   let memberFilter = 'all';
   let memberSearch = '';
 
+  /* ---- REAL API USERS (from Supabase via backend) ---- */
+  const API_BASE = 'https://gudspace-gym-backend.onrender.com/api';
+  let admUsers = []; // global cache of all users from DB
+
+  async function fetchAdmUsers() {
+    try {
+      const res = await fetch(`${API_BASE}/admin/users`, {
+        headers: { 'Authorization': 'Bearer ' + (window.GudAPI ? window.GudAPI.getToken() : '') }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        // Normalize fields to match what the rest of the admin UI expects
+        admUsers = data.map(u => ({
+          ...u,
+          firstName: (u.name || '').split(' ')[0] || '',
+          lastName:  (u.name || '').split(' ').slice(1).join(' ') || '',
+          isAdmin:   u.is_admin || false,
+          profile: {
+            weightKg:  u.weight,
+            heightCm:  u.height,
+            age:       u.age,
+            goal:      u.goal,
+            bmi:       u.weight && u.height ? Math.round((u.weight / Math.pow(u.height/100, 2)) * 10) / 10 : null,
+          },
+          attendance: [],
+          membership: u.membership || null,
+          renewalRequest: u.renewalRequest || false,
+        }));
+      }
+    } catch(e) {
+      console.warn('Could not fetch users from API, using empty list.', e);
+      admUsers = [];
+    }
+  }
+
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const DAYS_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const GOAL_LABELS = {
@@ -1502,9 +1537,10 @@
     }
   }
 
-  function showAdminDashboard() {
+  async function showAdminDashboard() {
     document.getElementById('adminLoginScreen').style.display = 'none';
     document.getElementById('adminDashboard').style.display   = 'block';
+    await fetchAdmUsers();
     renderOverview();
     renderMembers();
     renderAttendance();
@@ -1521,21 +1557,24 @@
   }
 
   /* ---- TABS ---- */
-  function switchTab(tab) {
+  async function switchTab(tab) {
     activeTab = tab;
     ['overview','members','memberships','attendance','progress','announce','messages','timeouts','settings'].forEach(t => {
       document.getElementById('view-' + t).style.display = t === tab ? 'block' : 'none';
       document.getElementById('tab-' + t).classList.toggle('active', t === tab);
     });
+    if (tab === 'members' || tab === 'overview' || tab === 'memberships') await fetchAdmUsers();
     if (tab === 'progress')    renderProgressPhotos();
     if (tab === 'announce')    renderAnnouncements();
     if (tab === 'messages')    renderMsgMemberList();
     if (tab === 'memberships') renderMemberships();
+    if (tab === 'members')     renderMembers();
+    if (tab === 'overview')    renderOverview();
   }
 
   /* ---- PROGRESS PHOTOS ---- */
   function renderProgressPhotos() {
-    const users   = window.GudSpace.storage.get('users') || [];
+    const users   = admUsers;
     const grid    = document.getElementById('progressPhotoGrid');
     const empty   = document.getElementById('progressPhotoEmpty');
     const members = users.filter(u => !u.isAdmin);
@@ -1628,7 +1667,7 @@
 
   /* ---- OVERVIEW ---- */
   function renderOverview() {
-    const users    = window.GudSpace.storage.get('users') || [];
+    const users    = admUsers;
     const today    = new Date().toDateString();
     const todayAtt = users.flatMap(u =>
       (u.attendance || [])
@@ -1713,7 +1752,7 @@
 
   /* ---- MEMBERS ---- */
   function renderMembers() {
-    const users = window.GudSpace.storage.get('users') || [];
+    const users = admUsers;
     const today = new Date().toDateString();
     const tbody = document.getElementById('membersTbody');
     const search = (document.getElementById('memberSearch')?.value || '').toLowerCase();
@@ -1801,7 +1840,7 @@
   /* ---- ATTENDANCE LOG ---- */
   function renderAttendance() {
     const container = document.getElementById('attendanceLog');
-    const users = window.GudSpace.storage.get('users') || [];
+    const users = admUsers;
     const dateFilter = document.getElementById('attDateFilter')?.value;
 
     // Collect all attendance
@@ -1930,7 +1969,7 @@
 
   /* ---- MEMBER DETAIL MODAL ---- */
   function openMemberModal(userId) {
-    const users = window.GudSpace.storage.get('users') || [];
+    const users = admUsers;
     const u = users.find(u => u.id === userId);
     if (!u) return;
 
@@ -1991,14 +2030,25 @@
   });
 
   /* ---- DELETE MEMBER ---- */
-  function deleteMember(userId, name) {
+  async function deleteMember(userId, name) {
     if (!confirm(`Delete member "${name}"? This cannot be undone.`)) return;
-    const users = window.GudSpace.storage.get('users') || [];
-    const updated = users.filter(u => u.id !== userId);
-    window.GudSpace.storage.set('users', updated);
-    renderOverview();
-    renderMembers();
-    window.GudSpace.showToast(`Member "${name}" removed.`, '🗑');
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + (window.GudAPI ? window.GudAPI.getToken() : '') }
+      });
+      const data = await res.json();
+      if (data.success) {
+        admUsers = admUsers.filter(u => u.id !== userId);
+        renderOverview();
+        renderMembers();
+        window.GudSpace.showToast(`Member "${name}" removed.`, '🗑');
+      } else {
+        window.GudSpace.showToast('Failed to delete member.', '❌');
+      }
+    } catch(e) {
+      window.GudSpace.showToast('Error deleting member.', '❌');
+    }
   }
 
   /* ---- CHANGE PIN ---- */
@@ -2117,7 +2167,7 @@
   function saveMsgs(msgs) { window.GudSpace.storage.set(MSG_KEY, msgs); }
 
   function renderMsgMemberList() {
-    const users  = (window.GudSpace.storage.get('users') || []).filter(u => !u.isAdmin);
+    const users  = admUsers.filter(u => !u.isAdmin);
     const msgs   = getMsgs();
     const query  = (document.getElementById('msgMemberSearch')?.value || '').toLowerCase();
     const el     = document.getElementById('msgMemberList');
@@ -2152,7 +2202,7 @@
 
   function openMsgThread(userId) {
     activeMsgId = userId;
-    const users  = window.GudSpace.storage.get('users') || [];
+    const users  = admUsers;
     const user   = users.find(u => u.id === userId);
     const msgs   = getMsgs();
     const thread = msgs[userId] || [];
@@ -2211,7 +2261,7 @@
   /* ---- EXPORT DATA ---- */
   function exportData() {
     const data = {
-      users:    window.GudSpace.storage.get('users') || [],
+      users:    admUsers,
       timeouts: window.GudSpace.storage.get('autoTimeouts') || [],
       exported: new Date().toISOString(),
     };
@@ -2292,7 +2342,7 @@
 
   /* ---- render table ---- */
   function renderMemberships() {
-    const users  = (window.GudSpace.storage.get('users') || []).filter(u => !u.isAdmin);
+    const users  = admUsers.filter(u => !u.isAdmin);
     const query  = (document.getElementById('memSearch')?.value || '').toLowerCase();
     const tbody  = document.getElementById('membershipsTbody');
     if (!tbody) return;
@@ -2394,7 +2444,7 @@
     assigningUserId = userId;
     selectedPreset  = null;
 
-    const users = window.GudSpace.storage.get('users') || [];
+    const users = admUsers;
     const u     = users.find(x => x.id === userId);
     if (!u) return;
 
@@ -2489,21 +2539,18 @@
       if (!planPrice || isNaN(planPrice)) { window.GudSpace.showToast('Please enter a valid price.', '⚠️'); return; }
     }
 
-    const users   = window.GudSpace.storage.get('users') || [];
-    const idx     = users.findIndex(u => u.id === assigningUserId);
+    const idx = admUsers.findIndex(u => u.id === assigningUserId);
     if (idx === -1) return;
 
-    users[idx].membership = {
+    admUsers[idx].membership = {
       name:      planName,
       price:     parseInt(planPrice),
       startDate,
       endDate,
       assignedAt: new Date().toISOString(),
     };
-    /* Clear renewal request if re-assigning */
-    users[idx].renewalRequest = false;
+    admUsers[idx].renewalRequest = false;
 
-    window.GudSpace.storage.set('users', users);
     closeMemModal();
     renderMemberships();
     renderAdminNotifications();
@@ -2513,12 +2560,10 @@
   /* ---- clear plan ---- */
   function clearMemberPlan(userId, name) {
     if (!confirm(`Remove membership plan for "${name}"?`)) return;
-    const users = window.GudSpace.storage.get('users') || [];
-    const idx   = users.findIndex(u => u.id === userId);
+    const idx = admUsers.findIndex(u => u.id === userId);
     if (idx === -1) return;
-    delete users[idx].membership;
-    users[idx].renewalRequest = false;
-    window.GudSpace.storage.set('users', users);
+    delete admUsers[idx].membership;
+    admUsers[idx].renewalRequest = false;
     renderMemberships();
     renderAdminNotifications();
     window.GudSpace.showToast(`Plan removed for "${name}".`, '🗑');
@@ -2526,11 +2571,9 @@
 
   /* ---- dismiss renewal request ---- */
   function dismissRenewal(userId) {
-    const users = window.GudSpace.storage.get('users') || [];
-    const idx   = users.findIndex(u => u.id === userId);
+    const idx = admUsers.findIndex(u => u.id === userId);
     if (idx === -1) return;
-    users[idx].renewalRequest = false;
-    window.GudSpace.storage.set('users', users);
+    admUsers[idx].renewalRequest = false;
     renderMemberships();
     renderAdminNotifications();
     window.GudSpace.showToast('Renewal request dismissed.', '✅');
@@ -2538,7 +2581,7 @@
 
   /* ---- admin notification bell ---- */
   function renderAdminNotifications() {
-    const users   = (window.GudSpace.storage.get('users') || []).filter(u => !u.isAdmin);
+    const users   = admUsers.filter(u => !u.isAdmin);
     const listEl  = document.getElementById('admNotifList');
     const dotEl   = document.getElementById('admNotifDot');
     if (!listEl) return;
