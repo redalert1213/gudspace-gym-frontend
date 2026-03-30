@@ -261,4 +261,21 @@ window.GudAPI = {
     });
     return res.json();
   },
+  /* ---- OTP ---- */
+  sendOtp: async function(email) {
+    const res = await fetch(`${API_URL}/otp/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    return res.json();
+  },
+  verifyOtp: async function(email, otp) {
+    const res = await fetch(`${API_URL}/otp/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp })
+    });
+    return res.json();
+  },
 };
