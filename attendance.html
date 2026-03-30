@@ -477,15 +477,18 @@
       .att-stats-row { grid-template-columns: repeat(3, 1fr); }
     }
     @media (max-width: 768px) {
-      .sidebar { transform: translateX(-100%); }
+      .sidebar { transform: translateX(-100%); width: 75vw; max-width: 280px; }
       .sidebar.open { transform: translateX(0); box-shadow: 16px 0 60px rgba(0,0,0,0.6); }
-      .page-main { margin-left: 0; }
+      .page-main { margin-left: 0; overflow-x: hidden; }
       .db-menu-btn { display: flex; }
-      .page-content { padding: 16px; }
-      .att-stats-row { grid-template-columns: repeat(2, 1fr); }
+      .page-content { padding: 12px; }
+      .att-stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .att-stat-card { padding: 12px 8px; }
+      .att-stat-val { font-size: 28px; }
       .att-today-layout { flex-direction: column; }
       .att-today-btns { flex-direction: row; width: 100%; }
       .att-in-btn, .att-out-btn { flex: 1; }
+      .att-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     }
   </style>
 </head>
