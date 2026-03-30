@@ -117,6 +117,12 @@ window.GudAPI = {
     });
     return res.json();
   },
+  getTodayPresence: async function() {
+    const res = await fetch(`${API_URL}/attendance/today`, {
+      headers: { 'Authorization': 'Bearer ' + this.getToken() }
+    });
+    return res.json();
+  },
 
   /* ---- ANNOUNCEMENTS ---- */
   getAnnouncements: async function() {
