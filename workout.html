@@ -2529,22 +2529,22 @@
     // If string contains "sec" or "min" use that value directly
     if (/sec/i.test(repsStr)) {
       const n = parseInt(repsStr);
-      return isNaN(n) ? 45 : n;
+      return isNaN(n) ? 90 : n;
     }
     if (/min/i.test(repsStr)) {
       const n = parseFloat(repsStr);
-      return isNaN(n) ? 60 : Math.round(n * 60);
+      return isNaN(n) ? 90 : Math.round(n * 60);
     }
     // Otherwise it's a rep number — take the first number × 4 sec
     const n = parseInt(repsStr);
-    return isNaN(n) ? 45 : n * 4;
+    return isNaN(n) ? 90 : n * 4;
   }
 
   function parseRestSecs(restStr) {
-    if (!restStr) return 60;
+    if (!restStr) return 180;
     // Handle ranges like "90–120 sec" → take lower bound
     const match = restStr.match(/(\d+)/);
-    if (!match) return 60;
+    if (!match) return 180;
     const n = parseInt(match[1]);
     if (/min/i.test(restStr)) return n * 60;
     return n;
@@ -2558,8 +2558,8 @@
     const restEl = document.getElementById('htRestVal_' + key);
     const setsEl = document.getElementById('htSetsVal_' + key);
 
-    const workSecs = workEl ? parseInt(workEl.textContent) : 45;
-    const restSecs = restEl ? parseInt(restEl.textContent) : 60;
+    const workSecs = workEl ? parseInt(workEl.textContent) : 90;
+    const restSecs = restEl ? parseInt(restEl.textContent) : 180;
     const totalSets = setsEl ? parseInt(setsEl.textContent) : 3;
 
     return {

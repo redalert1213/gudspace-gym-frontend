@@ -781,6 +781,9 @@
     .step-dot.active { width: 20px; background: var(--pink); }
     .step-dot.done { background: rgba(255,26,94,0.4); }
 
+    /* ---- CURSOR FIX: always above overlay screens (z-index 9999) ---- */
+    #cursor, #cursorFollower { z-index: 10001 !important; }
+
     /* Responsive */
     @media (max-width: 640px) {
       .ob-topbar { padding: 16px 20px; }
