@@ -2526,28 +2526,13 @@
 
   /* ── Parse helpers ── */
   function parseWorkSecs(repsStr) {
-    // If string contains "sec" or "min" use that value directly
-    if (/sec/i.test(repsStr)) {
-      const n = parseInt(repsStr);
-      return isNaN(n) ? 90 : n;
-    }
-    if (/min/i.test(repsStr)) {
-      const n = parseFloat(repsStr);
-      return isNaN(n) ? 90 : Math.round(n * 60);
-    }
-    // Otherwise it's a rep number — take the first number × 4 sec
-    const n = parseInt(repsStr);
-    return isNaN(n) ? 90 : n * 4;
+    // Fixed work duration: 1 minute 30 seconds (90s)
+    return 90;
   }
 
   function parseRestSecs(restStr) {
-    if (!restStr) return 180;
-    // Handle ranges like "90–120 sec" → take lower bound
-    const match = restStr.match(/(\d+)/);
-    if (!match) return 180;
-    const n = parseInt(match[1]);
-    if (/min/i.test(restStr)) return n * 60;
-    return n;
+    // Fixed rest duration: 3 minutes (180s)
+    return 180;
   }
 
   /* ── Build a fresh state object ── */
