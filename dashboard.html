@@ -205,6 +205,8 @@
       flex: 1; min-height: 100vh;
       display: flex; flex-direction: column;
       position: relative; z-index: 1;
+      overflow-x: hidden;
+      max-width: 100%;
     }
 
     /* ─── HERO TOPBAR ─── */
@@ -939,13 +941,53 @@
       .word-card  { grid-column: 1 / 3; }
     }
     @media (max-width: 768px) {
-      .sidebar { transform: translateX(-100%); }
+      /* Sidebar */
+      .sidebar { transform: translateX(-100%); width: 80vw; max-width: 300px; }
       .sidebar.open { transform: translateX(0); box-shadow: 20px 0 60px rgba(0,0,0,.7); }
-      .db-main { margin-left: 0; }
+
+      /* Main layout */
+      .db-main { margin-left: 0; overflow-x: hidden; }
       .db-menu-btn { display: flex; }
-      .db-content { grid-template-columns: 1fr; padding: 14px; gap: 10px; }
+
+      /* Topbar */
+      .db-topbar { padding: 0 16px; height: auto; min-height: 60px; flex-wrap: wrap; gap: 8px; padding-top: 10px; padding-bottom: 10px; }
+      .db-topbar-left { flex: 1; min-width: 0; overflow: hidden; }
+      .db-topbar-right { gap: 8px; flex-shrink: 0; }
+      .db-greeting { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .db-streak-pill { padding: 5px 10px; }
+      .db-streak-num { font-size: 16px; }
+      .db-streak-label { font-size: 8px; }
+
+      /* Content grid */
+      .db-content { grid-template-columns: 1fr; padding: 12px; gap: 10px; overflow-x: hidden; }
       .session-card, .workout-card, .preworkout-card, .water-card, .word-card { grid-column: 1 / 2; grid-row: auto; }
       .right-col { grid-column: 1 / 2; grid-template-columns: 1fr; }
+
+      /* Membership card wrap */
+      #memStatusCardWrap { grid-column: 1 / 2; }
+
+      /* Session card */
+      .session-times { grid-template-columns: 1fr 1fr; }
+      .session-btns { grid-template-columns: 1fr; gap: 8px; }
+      .session-active-badge { flex-wrap: wrap; gap: 6px; }
+      .session-timer { font-size: 24px; }
+
+      /* Workout day tabs */
+      .wday-tabs { gap: 4px; }
+      .wday-tab { padding: 6px 8px; font-size: 10px; }
+
+      /* Water buttons */
+      .water-btns { gap: 6px; }
+      .water-btn { width: 36px; height: 36px; font-size: 18px; }
+
+      /* Inbox modal full width */
+      .inbox-modal > div { width: 95vw; max-width: 100%; }
+    }
+
+    @media (max-width: 400px) {
+      .db-greeting { font-size: 14px; }
+      .db-streak-label { display: none; }
+      .db-topbar-right { gap: 6px; }
     }
   </style>
 </head>
