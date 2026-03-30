@@ -558,35 +558,49 @@
   });
 
   /* ---- Active Members on Left Panel ---- */
-  function loadActiveMembers() {
+  async function loadActiveMembers() {
     const el = document.getElementById('lvMembers');
     if (!el) return;
 
-    const today = new Date().toDateString();
-    const users = window.GudSpace.storage.get('users') || [];
-    const present = users.filter(u =>
-      (u.attendance || []).some(s => new Date(s.date).toDateString() === today && s.timeIn && !s.timeOut)
-    );
-
     const colors = ['#FF1A5E','#a29bfe','#74b9ff','#fd79a8','#fdcb6e','#2ed573'];
 
-    if (!present.length) {
-      el.innerHTML = '<div style="font-size:13px;color:var(--gray-4);">No members checked in yet today.</div>';
-      return;
-    }
+    try {
+      const API_URL = 'https://gudspace-gym-backend.onrender.com/api';
+      const res  = await fetch(`${API_URL}/admin/attendance`);
+      const data = await res.json();
 
-    el.innerHTML = present.slice(0, 5).map((u, i) => {
-      const name = (u.firstName || u.name || '?');
-      const initial = name.charAt(0).toUpperCase();
-      const color = colors[i % colors.length];
-      return `
-        <div class="lv-member-chip">
-          <div class="lmc-av" style="background:${color}">${initial}</div>
-          <span class="lmc-name">${name}</span>
-          <div class="lmc-dot"></div>
-        </div>
-      `;
-    }).join('');
+      if (!Array.isArray(data) || !data.length) {
+        el.innerHTML = '<div style="font-size:13px;color:var(--gray-4);">No members checked in yet today.</div>';
+        return;
+      }
+
+      const today   = new Date().toDateString();
+      const present = data.filter(a =>
+        a.check_in &&
+        !a.check_out &&
+        new Date(a.check_in).toDateString() === today
+      );
+
+      if (!present.length) {
+        el.innerHTML = '<div style="font-size:13px;color:var(--gray-4);">No members checked in yet today.</div>';
+        return;
+      }
+
+      el.innerHTML = present.slice(0, 5).map((a, i) => {
+        const name    = (a.users?.name || '?');
+        const initial = name.charAt(0).toUpperCase();
+        const color   = colors[i % colors.length];
+        return `
+          <div class="lv-member-chip">
+            <div class="lmc-av" style="background:${color}">${initial}</div>
+            <span class="lmc-name">${name}</span>
+            <div class="lmc-dot"></div>
+          </div>
+        `;
+      }).join('');
+    } catch(e) {
+      el.innerHTML = '<div style="font-size:13px;color:var(--gray-4);">No members checked in yet today.</div>';
+    }
   }
 
   /* ---- Password toggle ---- */
@@ -693,24 +707,18 @@
     const email = document.getElementById('forgotEmail').value.trim();
     if (!email) return;
 
-    const users = window.GudSpace.storage.get('users') || [];
-    const user  = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
     document.getElementById('modalFound').classList.remove('show');
     document.getElementById('modalNotFound').classList.remove('show');
 
-    if (user) {
+    if (email) {
       document.getElementById('modalFound').classList.add('show');
       document.getElementById('modalFound').innerHTML = `
-        <div style="font-family:var(--font-cond);font-weight:700;letter-spacing:0.06em;margin-bottom:8px;color:#2ed573;">✅ ACCOUNT FOUND</div>
+        <div style="font-family:var(--font-cond);font-weight:700;letter-spacing:0.06em;margin-bottom:8px;color:#2ed573;">✅ REQUEST RECEIVED</div>
         <div style="color:var(--gray-2);line-height:1.8;">
-          <strong style="color:white;">Name:</strong> ${user.firstName} ${user.lastName || ''}<br/>
-          <strong style="color:white;">Email:</strong> ${user.email}<br/>
+          <strong style="color:white;">Email:</strong> ${email}<br/>
         </div>
-        <div style="font-size:11px;color:var(--gray-4);margin-top:10px;">💡 Please contact the gym admin to reset your password.</div>
+        <div style="font-size:11px;color:var(--gray-4);margin-top:10px;">💡 Please contact the gym admin directly to reset your password.</div>
       `;
-    } else {
-      document.getElementById('modalNotFound').classList.add('show');
     }
   }
 

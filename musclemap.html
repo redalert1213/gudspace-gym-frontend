@@ -805,6 +805,7 @@
   </div><!-- end page-main -->
 
   <script src="script.js"></script>
+  <script src="api.js"></script>
   <script>
     'use strict';
 
@@ -1159,41 +1160,39 @@
     const DAYS_SHORT   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
     /* ── INIT ── */
-    document.addEventListener('DOMContentLoaded', () => {
-      currentUser = window.GudSpace.storage.get('currentUser');
-      if (!currentUser) { window.location.href = 'login.html'; return; }
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = window.GudSpace.requireAuth();
+      if (!currentUser) return;
+      try {
+        const res = await window.GudAPI.getProfile();
+        if (res.user) {
+          currentUser = { ...currentUser, ...res.user };
+          window.GudSpace.storage.set('currentUser', currentUser);
+        }
+      } catch(e) { console.warn('Could not refresh profile.'); }
       loadSidebar();
       loadTopBar();
-      recalcStreak();
       startAutoLogoutTimer();
       initDrag();
     });
 
     /* ── SIDEBAR ── */
     function loadSidebar() {
-      const u = currentUser, p = u.profile || {};
-      const name = u.firstName || u.name || 'Champ';
+      const u    = currentUser;
+      const name = u.name || 'Champ';
       document.getElementById('sbAvatarLetter').textContent = name.charAt(0).toUpperCase();
-      document.getElementById('sbName').textContent = ((u.firstName||'') + ' ' + (u.lastName||'')).trim().toUpperCase();
+      document.getElementById('sbName').textContent = name.toUpperCase();
       const gL = {male:'Male',female:'Female','non-binary':'Non-Binary','prefer-not-to-say':'—'};
-      document.getElementById('sbMeta').textContent = `${gL[p.gender]||'—'} · ${p.weightKg||'--'} kg · ${p.heightCm||'--'} cm`;
+      document.getElementById('sbMeta').textContent = `${gL[u.gender]||'—'} · ${u.weight||'--'} kg · ${u.height||'--'} cm`;
       const gM = {'build-strength':'Build Strength','lose-weight':'Lose Weight','get-lean':'Get Lean','get-in-shape':'Get in Shape','build-muscle':'Build Muscle','overall-fitness':'Overall Fitness'};
-      document.getElementById('sbGoalBadge').textContent = '🎯 ' + (gM[p.goal] || 'Set Goal');
-      if (u.photoUrl) { const i = document.getElementById('sbAvatarImg'); i.src = u.photoUrl; i.style.display = 'block'; }
+      document.getElementById('sbGoalBadge').textContent = '🎯 ' + (gM[u.goal] || 'Set Goal');
+      if (u.avatar_url) { const i = document.getElementById('sbAvatarImg'); i.src = u.avatar_url; i.style.display = 'block'; }
     }
 
     function loadTopBar() {
       const now = new Date();
       document.getElementById('topDate').textContent = (DAYS_SHORT[now.getDay()] + ', ' + MONTHS_FULL[now.getMonth()] + ' ' + now.getDate()).toUpperCase();
-      document.getElementById('topStreakNum').textContent = currentUser.streak || 0;
-    }
-
-    function recalcStreak() {
-      const attended = new Set((currentUser.attendance||[]).filter(s=>s.timeIn).map(s=>new Date(s.date).toDateString()));
-      const today = new Date(); let streak = 0;
-      for (let i=0;i<365;i++) { const d=new Date(today); d.setDate(today.getDate()-i); if (attended.has(d.toDateString())) streak++; else break; }
-      if (streak !== (currentUser.streak||0)) { currentUser.streak=streak; saveUser(); }
-      document.getElementById('topStreakNum').textContent = streak;
+      document.getElementById('topStreakNum').textContent = '—';
     }
 
     /* ── 3D BODY CONTROLS ── */
@@ -1379,24 +1378,31 @@
 
     /* ── PHOTO UPLOAD ── */
     function triggerPhotoUpload() { document.getElementById('photoInput').click(); }
-    function handlePhotoUpload(e) {
+    async function handlePhotoUpload(e) {
       const file = e.target.files[0]; if (!file) return;
       const reader = new FileReader();
       reader.onload = ev => {
         const img = document.getElementById('sbAvatarImg');
         img.src = ev.target.result; img.style.display = 'block';
-        currentUser.photoUrl = ev.target.result; saveUser();
-        window.GudSpace.showToast('Profile photo updated! 📸','✅');
       };
       reader.readAsDataURL(file);
+      window.GudSpace.showToast('Uploading photo...', '⏳', 8000);
+      try {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        const res = await window.GudAPI.uploadAvatar(formData);
+        if (res.error) { window.GudSpace.showToast(res.error, '❌'); }
+        else {
+          currentUser.avatar_url = res.avatar_url;
+          window.GudSpace.storage.set('currentUser', currentUser);
+          document.getElementById('sbAvatarImg').src = res.avatar_url;
+          window.GudSpace.showToast('Profile photo updated! 📸', '✅');
+        }
+      } catch(err) { window.GudSpace.showToast('Photo upload failed. Try again.', '❌'); }
     }
 
     /* ── HELPERS ── */
     function saveUser() {
-      const users = window.GudSpace.storage.get('users') || [];
-      const idx   = users.findIndex(u => u.id === currentUser.id);
-      if (idx >= 0) users[idx] = currentUser;
-      window.GudSpace.storage.set('users', users);
       window.GudSpace.storage.set('currentUser', currentUser);
     }
   </script>
