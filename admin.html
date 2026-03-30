@@ -2105,13 +2105,36 @@
     const u = users.find(u => u.id === userId);
     if (!u) return;
 
-    const p = u.profile || {};
-    const name = ((u.firstName || '') + ' ' + (u.lastName || '')).trim();
-    const initial = (u.firstName || '?').charAt(0).toUpperCase();
+    const name = ((u.firstName || '') + ' ' + (u.lastName || '')).trim() || u.name || 'N/A';
+    const initial = (u.firstName || u.name || '?').charAt(0).toUpperCase();
     const color = avatarColor(u.id);
     const attendance = (u.attendance || []).sort((a,b) => new Date(b.date)-new Date(a.date));
-    const bmiClass = (p.bmiClass || '').toLowerCase();
-    const bmiColor = bmiClass.includes('normal') ? '#2ed573' : bmiClass.includes('over') ? '#fdcb6e' : bmiClass.includes('obese') ? '#ff6b6b' : '#74b9ff';
+
+    // Pull stats directly from user fields (from DB)
+    const weightKg = parseFloat(u.weight) || 0;
+    const heightCm = parseFloat(u.height) || 0;
+    const age      = parseInt(u.age)      || 0;
+    const gender   = u.gender             || 'male';
+    const goal     = u.goal               || '';
+    const activity = parseFloat(u.activity_level) || 1.375;
+
+    // Compute BMI
+    let bmiVal = '--', bmiClass = '', bmiColor = 'var(--white)';
+    if (weightKg && heightCm) {
+      const bmiResult = window.GudSpace.calculateBMI(weightKg, heightCm);
+      bmiVal   = bmiResult.bmi;
+      bmiClass = bmiResult.classification;
+      bmiColor = bmiResult.color;
+    }
+
+    // Compute Nutrition
+    let calories = '--', protein = '--', carbs = '--';
+    if (weightKg && heightCm && age && gender) {
+      const n = window.GudSpace.calculateNutrition({ gender, age, weightKg, heightCm, activityLevel: activity });
+      calories = n.tdee.toLocaleString();
+      protein  = n.protein;
+      carbs    = n.carbs;
+    }
 
     const attRows = attendance.slice(0, 10).map(s => `
       <div class="mm-att-row">
@@ -2125,25 +2148,25 @@
       <div class="mm-header">
         <div class="mm-avatar" style="background:${color}">${initial}</div>
         <div>
-          <div class="mm-name">${name.toUpperCase() || 'N/A'}</div>
+          <div class="mm-name">${name.toUpperCase()}</div>
           <div class="mm-email">${u.email}</div>
-          <span class="goal-tag" style="margin-top:6px;display:inline-block;">${GOAL_LABELS[p.goal] || '—'}</span>
+          <span class="goal-tag" style="margin-top:6px;display:inline-block;">${GOAL_LABELS[goal] || '—'}</span>
         </div>
       </div>
 
       <div class="mm-section">Body Stats</div>
       <div class="mm-grid">
-        <div class="mm-item"><div class="mm-item-label">Weight</div><div class="mm-item-value">${p.weightKg || '--'} kg</div></div>
-        <div class="mm-item"><div class="mm-item-label">Height</div><div class="mm-item-value">${p.heightCm || '--'} cm</div></div>
-        <div class="mm-item"><div class="mm-item-label">Age</div><div class="mm-item-value">${p.age || '--'} yrs</div></div>
-        <div class="mm-item"><div class="mm-item-label">BMI</div><div class="mm-item-value" style="color:${bmiColor}">${p.bmi || '--'} <span style="font-size:12px;">${p.bmiClass || ''}</span></div></div>
+        <div class="mm-item"><div class="mm-item-label">Weight</div><div class="mm-item-value">${weightKg || '--'} kg</div></div>
+        <div class="mm-item"><div class="mm-item-label">Height</div><div class="mm-item-value">${heightCm || '--'} cm</div></div>
+        <div class="mm-item"><div class="mm-item-label">Age</div><div class="mm-item-value">${age || '--'} yrs</div></div>
+        <div class="mm-item"><div class="mm-item-label">BMI</div><div class="mm-item-value" style="color:${bmiColor}">${bmiVal} <span style="font-size:12px;">${bmiClass}</span></div></div>
       </div>
 
       <div class="mm-section">Daily Nutrition Targets</div>
       <div class="mm-grid">
-        <div class="mm-item"><div class="mm-item-label">Calories</div><div class="mm-item-value">${(p.calories||'--').toLocaleString()} kcal</div></div>
-        <div class="mm-item"><div class="mm-item-label">Protein</div><div class="mm-item-value">${p.protein || '--'} g</div></div>
-        <div class="mm-item"><div class="mm-item-label">Carbs</div><div class="mm-item-value">${p.carbs || '--'} g</div></div>
+        <div class="mm-item"><div class="mm-item-label">Calories</div><div class="mm-item-value">${calories} kcal</div></div>
+        <div class="mm-item"><div class="mm-item-label">Protein</div><div class="mm-item-value">${protein} g</div></div>
+        <div class="mm-item"><div class="mm-item-label">Carbs</div><div class="mm-item-value">${carbs} g</div></div>
         <div class="mm-item"><div class="mm-item-label">Total Visits</div><div class="mm-item-value" style="color:var(--pink)">${attendance.length}</div></div>
       </div>
 
