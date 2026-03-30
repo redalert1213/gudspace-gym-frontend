@@ -2137,6 +2137,21 @@
 
       <div class="mm-section">Attendance History (Last 10)</div>
       <div class="mm-att-list">${attRows}</div>
+
+      <div class="mm-section" style="margin-top:20px;">Reset Password</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px;">
+        <input
+          type="password"
+          id="resetPwInput_${u.id}"
+          placeholder="Enter new password"
+          style="flex:1;min-width:180px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px 14px;color:#fff;font-size:13px;font-family:var(--font-body);outline:none;"
+        />
+        <button
+          onclick="doResetPassword('${u.id}')"
+          style="background:var(--pink);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-family:var(--font-cond);font-size:12px;font-weight:700;letter-spacing:.08em;cursor:pointer;white-space:nowrap;"
+        >🔑 RESET PASSWORD</button>
+      </div>
+      <div id="resetPwMsg_${u.id}" style="font-size:12px;margin-top:6px;min-height:18px;"></div>
     `;
 
     document.getElementById('memberModal').classList.add('show');
@@ -2144,6 +2159,37 @@
 
   function closeMemberModal() {
     document.getElementById('memberModal').classList.remove('show');
+  }
+
+  async function doResetPassword(userId) {
+    const input = document.getElementById('resetPwInput_' + userId);
+    const msgEl = document.getElementById('resetPwMsg_' + userId);
+    if (!input || !msgEl) return;
+
+    const password = input.value.trim();
+    if (!password || password.length < 6) {
+      msgEl.style.color = '#ff6b6b';
+      msgEl.textContent = '⚠️ Password must be at least 6 characters.';
+      return;
+    }
+
+    msgEl.style.color = 'rgba(255,255,255,0.4)';
+    msgEl.textContent = 'Resetting...';
+
+    try {
+      const res = await GudAPI.adminResetPassword(userId, password);
+      if (res.success || res.message) {
+        msgEl.style.color = '#2ed573';
+        msgEl.textContent = '✅ Password reset successfully!';
+        input.value = '';
+      } else {
+        msgEl.style.color = '#ff6b6b';
+        msgEl.textContent = '❌ ' + (res.error || 'Something went wrong.');
+      }
+    } catch (err) {
+      msgEl.style.color = '#ff6b6b';
+      msgEl.textContent = '❌ Network error. Please try again.';
+    }
   }
   document.getElementById('memberModal').addEventListener('click', function(e) {
     if (e.target === this) closeMemberModal();
