@@ -1010,6 +1010,18 @@
 
       <p class="adm-pin-hint">Default PIN: <span>1234</span> — change in Settings</p>
 
+      <!-- Admin account login — needed to get a JWT token for the API -->
+      <div style="margin-top:20px;border-top:1px solid rgba(255,255,255,0.06);padding-top:20px;">
+        <div style="font-family:var(--font-cond);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:10px;">🔐 Admin Account</div>
+        <input type="email" id="adminLoginEmail" placeholder="Admin email address"
+          style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 13px;color:#fff;font-size:13px;outline:none;margin-bottom:8px;font-family:inherit;"
+          onfocus="this.style.borderColor='rgba(255,26,94,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'" />
+        <input type="password" id="adminLoginPw" placeholder="Admin password"
+          style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 13px;color:#fff;font-size:13px;outline:none;font-family:inherit;"
+          onfocus="this.style.borderColor='rgba(255,26,94,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'" />
+        <div id="adminLoginError" style="font-size:11px;color:#ff6b6b;margin-top:6px;min-height:16px;"></div>
+      </div>
+
       <a href="login.html" class="adm-back-link">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -1292,14 +1304,6 @@
             </select>
           </div>
           </div>
-          <!-- Admin login prompt — shown if no token available -->
-      <div id="annAdminLoginPrompt" style="display:none;background:rgba(255,26,94,0.07);border:1px solid rgba(255,26,94,0.2);border-radius:10px;padding:16px;margin-bottom:16px;">
-        <div style="font-family:var(--font-cond);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--pink);margin-bottom:10px;">🔐 Admin Login Required</div>
-        <div style="font-size:12px;color:var(--gray-3);margin-bottom:12px;">Log in with your admin account to post announcements.</div>
-        <input type="email" id="annAdminEmail" placeholder="Admin email" style="width:100%;background:var(--black-4);border:1.5px solid var(--black-5);border-radius:8px;padding:10px 12px;color:var(--white);font-size:13px;outline:none;margin-bottom:8px;" />
-        <input type="password" id="annAdminPw" placeholder="Password" style="width:100%;background:var(--black-4);border:1.5px solid var(--black-5);border-radius:8px;padding:10px 12px;color:var(--white);font-size:13px;outline:none;margin-bottom:10px;" />
-        <button onclick="adminUserLogin()" style="background:var(--pink);color:white;border:none;border-radius:8px;padding:10px 20px;font-family:var(--font-cond);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;width:100%;">Login & Continue</button>
-      </div>
       <button class="ann-post-btn" onclick="postAnnouncement()">
             Post Announcement
           </button>
@@ -1529,6 +1533,7 @@
   /* ---- Check saved admin session ---- */
   document.addEventListener('DOMContentLoaded', () => {
     const admSession = sessionStorage.getItem('gudspace_admin');
+    // If returning to admin portal and already have a stored user token, use it
     if (admSession === 'true') showAdminDashboard();
     updateAdmDate();
 
@@ -1575,9 +1580,39 @@
     }
   }
 
-  function checkPin() {
+  async function checkPin() {
     const stored = window.GudSpace.storage.get(ADMIN_PIN_KEY) || DEFAULT_PIN;
     if (pinBuffer === stored) {
+
+      // Also log in as admin user so we get a JWT token.
+      // This token is needed by the API for announcements, messages, etc.
+      const email = document.getElementById('adminLoginEmail').value.trim();
+      const pw    = document.getElementById('adminLoginPw').value;
+      const errEl = document.getElementById('adminLoginError');
+
+      if (email && pw) {
+        try {
+          const res = await window.GudAPI.login({ email, password: pw });
+          if (res.error) {
+            // Wrong credentials — block entry and show error
+            errEl.textContent = '❌ ' + res.error;
+            pinBuffer = '';
+            updatePinDots();
+            return;
+          }
+          // Save token so GudAPI.getToken() works everywhere
+          window.GudSpace.storage.set('currentUser', { ...res.user, token: res.token });
+          errEl.textContent = '';
+        } catch(e) {
+          errEl.textContent = '❌ Could not connect to server. Check your internet.';
+          pinBuffer = '';
+          updatePinDots();
+          return;
+        }
+      }
+      // If fields are blank, we still let them in (PIN is enough for viewing),
+      // but announcements and messages will still prompt for login.
+
       sessionStorage.setItem('gudspace_admin', 'true');
       showAdminDashboard();
     } else {
@@ -2172,11 +2207,10 @@
       window.GudSpace.showToast('Please fill in both Title and Message.', '⚠️'); return;
     }
 
-    // Admin needs a valid user token — check if logged in as admin user
+    // Token comes from logging in at the PIN screen
     const token = window.GudAPI ? window.GudAPI.getToken() : null;
     if (!token) {
-      window.GudSpace.showToast('Please log in as admin user first to post announcements.', '⚠️', 6000);
-      document.getElementById('annAdminLoginPrompt').style.display = 'block';
+      window.GudSpace.showToast('No admin session found. Please log out and log back in with your email and password.', '⚠️', 7000);
       return;
     }
 
@@ -2192,22 +2226,6 @@
     } catch (err) {
       console.error('postAnnouncement error:', err);
       window.GudSpace.showToast('Failed to post announcement.', '❌');
-    }
-  }
-
-  async function adminUserLogin() {
-    const email = document.getElementById('annAdminEmail').value.trim();
-    const pw    = document.getElementById('annAdminPw').value;
-    if (!email || !pw) { window.GudSpace.showToast('Enter email and password.', '⚠️'); return; }
-    try {
-      const res = await window.GudAPI.login({ email, password: pw });
-      if (res.error) { window.GudSpace.showToast(res.error, '❌'); return; }
-      // Store token so GudAPI.getToken() works
-      window.GudSpace.storage.set('currentUser', { ...res.user, token: res.token });
-      document.getElementById('annAdminLoginPrompt').style.display = 'none';
-      window.GudSpace.showToast('Logged in! You can now post announcements.', '✅');
-    } catch(e) {
-      window.GudSpace.showToast('Login failed. Try again.', '❌');
     }
   }
 
