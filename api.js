@@ -261,6 +261,19 @@ window.GudAPI = {
     });
     return res.json();
   },
+  /* ---- ADMIN PASSWORD RESET ---- */
+  adminResetPassword: async function(user_id, password) {
+    const res = await fetch(`${API_URL}/admin/reset-password/${user_id}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.getToken()
+      },
+      body: JSON.stringify({ password })
+    });
+    return res.json();
+  },
+
   /* ---- OTP ---- */
   sendOtp: async function(email) {
     const res = await fetch(`${API_URL}/otp/send`, {

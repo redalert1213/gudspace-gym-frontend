@@ -2115,6 +2115,21 @@
 
       <div class="mm-section">Attendance History (Last 10)</div>
       <div class="mm-att-list">${attRows}</div>
+
+      <div class="mm-section">Reset Password</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <input
+          type="password"
+          id="resetPwInput_${u.id}"
+          placeholder="Enter new password"
+          style="flex:1;min-width:180px;background:var(--black-3);border:1px solid var(--black-5);border-radius:6px;padding:10px 14px;color:var(--white);font-size:14px;outline:none;"
+        />
+        <button
+          onclick="adminResetPassword('${u.id}')"
+          style="background:var(--pink);color:white;border:none;border-radius:6px;padding:10px 20px;font-family:var(--font-cond);font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;white-space:nowrap;"
+        >🔑 Reset Password</button>
+      </div>
+      <div id="resetPwMsg_${u.id}" style="font-size:12px;margin-top:8px;min-height:18px;"></div>
     `;
 
     document.getElementById('memberModal').classList.add('show');
@@ -2126,6 +2141,34 @@
   document.getElementById('memberModal').addEventListener('click', function(e) {
     if (e.target === this) closeMemberModal();
   });
+
+  /* ---- ADMIN RESET PASSWORD ---- */
+  async function adminResetPassword(userId) {
+    const input = document.getElementById('resetPwInput_' + userId);
+    const msgEl = document.getElementById('resetPwMsg_' + userId);
+    const password = input ? input.value.trim() : '';
+
+    if (!password || password.length < 6) {
+      msgEl.style.color = '#ff6b6b';
+      msgEl.textContent = '⚠️ Password must be at least 6 characters.';
+      return;
+    }
+
+    msgEl.style.color = 'var(--gray-3)';
+    msgEl.textContent = 'Resetting...';
+
+    const result = await window.GudAPI.adminResetPassword(userId, password);
+
+    if (result.success) {
+      input.value = '';
+      msgEl.style.color = '#2ed573';
+      msgEl.textContent = '✅ Password reset successfully!';
+      setTimeout(() => { msgEl.textContent = ''; }, 4000);
+    } else {
+      msgEl.style.color = '#ff6b6b';
+      msgEl.textContent = '❌ ' + (result.error || 'Something went wrong.');
+    }
+  }
 
   /* ---- DELETE MEMBER ---- */
   async function deleteMember(userId, name) {
