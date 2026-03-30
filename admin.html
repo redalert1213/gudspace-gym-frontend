@@ -475,8 +475,11 @@
       width: 36px; height: 36px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       font-family: var(--font-display); font-size: 15px;
-      color: white; flex-shrink: 0;
+      color: white; flex-shrink: 0; overflow: hidden; position: relative;
     }
+    .member-av img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+    .pp-member-avatar { overflow: hidden; position: relative; }
+    .pp-member-avatar img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
     .member-name {
       font-family: var(--font-cond);
       font-size: 13px; font-weight: 700;
@@ -1289,7 +1292,15 @@
             </select>
           </div>
           </div>
-          <button class="ann-post-btn" onclick="postAnnouncement()">
+          <!-- Admin login prompt — shown if no token available -->
+      <div id="annAdminLoginPrompt" style="display:none;background:rgba(255,26,94,0.07);border:1px solid rgba(255,26,94,0.2);border-radius:10px;padding:16px;margin-bottom:16px;">
+        <div style="font-family:var(--font-cond);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--pink);margin-bottom:10px;">🔐 Admin Login Required</div>
+        <div style="font-size:12px;color:var(--gray-3);margin-bottom:12px;">Log in with your admin account to post announcements.</div>
+        <input type="email" id="annAdminEmail" placeholder="Admin email" style="width:100%;background:var(--black-4);border:1.5px solid var(--black-5);border-radius:8px;padding:10px 12px;color:var(--white);font-size:13px;outline:none;margin-bottom:8px;" />
+        <input type="password" id="annAdminPw" placeholder="Password" style="width:100%;background:var(--black-4);border:1.5px solid var(--black-5);border-radius:8px;padding:10px 12px;color:var(--white);font-size:13px;outline:none;margin-bottom:10px;" />
+        <button onclick="adminUserLogin()" style="background:var(--pink);color:white;border:none;border-radius:8px;padding:10px 20px;font-family:var(--font-cond);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;width:100%;">Login & Continue</button>
+      </div>
+      <button class="ann-post-btn" onclick="postAnnouncement()">
             Post Announcement
           </button>
         </div>
@@ -1639,10 +1650,18 @@
     const empty   = document.getElementById('progressPhotoEmpty');
     const members = users.filter(u => !u.isAdmin);
 
+    // NOTE: Before/After photos are currently stored locally on each member's device.
+    // They will show here only after a backend upgrade (Supabase table + Cloudinary).
+    // For now, this section shows photos from any backend-synced data if available.
     const withPhotos = members.filter(u => u.progressPhotos && (u.progressPhotos.before || u.progressPhotos.after));
 
     if (!withPhotos.length) {
       grid.style.display  = 'none';
+      empty.innerHTML = `<div style="text-align:center;padding:40px 20px;">
+        <div style="font-size:48px;margin-bottom:16px;">📷</div>
+        <div style="font-family:var(--font-cond);font-size:16px;font-weight:700;color:var(--white);margin-bottom:8px;">No Progress Photos Yet</div>
+        <div style="font-size:13px;color:var(--gray-3);line-height:1.6;">Members' before/after photos will appear here once the<br>backend photo storage feature is enabled.</div>
+      </div>`;
       empty.style.display = 'block';
       return;
     }
@@ -1658,6 +1677,7 @@
       const color   = COLORS[(u.id?.charCodeAt(4) || 0) % COLORS.length];
       const p       = u.profile || {};
       const photos  = u.progressPhotos || {};
+      const ppAvImg = u.avatar_url ? `<img src="${u.avatar_url}" alt="${initial}" />` : '';
 
       const beforeSlot = photos.before
         ? `<div class="pp-photo-slot">
@@ -1678,7 +1698,7 @@
       return `
         <div class="pp-member-card">
           <div class="pp-member-header">
-            <div class="pp-member-avatar" style="background:${color};">${initial}</div>
+            <div class="pp-member-avatar" style="background:${color};">${initial}${ppAvImg}</div>
             <div>
               <div class="pp-member-name">${name}</div>
               <div class="pp-member-meta">${p.goal ? p.goal.replace(/-/g,' ') : '—'} · ${p.weightKg || '--'} kg · ${p.heightCm || '--'} cm</div>
@@ -1783,11 +1803,12 @@
       const color = avatarColor(u.id);
       const isIn = s.timeIn && !s.timeOut;
       const isAuto = s.autoTimeout;
+      const avImg2 = u.avatar_url ? `<img src="${u.avatar_url}" alt="${initial}" />` : '';
       return `
         <tr>
           <td>
             <div class="member-cell">
-              <div class="member-av" style="background:${color}">${initial}</div>
+              <div class="member-av" style="background:${color}">${initial}${avImg2}</div>
               <div>
                 <div class="member-name">${name.toUpperCase()}</div>
                 <div class="member-email">${u.email}</div>
@@ -1852,12 +1873,13 @@
       const color = avatarColor(u.id);
       const bmiClass = (p.bmiClass || '').toLowerCase();
       const bmiColor = bmiClass.includes('normal') ? '#2ed573' : bmiClass.includes('over') ? '#fdcb6e' : bmiClass.includes('obese') ? '#ff6b6b' : '#74b9ff';
+      const avImg = u.avatar_url ? `<img src="${u.avatar_url}" alt="${initial}" />` : '';
 
       return `
         <tr>
           <td>
             <div class="member-cell">
-              <div class="member-av" style="background:${color}">${initial}</div>
+              <div class="member-av" style="background:${color}">${initial}${avImg}</div>
               <div>
                 <div class="member-name">${name.trim().toUpperCase() || 'N/A'}</div>
                 <div class="member-email">${u.email}</div>
@@ -2150,6 +2172,14 @@
       window.GudSpace.showToast('Please fill in both Title and Message.', '⚠️'); return;
     }
 
+    // Admin needs a valid user token — check if logged in as admin user
+    const token = window.GudAPI ? window.GudAPI.getToken() : null;
+    if (!token) {
+      window.GudSpace.showToast('Please log in as admin user first to post announcements.', '⚠️', 6000);
+      document.getElementById('annAdminLoginPrompt').style.display = 'block';
+      return;
+    }
+
     const expires_at = expDays > 0 ? new Date(Date.now() + expDays * 86400000).toISOString() : null;
 
     try {
@@ -2157,11 +2187,27 @@
       if (res.error) { window.GudSpace.showToast(res.error, '❌'); return; }
       document.getElementById('annTitle').value = '';
       document.getElementById('annBody').value  = '';
-      window.GudSpace.showToast('Announcement posted!', '📢');
+      window.GudSpace.showToast('Announcement posted! 📢', '✅');
       renderAnnouncements();
     } catch (err) {
       console.error('postAnnouncement error:', err);
       window.GudSpace.showToast('Failed to post announcement.', '❌');
+    }
+  }
+
+  async function adminUserLogin() {
+    const email = document.getElementById('annAdminEmail').value.trim();
+    const pw    = document.getElementById('annAdminPw').value;
+    if (!email || !pw) { window.GudSpace.showToast('Enter email and password.', '⚠️'); return; }
+    try {
+      const res = await window.GudAPI.login({ email, password: pw });
+      if (res.error) { window.GudSpace.showToast(res.error, '❌'); return; }
+      // Store token so GudAPI.getToken() works
+      window.GudSpace.storage.set('currentUser', { ...res.user, token: res.token });
+      document.getElementById('annAdminLoginPrompt').style.display = 'none';
+      window.GudSpace.showToast('Logged in! You can now post announcements.', '✅');
+    } catch(e) {
+      window.GudSpace.showToast('Login failed. Try again.', '❌');
     }
   }
 
