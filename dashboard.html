@@ -1977,8 +1977,10 @@
     }
 
     function formatTime12(date) {
-      let h      = date.getHours();
-      const m    = String(date.getMinutes()).padStart(2,'0');
+      // Convert UTC timestamp to PH time (UTC+8)
+      const phDate = new Date(date.getTime() + (8 * 60 * 60 * 1000));
+      let h      = phDate.getUTCHours();
+      const m    = String(phDate.getUTCMinutes()).padStart(2,'0');
       const ampm = h >= 12 ? 'PM' : 'AM';
       h = h % 12 || 12;
       return `${String(h).padStart(2,'0')}:${m} ${ampm}`;

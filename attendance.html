@@ -1136,13 +1136,14 @@
 
     /* ---- HELPERS ---- */
     function formatTime12(date) {
-      // Ensure UTC strings are treated as UTC, not local
+      // Parse string as UTC, then convert to PH time (UTC+8)
       if (typeof date === 'string') {
         if (!/Z|[+-]\d{2}:?\d{2}$/.test(date)) date = date + 'Z';
         date = new Date(date);
       }
-      let h      = date.getHours();
-      const m    = String(date.getMinutes()).padStart(2, '0');
+      const phDate = new Date(date.getTime() + (8 * 60 * 60 * 1000));
+      let h      = phDate.getUTCHours();
+      const m    = String(phDate.getUTCMinutes()).padStart(2, '0');
       const ampm = h >= 12 ? 'PM' : 'AM';
       h = h % 12 || 12;
       return `${String(h).padStart(2, '0')}:${m} ${ampm}`;
