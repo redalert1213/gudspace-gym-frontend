@@ -1493,6 +1493,24 @@
             else                    bmiClass = 'Obese';
           }
 
+          // Compute daily nutrition targets via Mifflin-St Jeor
+          let nutCalories = null, nutProtein = null, nutCarbs = null, nutFat = null;
+          if (u.weight && u.height && u.age && u.gender) {
+            let bmr;
+            if (u.gender === 'male') {
+              bmr = 10 * u.weight + 6.25 * u.height - 5 * u.age + 5;
+            } else {
+              bmr = 10 * u.weight + 6.25 * u.height - 5 * u.age - 161;
+            }
+            const actMap = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9 };
+            const actMult = actMap[u.activity_level] || 1.375;
+            const tdee = Math.round(bmr * actMult);
+            nutProtein  = Math.round(u.weight * 1.8);
+            nutFat      = Math.round(tdee * 0.25 / 9);
+            nutCarbs    = Math.round((tdee - nutProtein * 4 - nutFat * 9) / 4);
+            nutCalories = tdee;
+          }
+
           // membership from Supabase — stored in u.membership if admin/users returns it
           // otherwise null
           const membership = u.membership
@@ -1518,9 +1536,10 @@
               goal:     u.goal,
               bmi:      bmiRaw,
               bmiClass,
-              calories: u.calories || null,
-              protein:  u.protein  || null,
-              carbs:    u.carbs    || null,
+              calories: nutCalories,
+              protein:  nutProtein,
+              carbs:    nutCarbs,
+              fat:      nutFat,
             },
             attendance:     userAtt,
             membership,
@@ -1729,11 +1748,11 @@
   /* ---- HELPER: format time ---- */
   function fmt12(isoStr) {
     if (!isoStr) return '--';
-    // Ensure UTC strings are treated as UTC, not local
+    // Force UTC parsing then convert to PH time (UTC+8)
     if (!/Z|[+-]\d{2}:?\d{2}$/.test(isoStr)) isoStr = isoStr + 'Z';
     const d = new Date(isoStr);
-    let h = d.getHours();
-    const m = String(d.getMinutes()).padStart(2, '0');
+    let h = (d.getUTCHours() + 8) % 24;
+    const m = String(d.getUTCMinutes()).padStart(2, '0');
     const ap = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12;
     return `${String(h).padStart(2,'0')}:${m} ${ap}`;
@@ -2109,9 +2128,10 @@
 
       <div class="mm-section">Daily Nutrition Targets</div>
       <div class="mm-grid">
-        <div class="mm-item"><div class="mm-item-label">Calories</div><div class="mm-item-value">${(p.calories||'--').toLocaleString()} kcal</div></div>
+        <div class="mm-item"><div class="mm-item-label">Calories</div><div class="mm-item-value">${p.calories ? p.calories.toLocaleString() + ' kcal' : '--'}</div></div>
         <div class="mm-item"><div class="mm-item-label">Protein</div><div class="mm-item-value">${p.protein || '--'} g</div></div>
         <div class="mm-item"><div class="mm-item-label">Carbs</div><div class="mm-item-value">${p.carbs || '--'} g</div></div>
+        <div class="mm-item"><div class="mm-item-label">Fat</div><div class="mm-item-value">${p.fat || '--'} g</div></div>
         <div class="mm-item"><div class="mm-item-label">Total Visits</div><div class="mm-item-value" style="color:var(--pink)">${attendance.length}</div></div>
       </div>
 
