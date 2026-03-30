@@ -2007,11 +2007,12 @@
         const color = avatarColor(u.id);
         const isIn = s.timeIn && !s.timeOut;
         const isAuto = s.autoTimeout;
+        const avImgAtt = u.avatar_url ? `<img src="${u.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;inset:0;" />` : '';
         return `
           <tr ${isAuto ? 'class="timeout-row"' : ''}>
             <td>
               <div class="member-cell">
-                <div class="member-av" style="background:${color};width:32px;height:32px;font-size:13px;">${initial}</div>
+                <div class="member-av" style="background:${color};width:32px;height:32px;font-size:13px;position:relative;">${initial}${avImgAtt}</div>
                 <div class="member-name">${name.trim().toUpperCase()}</div>
               </div>
             </td>
@@ -2551,11 +2552,12 @@
         ? `<span class="renewal-req-badge">🔄 Requested</span>`
         : `<span style="color:rgba(255,255,255,.2);font-size:12px;">—</span>`;
 
+      const avImgMem = u.avatar_url ? `<img src="${u.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;inset:0;" />` : '';
       return `
         <tr>
           <td>
             <div class="member-cell">
-              <div class="member-av" style="background:${color}">${initial}</div>
+              <div class="member-av" style="background:${color};position:relative;">${initial}${avImgMem}</div>
               <div>
                 <div class="member-name">${name.toUpperCase() || 'N/A'}</div>
                 <div class="member-email">${u.email}</div>
