@@ -584,10 +584,6 @@
                 </span>
               </div>
               <div class="form-error" id="err-email"></div>
-              <button type="button" id="sendOtpBtn" onclick="sendOtp()"
-                style="display:none; margin-top: 8px; background: rgba(255,26,94,0.1); color: var(--pink); border: 1px solid rgba(255,26,94,0.3); border-radius: 8px; padding: 9px 18px; font-family: var(--font-cond); font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; width: 100%;">
-                📧 Send Verification Code
-              </button>
             </div>
 
             <!-- Password -->
@@ -693,34 +689,6 @@
 
           </form>
 
-          <!-- OTP VERIFICATION STEP (hidden until Send Code clicked) -->
-          <div id="otpStep" style="display:none; margin-top: 20px;">
-            <div style="background: rgba(255,26,94,0.06); border: 1px solid rgba(255,26,94,0.2); border-radius: 12px; padding: 20px;">
-              <div style="font-family: var(--font-cond); font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pink); margin-bottom: 6px;">📧 Verify Your Email</div>
-              <div style="font-size: 13px; color: var(--gray-3); margin-bottom: 16px;">We sent a 6-digit code to <strong id="otpEmailLabel" style="color:var(--white);"></strong>. Enter it below.</div>
-              <div style="display: flex; gap: 10px;">
-                <input
-                  type="text" id="otpInput"
-                  maxlength="6"
-                  placeholder="Enter 6-digit code"
-                  style="flex:1; background: var(--black-4); border: 1.5px solid var(--black-5); border-radius: 8px; padding: 12px 14px; color: var(--white); font-family: var(--font-cond); font-size: 20px; font-weight: 700; letter-spacing: 0.3em; text-align: center; outline: none; transition: border-color 0.2s;"
-                  oninput="this.value = this.value.replace(/\D/g, '')"
-                  onfocus="this.style.borderColor='var(--pink)'"
-                  onblur="this.style.borderColor='var(--black-5)'"
-                />
-                <button type="button" id="verifyOtpBtn" onclick="verifyOtp()"
-                  style="background: var(--pink); color: white; border: none; border-radius: 8px; padding: 12px 20px; font-family: var(--font-cond); font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; white-space: nowrap;">
-                  Verify
-                </button>
-              </div>
-              <div id="otpError" style="color: #ff6b6b; font-size: 12px; margin-top: 8px; display:none;"></div>
-              <div id="otpSuccess" style="color: #2ed573; font-size: 12px; margin-top: 8px; display:none;">✅ Email verified! You can now create your account.</div>
-              <button type="button" onclick="resendOtp()"
-                style="background:none; border:none; color: var(--gray-3); font-size: 12px; margin-top: 10px; cursor: pointer; text-decoration: underline; padding: 0;">
-                Didn't receive it? Resend code
-              </button>
-            </div>
-          </div>
         </div><!-- end #formView -->
 
         <!-- SUCCESS VIEW -->
@@ -896,7 +864,6 @@
         lastName &&
         email &&
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
-        emailVerified &&
         v.score >= 3 &&
         pw === cpw &&
         termsChk.checked;
@@ -913,94 +880,8 @@
       const icon  = document.getElementById('emailIcon');
       const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.value);
       icon.style.color = valid ? '#2ed573' : 'var(--gray-3)';
-      // Show/hide Send Code button
-      const sendBtn = document.getElementById('sendOtpBtn');
-      sendBtn.style.display = valid ? 'block' : 'none';
-      // Reset OTP state if email changed after verification
-      if (emailVerified && this.value !== verifiedEmail) {
-        emailVerified = false;
-        verifiedEmail = '';
-        document.getElementById('otpStep').style.display    = 'none';
-        document.getElementById('otpSuccess').style.display = 'none';
-        document.getElementById('email').readOnly = false;
-        updateSubmitState();
-      }
+      updateSubmitState();
     });
-
-    /* -- OTP STATE -- */
-    let emailVerified = false;
-    let verifiedEmail = '';
-
-    async function sendOtp() {
-      const email   = document.getElementById('email').value.trim();
-      const sendBtn = document.getElementById('sendOtpBtn');
-      sendBtn.disabled    = true;
-      sendBtn.textContent = '\u23F3 Sending...';
-      try {
-        const res = await window.GudAPI.sendOtp(email);
-        if (res.error) {
-          showFieldError('err-email', res.error);
-          sendBtn.disabled    = false;
-          sendBtn.textContent = '\uD83D\uDCE7 Send Verification Code';
-          return;
-        }
-        document.getElementById('otpEmailLabel').textContent = email;
-        document.getElementById('otpStep').style.display     = 'block';
-        document.getElementById('otpError').style.display    = 'none';
-        document.getElementById('otpSuccess').style.display  = 'none';
-        document.getElementById('otpInput').value = '';
-        sendBtn.textContent = '\uD83D\uDCE7 Code Sent! Resend';
-        sendBtn.disabled    = false;
-        window.GudSpace.showToast('Verification code sent! Check your email \uD83D\uDCE7', '\u2705');
-      } catch(err) {
-        showFieldError('err-email', 'Could not send code. Try again.');
-        sendBtn.disabled    = false;
-        sendBtn.textContent = '\uD83D\uDCE7 Send Verification Code';
-      }
-    }
-
-    async function resendOtp() { await sendOtp(); }
-
-    async function verifyOtp() {
-      const email     = document.getElementById('email').value.trim();
-      const otp       = document.getElementById('otpInput').value.trim();
-      const verifyBtn = document.getElementById('verifyOtpBtn');
-      const errEl     = document.getElementById('otpError');
-      const okEl      = document.getElementById('otpSuccess');
-
-      if (otp.length !== 6) {
-        errEl.textContent   = 'Please enter the 6-digit code.';
-        errEl.style.display = 'block';
-        return;
-      }
-      verifyBtn.disabled    = true;
-      verifyBtn.textContent = '\u23F3';
-      try {
-        const res = await window.GudAPI.verifyOtp(email, otp);
-        if (res.error) {
-          errEl.textContent     = res.error;
-          errEl.style.display   = 'block';
-          okEl.style.display    = 'none';
-          verifyBtn.disabled    = false;
-          verifyBtn.textContent = 'Verify';
-          return;
-        }
-        emailVerified = true;
-        verifiedEmail = email;
-        errEl.style.display           = 'none';
-        okEl.style.display            = 'block';
-        verifyBtn.textContent         = '\u2705';
-        document.getElementById('email').readOnly           = true;
-        document.getElementById('sendOtpBtn').style.display = 'none';
-        updateSubmitState();
-        window.GudSpace.showToast('Email verified! \uD83C\uDF89', '\u2705');
-      } catch(err) {
-        errEl.textContent     = 'Verification failed. Try again.';
-        errEl.style.display   = 'block';
-        verifyBtn.disabled    = false;
-        verifyBtn.textContent = 'Verify';
-      }
-    }
 
     /* -- FORM SUBMIT -- */
     document.getElementById('registerForm').addEventListener('submit', async function(e) {
@@ -1011,11 +892,6 @@
       const email     = document.getElementById('email').value.trim();
       const password  = passwordInput.value;
       const name      = firstName + ' ' + lastName;
-
-      if (!emailVerified) {
-        showFieldError('err-email', 'Please verify your email first.');
-        return;
-      }
 
       registerBtn.classList.add('loading');
       registerBtn.disabled = true;
