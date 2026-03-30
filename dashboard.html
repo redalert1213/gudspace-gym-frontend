@@ -1769,73 +1769,84 @@
       if (el) { el.style.opacity = '0'; el.style.transform = 'translateY(-6px)'; el.style.transition = 'all .3s'; setTimeout(() => { el.remove(); const area = document.getElementById('annBannerArea'); if (area && !area.children.length) area.classList.remove('has-banners'); }, 300); }
     }
 
-    /* ---- INBOX (member side) ---- */
-    const MSG_KEY = 'dm_messages';
+    /* ---- INBOX (member side) — real API ---- */
 
-    function loadInboxUnread() {
-      const msgs   = window.GudSpace.storage.get(MSG_KEY) || {};
-      const thread = msgs[currentUser.id] || [];
-      const unread = thread.filter(m => m.from === 'admin' && !m.read).length;
-      const dot    = document.getElementById('inboxUnreadDot');
-      const btn    = document.getElementById('inboxBtn');
-      if (!dot) return;
-      if (unread > 0) {
-        const wasHidden = dot.style.display !== 'flex';
-        dot.textContent = unread > 9 ? '9+' : unread;
-        dot.style.display = 'flex';
-        if (wasHidden) {
+    async function loadInboxUnread() {
+      try {
+        const res    = await window.GudAPI.getMessages();
+        const thread = res.messages || [];
+        const unread = thread.filter(m => m.from_role === 'admin' && !m.is_read).length;
+        const dot    = document.getElementById('inboxUnreadDot');
+        const btn    = document.getElementById('inboxBtn');
+        if (!dot) return;
+        if (unread > 0) {
+          const wasHidden = dot.style.display !== 'flex';
+          dot.textContent = unread > 9 ? '9+' : unread;
+          dot.style.display = 'flex';
+          if (wasHidden) {
+            dot.classList.remove('pop');
+            void dot.offsetWidth;
+            dot.classList.add('pop');
+          }
+          if (btn) btn.classList.add('has-unread');
+        } else {
+          dot.style.display = 'none';
           dot.classList.remove('pop');
-          void dot.offsetWidth; // reflow to restart animation
-          dot.classList.add('pop');
+          if (btn) btn.classList.remove('has-unread');
         }
-        if (btn) btn.classList.add('has-unread');
-      } else {
-        dot.style.display = 'none';
-        dot.classList.remove('pop');
-        if (btn) btn.classList.remove('has-unread');
+      } catch(e) {
+        console.warn('loadInboxUnread error:', e);
       }
     }
 
-    function openInbox() {
-      const msgs   = window.GudSpace.storage.get(MSG_KEY) || {};
-      const thread = msgs[currentUser.id] || [];
-      // Mark admin messages as read
-      thread.forEach(m => { if (m.from === 'admin') m.read = true; });
-      msgs[currentUser.id] = thread;
-      window.GudSpace.storage.set(MSG_KEY, msgs);
-      loadInboxUnread();
-
-      const body = document.getElementById('inboxBody');
-      if (!thread.length) {
-        body.innerHTML = '<div class="inbox-empty">💬<br><br>No messages from admin yet.</div>';
-      } else {
-        body.innerHTML = thread.map(m => {
-          const side = m.from === 'admin' ? 'from-admin' : 'from-me';
-          const time = new Date(m.at).toLocaleTimeString('en-PH', { hour:'2-digit', minute:'2-digit', hour12:true });
-          return `<div class="inbox-msg-wrap ${side}">
-            <div class="inbox-bubble">${m.text}</div>
-            <div class="inbox-bubble-time">${time}</div>
-          </div>`;
-        }).join('');
-        body.scrollTop = body.scrollHeight;
-      }
+    async function openInbox() {
       document.getElementById('inboxModal').classList.add('show');
+      const body = document.getElementById('inboxBody');
+      body.innerHTML = '<div class="inbox-empty">Loading...</div>';
+      try {
+        await window.GudAPI.markMessagesRead();
+        const res    = await window.GudAPI.getMessages();
+        const thread = res.messages || [];
+        loadInboxUnread();
+        if (!thread.length) {
+          body.innerHTML = '<div class="inbox-empty">💬<br><br>No messages yet. Send us a message!</div>';
+        } else {
+          body.innerHTML = thread.map(m => {
+            const side = m.from_role === 'admin' ? 'from-admin' : 'from-me';
+            const time = new Date(m.created_at).toLocaleTimeString('en-PH', { hour:'2-digit', minute:'2-digit', hour12:true });
+            return `<div class="inbox-msg-wrap ${side}">
+              <div class="inbox-bubble">${m.text}</div>
+              <div class="inbox-bubble-time">${time}</div>
+            </div>`;
+          }).join('');
+          body.scrollTop = body.scrollHeight;
+        }
+      } catch(e) {
+        console.error('openInbox error:', e);
+        body.innerHTML = '<div class="inbox-empty">Failed to load messages. Please try again.</div>';
+      }
     }
 
     function closeInbox() {
       document.getElementById('inboxModal').classList.remove('show');
     }
 
-    function sendMemberMsg() {
+    async function sendMemberMsg() {
       const input = document.getElementById('inboxInput');
       const text  = input.value.trim();
       if (!text) return;
-      const msgs   = window.GudSpace.storage.get(MSG_KEY) || {};
-      if (!msgs[currentUser.id]) msgs[currentUser.id] = [];
-      msgs[currentUser.id].push({ from:'member', text, at: new Date().toISOString(), read: false });
-      window.GudSpace.storage.set(MSG_KEY, msgs);
       input.value = '';
-      openInbox();
+      input.disabled = true;
+      try {
+        await window.GudAPI.sendMessage(text);
+        await openInbox();
+      } catch(e) {
+        console.error('sendMemberMsg error:', e);
+        window.GudSpace.showToast('Failed to send message. Try again.', '❌');
+      } finally {
+        input.disabled = false;
+        input.focus();
+      }
     }
 
     function loadTodayQuote() {
