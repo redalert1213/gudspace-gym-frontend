@@ -950,40 +950,60 @@
       } catch(err) { window.GudSpace.showToast('Photo upload failed. Try again.', '❌'); }
     }
 
-    /* ---- BEFORE / AFTER PHOTOS (stored locally per user) ---- */
-    function baInit() {
-      const photos = window.GudSpace.storage.get('progressPhotos_' + currentUser.id) || {};
-      if (photos.before) baRenderSlot('before', photos.before.url, photos.before.date);
-      if (photos.after)  baRenderSlot('after',  photos.after.url,  photos.after.date);
+    /* ---- BEFORE / AFTER PHOTOS (stored in Cloudinary + Supabase) ---- */
+    async function baInit() {
+      try {
+        const res = await window.GudAPI.getMyProgressPhotos();
+        const photos = res.photos || {};
+        if (photos.before) baRenderSlot('before', photos.before.photo_url, photos.before.uploaded_at);
+        if (photos.after)  baRenderSlot('after',  photos.after.photo_url,  photos.after.uploaded_at);
+      } catch(e) {
+        console.warn('Could not load progress photos:', e);
+      }
     }
 
     function baTriggerUpload(type) {
       document.getElementById('ba' + (type === 'before' ? 'Before' : 'After') + 'Input').click();
     }
 
-    function baHandleUpload(e, type) {
+    async function baHandleUpload(e, type) {
       const file = e.target.files[0];
       if (!file) return;
       if (file.size > 5 * 1024 * 1024) {
         window.GudSpace.showToast('Photo too large. Max 5MB please.', '⚠️'); return;
       }
+
+      // Show preview immediately while uploading
       const reader = new FileReader();
-      reader.onload = ev => {
-        const url   = ev.target.result;
-        const date  = new Date().toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' });
-        const photos = window.GudSpace.storage.get('progressPhotos_' + currentUser.id) || {};
-        photos[type] = { url, date, uploadedAt: new Date().toISOString() };
-        window.GudSpace.storage.set('progressPhotos_' + currentUser.id, photos);
-        baRenderSlot(type, url, date);
-        window.GudSpace.showToast((type === 'before' ? 'Before' : 'After') + ' photo saved! 📸', '✅');
-      };
+      reader.onload = ev => baRenderSlot(type, ev.target.result, new Date().toISOString());
       reader.readAsDataURL(file);
+
+      window.GudSpace.showToast('Uploading ' + type + ' photo...', '⏳', 8000);
+
+      try {
+        const formData = new FormData();
+        formData.append('photo', file);
+        const res = await window.GudAPI.uploadProgressPhoto(type, formData);
+
+        if (res.error) {
+          window.GudSpace.showToast(res.error, '❌');
+        } else {
+          // Re-render with the real Cloudinary URL
+          baRenderSlot(type, res.photo.photo_url, res.photo.uploaded_at);
+          window.GudSpace.showToast((type === 'before' ? 'Before' : 'After') + ' photo saved! 📸', '✅');
+        }
+      } catch(err) {
+        window.GudSpace.showToast('Upload failed. Check your connection.', '❌');
+      }
     }
 
-    function baRenderSlot(type, url, date) {
+    function baRenderSlot(type, url, uploadedAt) {
       const slotId   = type === 'before' ? 'baBeforeSlot' : 'baAfterSlot';
       const tagColor = type === 'before' ? 'var(--pink)' : 'rgba(46,213,115,1)';
       const tagLabel = type === 'before' ? 'Before' : 'After';
+      const date     = uploadedAt
+        ? new Date(uploadedAt).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' })
+        : '';
       const slot     = document.getElementById(slotId);
       slot.classList.add('has-photo');
       slot.innerHTML = `

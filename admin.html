@@ -1669,7 +1669,7 @@
     });
     // Always refetch fresh data when switching to data tabs
     if (['overview','members','memberships','attendance'].includes(tab)) await fetchAdmUsers();
-    if (tab === 'progress')    renderProgressPhotos();
+    if (tab === 'progress')    await renderProgressPhotos();
     if (tab === 'announce')    renderAnnouncements();
     if (tab === 'messages')    renderMsgMemberList();
     if (tab === 'memberships') renderMemberships();
@@ -1679,23 +1679,31 @@
   }
 
   /* ---- PROGRESS PHOTOS ---- */
-  function renderProgressPhotos() {
-    const users   = admUsers;
-    const grid    = document.getElementById('progressPhotoGrid');
-    const empty   = document.getElementById('progressPhotoEmpty');
-    const members = users.filter(u => !u.isAdmin);
+  async function renderProgressPhotos() {
+    const grid  = document.getElementById('progressPhotoGrid');
+    const empty = document.getElementById('progressPhotoEmpty');
 
-    // NOTE: Before/After photos are currently stored locally on each member's device.
-    // They will show here only after a backend upgrade (Supabase table + Cloudinary).
-    // For now, this section shows photos from any backend-synced data if available.
-    const withPhotos = members.filter(u => u.progressPhotos && (u.progressPhotos.before || u.progressPhotos.after));
+    grid.style.display  = 'none';
+    empty.style.display = 'block';
+    empty.innerHTML = `<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.25);font-family:var(--font-cond);font-size:14px;">Loading photos...</div>`;
 
-    if (!withPhotos.length) {
-      grid.style.display  = 'none';
+    let groups = [];
+    try {
+      const token = window.GudAPI ? window.GudAPI.getToken() : '';
+      const res   = await fetch(`${API_BASE}/progress-photos/admin/all`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      groups = data.progressPhotos || [];
+    } catch(e) {
+      console.warn('Could not fetch progress photos:', e);
+    }
+
+    if (!groups.length) {
       empty.innerHTML = `<div style="text-align:center;padding:40px 20px;">
         <div style="font-size:48px;margin-bottom:16px;">📷</div>
         <div style="font-family:var(--font-cond);font-size:16px;font-weight:700;color:var(--white);margin-bottom:8px;">No Progress Photos Yet</div>
-        <div style="font-size:13px;color:var(--gray-3);line-height:1.6;">Members' before/after photos will appear here once the<br>backend photo storage feature is enabled.</div>
+        <div style="font-size:13px;color:var(--gray-3);line-height:1.6;">Progress photos uploaded by members will appear here.</div>
       </div>`;
       empty.style.display = 'block';
       return;
@@ -1706,27 +1714,30 @@
 
     const COLORS = ['#FF1A5E','#a29bfe','#74b9ff','#fd79a8','#fdcb6e','#6c5ce7'];
 
-    grid.innerHTML = withPhotos.map(u => {
-      const name    = ((u.firstName || '') + ' ' + (u.lastName || '')).trim() || u.name || 'Member';
+    grid.innerHTML = groups.map(g => {
+      const u       = g.user || {};
+      const name    = u.name || 'Member';
       const initial = name.charAt(0).toUpperCase();
       const color   = COLORS[(u.id?.charCodeAt(4) || 0) % COLORS.length];
-      const p       = u.profile || {};
-      const photos  = u.progressPhotos || {};
       const ppAvImg = u.avatar_url ? `<img src="${u.avatar_url}" alt="${initial}" />` : '';
 
-      const beforeSlot = photos.before
+      const fmtDate = iso => iso
+        ? new Date(iso).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' })
+        : '';
+
+      const beforeSlot = g.before
         ? `<div class="pp-photo-slot">
-             <img src="${photos.before.url}" alt="Before" />
+             <img src="${g.before.photo_url}" alt="Before" />
              <div class="pp-photo-label before">Before</div>
-             <div class="pp-photo-date">${photos.before.date || ''}</div>
+             <div class="pp-photo-date">${fmtDate(g.before.uploaded_at)}</div>
            </div>`
         : `<div class="pp-no-photo"><span>📷</span><span>No Before Photo</span></div>`;
 
-      const afterSlot = photos.after
+      const afterSlot = g.after
         ? `<div class="pp-photo-slot">
-             <img src="${photos.after.url}" alt="After" />
+             <img src="${g.after.photo_url}" alt="After" />
              <div class="pp-photo-label after">After</div>
-             <div class="pp-photo-date">${photos.after.date || ''}</div>
+             <div class="pp-photo-date">${fmtDate(g.after.uploaded_at)}</div>
            </div>`
         : `<div class="pp-no-photo"><span>💪</span><span>No After Photo</span></div>`;
 
@@ -1736,7 +1747,7 @@
             <div class="pp-member-avatar" style="background:${color};">${initial}${ppAvImg}</div>
             <div>
               <div class="pp-member-name">${name}</div>
-              <div class="pp-member-meta">${p.goal ? p.goal.replace(/-/g,' ') : '—'} · ${p.weightKg || '--'} kg · ${p.heightCm || '--'} cm</div>
+              <div class="pp-member-meta">${u.email || ''}</div>
             </div>
           </div>
           <div class="pp-photos-row">

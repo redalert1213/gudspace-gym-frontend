@@ -175,7 +175,6 @@ window.GudAPI = {
     });
     return res.json();
   },
-  // Admin message endpoints
   adminGetAllThreads: async function() {
     const res = await fetch(`${API_URL}/messages/admin/all`, {
       headers: { 'Authorization': 'Bearer ' + this.getToken() }
@@ -239,5 +238,27 @@ window.GudAPI = {
       headers: { 'Authorization': 'Bearer ' + this.getToken() }
     });
     return res.json();
-  }
+  },
+
+  /* ---- PROGRESS PHOTOS ---- */
+  getMyProgressPhotos: async function() {
+    const res = await fetch(`${API_URL}/progress-photos`, {
+      headers: { 'Authorization': 'Bearer ' + this.getToken() }
+    });
+    return res.json();
+  },
+  uploadProgressPhoto: async function(type, formData) {
+    const res = await fetch(`${API_URL}/progress-photos/${type}`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + this.getToken() },
+      body: formData
+    });
+    return res.json();
+  },
+  adminGetAllProgressPhotos: async function() {
+    const res = await fetch(`${API_URL}/progress-photos/admin/all`, {
+      headers: { 'Authorization': 'Bearer ' + this.getToken() }
+    });
+    return res.json();
+  },
 };
