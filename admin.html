@@ -40,189 +40,174 @@
     }
     @keyframes scanMove { from { background-position: 0 0; } to { background-position: 0 100px; } }
 
-    /* ---- ADMIN LOGIN SCREEN ---- */
+    /* ---- ADMIN LOGIN SCREEN — SPLIT LAYOUT ---- */
     .admin-login-screen {
       min-height: 100vh;
-      display: flex; align-items: center; justify-content: center;
-      padding: 40px 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       position: relative; overflow: hidden;
     }
 
-    /* Ambient radial layers */
-    .adm-login-glow {
+    /* LEFT BRAND PANEL */
+    .adm-brand-panel {
+      position: relative;
+      background: #080808;
+      display: flex; flex-direction: column;
+      justify-content: space-between;
+      padding: 48px;
+      overflow: hidden;
+      border-right: 1px solid rgba(255,26,94,0.08);
+    }
+    .adm-brand-bg {
+      position: absolute; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,26,94,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,26,94,0.025) 1px, transparent 1px);
+      background-size: 52px 52px;
+      mask-image: radial-gradient(ellipse 80% 80% at 40% 50%, black, transparent);
+    }
+    .adm-brand-glow {
       position: absolute; inset: 0; pointer-events: none;
       background:
-        radial-gradient(ellipse 70% 60% at 50% -10%, rgba(255,26,94,0.18), transparent 65%),
-        radial-gradient(ellipse 40% 40% at 80% 80%, rgba(160,0,74,0.1), transparent 60%),
-        radial-gradient(ellipse 40% 40% at 20% 80%, rgba(255,26,94,0.06), transparent 60%);
+        radial-gradient(ellipse 60% 50% at 50% 60%, rgba(255,26,94,0.13), transparent 65%),
+        radial-gradient(ellipse 30% 40% at 80% 20%, rgba(160,0,74,0.08), transparent 60%);
       animation: glowPulse 6s ease-in-out infinite;
     }
-    @keyframes glowPulse {
-      0%,100% { opacity: 0.8; }
-      50%      { opacity: 1; }
-    }
+    @keyframes glowPulse { 0%,100%{opacity:0.8} 50%{opacity:1} }
 
-    /* Corner accent lines */
-    .adm-login-screen::before, .adm-login-screen::after {
-      content: '';
-      position: absolute;
-      width: 280px; height: 280px;
-      border: 1px solid rgba(255,26,94,0.08);
-      border-radius: 50%;
-      pointer-events: none;
-      animation: cornerSpin 20s linear infinite;
+    .adm-brand-top { position: relative; z-index: 2; }
+    .adm-brand-logo {
+      font-family: var(--font-display);
+      font-size: 22px; letter-spacing: 0.04em;
+      display: flex; align-items: baseline; gap: 2px;
+      margin-bottom: 4px;
     }
-    .adm-login-screen::before { top: -80px; right: -80px; }
-    .adm-login-screen::after  { bottom: -80px; left: -80px; animation-direction: reverse; animation-duration: 28s; }
-    @keyframes cornerSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-    .adm-login-card {
-      background: rgba(12,12,12,0.92);
-      border: 1px solid rgba(255,26,94,0.15);
-      border-radius: 24px;
-      padding: 52px 48px;
-      width: 100%; max-width: 440px;
+    .adm-brand-tagline {
+      font-family: var(--font-cond);
+      font-size: 11px; letter-spacing: 0.16em;
+      text-transform: uppercase; color: rgba(255,255,255,0.25);
+    }
+    .adm-brand-center {
       position: relative; z-index: 2;
-      box-shadow:
-        0 0 0 1px rgba(255,26,94,0.05),
-        0 40px 80px rgba(0,0,0,0.7),
-        0 0 60px rgba(255,26,94,0.06),
-        inset 0 1px 0 rgba(255,255,255,0.04);
-      backdrop-filter: blur(24px);
-      animation: cardIn 0.6s cubic-bezier(0.34,1.56,0.64,1);
+      flex: 1; display: flex; flex-direction: column; justify-content: center;
     }
-    @keyframes cardIn {
-      from { opacity: 0; transform: translateY(24px) scale(0.97); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
+    .adm-brand-eyebrow {
+      display: flex; align-items: center; gap: 8px;
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--pink); margin-bottom: 28px;
     }
+    .adm-brand-eyebrow::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--pink); box-shadow: 0 0 8px var(--pink);
+      animation: dotBlink 2s ease-in-out infinite;
+    }
+    @keyframes dotBlink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .adm-brand-headline {
+      font-family: var(--font-display);
+      font-size: clamp(56px, 5.8vw, 92px);
+      line-height: 0.86; letter-spacing: 0.02em; margin-bottom: 28px;
+    }
+    .adm-brand-headline .line-pink { color: var(--pink); }
+    .adm-brand-desc {
+      font-size: 14px; color: rgba(255,255,255,0.35);
+      line-height: 1.8; max-width: 340px; margin-bottom: 48px;
+    }
+    .adm-brand-stats { display: flex; gap: 0; }
+    .adm-brand-stat {
+      flex: 1; padding: 0 24px 0 0;
+      border-right: 1px solid rgba(255,255,255,0.06);
+    }
+    .adm-brand-stat:first-child { padding-left: 0; }
+    .adm-brand-stat:last-child { border-right: none; }
+    .adm-stat-num {
+      font-family: var(--font-display); font-size: 36px; line-height: 1;
+      color: var(--white); margin-bottom: 4px;
+    }
+    .adm-stat-num span { color: var(--pink); }
+    .adm-stat-label {
+      font-family: var(--font-cond); font-size: 9px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.25);
+    }
+    .adm-brand-bottom { position: relative; z-index: 2; font-size: 11px; color: rgba(255,255,255,0.2); }
 
-    /* Top accent line on card */
-    .adm-login-card::before {
-      content: '';
-      position: absolute; top: 0; left: 20%; right: 20%;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255,26,94,0.6), transparent);
-      border-radius: 50%;
-    }
-
-    .adm-shield {
-      width: 68px; height: 68px;
-      background: rgba(255,26,94,0.1);
-      border: 1.5px solid rgba(255,26,94,0.3);
-      border-radius: 16px;
+    /* RIGHT FORM PANEL */
+    .adm-form-panel {
+      background: #050505;
       display: flex; align-items: center; justify-content: center;
-      font-size: 28px; margin-bottom: 24px;
-      box-shadow: 0 0 20px rgba(255,26,94,0.15), inset 0 0 20px rgba(255,26,94,0.05);
-      animation: shieldFloat 4s ease-in-out infinite;
+      padding: 48px 60px; position: relative; overflow-y: auto;
     }
-    @keyframes shieldFloat {
-      0%,100% { transform: translateY(0); box-shadow: 0 0 20px rgba(255,26,94,0.15); }
-      50%      { transform: translateY(-4px); box-shadow: 0 8px 28px rgba(255,26,94,0.25); }
+    .adm-form-inner {
+      width: 100%; max-width: 400px;
+      animation: formSlideIn 0.5s cubic-bezier(0.34,1.1,0.64,1);
     }
-
-    .adm-login-title {
-      font-family: var(--font-display);
-      font-size: 46px; letter-spacing: 0.03em;
-      line-height: 1; margin-bottom: 8px;
+    @keyframes formSlideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-    .adm-login-sub {
-      font-size: 13px; color: rgba(255,255,255,0.35);
-      margin-bottom: 36px; line-height: 1.6;
-      letter-spacing: 0.02em;
+    .adm-form-title {
+      font-family: var(--font-display); font-size: 48px;
+      letter-spacing: 0.03em; line-height: 1; margin-bottom: 6px;
     }
-
-    /* ---- PIN DOTS — GLOWING ---- */
-    .adm-pin-row {
-      display: flex; gap: 14px;
-      justify-content: center; margin-bottom: 20px;
+    .adm-form-sub {
+      font-size: 14px; color: rgba(255,255,255,0.3);
+      margin-bottom: 40px; line-height: 1.6;
     }
-    .adm-pin-dot {
-      width: 16px; height: 16px; border-radius: 50%;
-      background: rgba(255,255,255,0.06);
-      border: 1.5px solid rgba(255,255,255,0.12);
-      transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
-      position: relative;
+    .adm-form-sub span { color: var(--pink); font-weight: 600; }
+    .adm-field { margin-bottom: 18px; }
+    .adm-field-label {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(255,255,255,0.35); margin-bottom: 8px; display: block;
     }
-    .adm-pin-dot.filled {
-      background: var(--pink);
-      border-color: var(--pink);
-      box-shadow:
-        0 0 8px rgba(255,26,94,0.8),
-        0 0 20px rgba(255,26,94,0.4),
-        0 0 40px rgba(255,26,94,0.15);
-      transform: scale(1.15);
-      animation: dotPop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    .adm-field-input {
+      width: 100%; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09); border-radius: 10px;
+      padding: 14px 16px; color: var(--white); font-size: 14px;
+      outline: none; font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s;
     }
-    @keyframes dotPop {
-      from { transform: scale(0.5); }
-      to   { transform: scale(1.15); }
+    .adm-field-input:focus {
+      border-color: rgba(255,26,94,0.5); box-shadow: 0 0 0 3px rgba(255,26,94,0.07);
     }
-    .adm-pin-dot.error {
-      background: #ff4757;
-      border-color: #ff4757;
-      box-shadow: 0 0 12px rgba(255,71,87,0.7);
+    .adm-field-input::placeholder { color: rgba(255,255,255,0.2); }
+    .adm-login-error {
+      font-size: 12px; color: #ff6b6b; min-height: 18px; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 6px;
     }
-    /* Shake the whole row on error */
-    .adm-pin-row.shake {
-      animation: rowShake 0.5s cubic-bezier(.36,.07,.19,.97);
-    }
-    @keyframes rowShake {
-      0%,100% { transform: translateX(0); }
-      15%      { transform: translateX(-8px); }
-      30%      { transform: translateX(8px); }
-      45%      { transform: translateX(-6px); }
-      60%      { transform: translateX(6px); }
-      75%      { transform: translateX(-3px); }
-      90%      { transform: translateX(3px); }
-    }
-
-    /* ---- NUMPAD ---- */
-    .adm-numpad {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 10px; margin-bottom: 20px;
-    }
-    .adm-num-btn {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px;
-      padding: 18px;
-      font-family: var(--font-display);
-      font-size: 28px; color: rgba(255,255,255,0.85);
-      cursor: pointer;
-      transition: all 0.15s ease;
-      text-align: center;
+    .adm-login-btn {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, var(--pink) 0%, #c4003f 100%);
+      border: none; border-radius: 10px; cursor: pointer;
+      font-family: var(--font-cond); font-size: 15px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase; color: white;
+      box-shadow: 0 4px 24px rgba(255,26,94,0.3); transition: all 0.2s; margin-top: 4px;
       position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
     }
-    /* Ripple on press */
-    .adm-num-btn::after {
-      content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(circle at center, rgba(255,26,94,0.3) 0%, transparent 70%);
-      opacity: 0; transform: scale(0);
-      transition: opacity 0.3s, transform 0.3s;
-      border-radius: inherit;
+    .adm-login-btn::before {
+      content: ''; position: absolute; inset: 0;
+      background: rgba(255,255,255,0.1);
+      transform: translateX(-100%) skewX(-15deg); transition: transform 0.4s ease;
     }
-    .adm-num-btn:hover {
-      background: rgba(255,26,94,0.08);
-      border-color: rgba(255,26,94,0.3);
-      color: #fff;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(255,26,94,0.15);
+    .adm-login-btn:hover:not(:disabled)::before { transform: translateX(100%) skewX(-15deg); }
+    .adm-login-btn:hover:not(:disabled) {
+      transform: translateY(-2px); box-shadow: 0 10px 36px rgba(255,26,94,0.45);
     }
-    .adm-num-btn:active {
-      transform: scale(0.93) translateY(0);
-      background: rgba(255,26,94,0.15);
-      border-color: rgba(255,26,94,0.5);
+    .adm-login-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .adm-btn-spinner {
+      display: none; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
     }
-    .adm-num-btn:active::after {
-      opacity: 1; transform: scale(1);
-      transition: opacity 0s, transform 0s;
+    .adm-login-btn.loading .adm-btn-text { display: none; }
+    .adm-login-btn.loading .adm-btn-spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 900px) {
+      .admin-login-screen { grid-template-columns: 1fr; }
+      .adm-brand-panel { display: none; }
+      .adm-form-panel { padding: 40px 24px; }
     }
-    .adm-num-btn.del {
-      font-family: var(--font-body); font-size: 20px;
-      color: rgba(255,255,255,0.35);
-    }
-    .adm-num-btn.del:hover { color: #ff6b6b; border-color: rgba(255,59,48,0.3); background: rgba(255,59,48,0.06); }
 
     .adm-pin-hint {
       text-align: center; font-size: 11px; color: rgba(255,255,255,0.2);
@@ -976,59 +961,90 @@
 
   <!-- ==================== ADMIN LOGIN ==================== -->
   <div id="adminLoginScreen" class="admin-login-screen">
-    <div class="adm-login-glow"></div>
-    <div class="adm-login-card">
-      <div class="adm-shield">🛡</div>
-      <h1 class="adm-login-title">ADMIN<br /><span style="color:var(--pink)">PORTAL</span></h1>
-      <p class="adm-login-sub">Enter your 4-digit PIN to access the owner dashboard.</p>
 
-      <!-- PIN dots -->
-      <div class="adm-pin-row" id="pinDots">
-        <div class="adm-pin-dot" id="pd0"></div>
-        <div class="adm-pin-dot" id="pd1"></div>
-        <div class="adm-pin-dot" id="pd2"></div>
-        <div class="adm-pin-dot" id="pd3"></div>
+    <!-- LEFT: BRAND PANEL -->
+    <aside class="adm-brand-panel">
+      <div class="adm-brand-bg"></div>
+      <div class="adm-brand-glow"></div>
+
+      <div class="adm-brand-top">
+        <div class="adm-brand-logo">
+          <span class="logo-gud">GUD</span><span class="logo-space">SPACE</span><span class="logo-gym">GYM</span>
+        </div>
+        <div class="adm-brand-tagline">Owner Dashboard</div>
       </div>
 
-      <div class="adm-pin-error" id="pinError"></div>
-
-      <!-- Numpad -->
-      <div class="adm-numpad">
-        <button class="adm-num-btn" onclick="pinPress('1')">1</button>
-        <button class="adm-num-btn" onclick="pinPress('2')">2</button>
-        <button class="adm-num-btn" onclick="pinPress('3')">3</button>
-        <button class="adm-num-btn" onclick="pinPress('4')">4</button>
-        <button class="adm-num-btn" onclick="pinPress('5')">5</button>
-        <button class="adm-num-btn" onclick="pinPress('6')">6</button>
-        <button class="adm-num-btn" onclick="pinPress('7')">7</button>
-        <button class="adm-num-btn" onclick="pinPress('8')">8</button>
-        <button class="adm-num-btn" onclick="pinPress('9')">9</button>
-        <button class="adm-num-btn del" onclick="pinPress('clear')">CLR</button>
-        <button class="adm-num-btn" onclick="pinPress('0')">0</button>
-        <button class="adm-num-btn del" onclick="pinPress('del')">⌫</button>
+      <div class="adm-brand-center">
+        <div class="adm-brand-eyebrow">Admin Access Only</div>
+        <div class="adm-brand-headline">
+          <div>MANAGE.</div>
+          <div class="line-pink">TRACK.</div>
+          <div>GROW.</div>
+        </div>
+        <p class="adm-brand-desc">
+          No excuses. No limits.<br />
+          Run your gym smarter — every member, every session, every peso.
+        </p>
+        <div class="adm-brand-stats">
+          <div class="adm-brand-stat">
+            <div class="adm-stat-num">500<span>+</span></div>
+            <div class="adm-stat-label">Active Members</div>
+          </div>
+          <div class="adm-brand-stat" style="padding-left:24px;">
+            <div class="adm-stat-num">24<span>/7</span></div>
+            <div class="adm-stat-label">Portal Access</div>
+          </div>
+          <div class="adm-brand-stat" style="padding-left:24px;">
+            <div class="adm-stat-num">100<span>%</span></div>
+            <div class="adm-stat-label">Personalized</div>
+          </div>
+        </div>
       </div>
 
-      <p class="adm-pin-hint">Default PIN: <span>1234</span> — change in Settings</p>
-
-      <!-- Admin account login — needed to get a JWT token for the API -->
-      <div style="margin-top:20px;border-top:1px solid rgba(255,255,255,0.06);padding-top:20px;">
-        <div style="font-family:var(--font-cond);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:10px;">🔐 Admin Account</div>
-        <input type="email" id="adminLoginEmail" placeholder="Admin email address"
-          style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 13px;color:#fff;font-size:13px;outline:none;margin-bottom:8px;font-family:inherit;"
-          onfocus="this.style.borderColor='rgba(255,26,94,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'" />
-        <input type="password" id="adminLoginPw" placeholder="Admin password"
-          style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 13px;color:#fff;font-size:13px;outline:none;font-family:inherit;"
-          onfocus="this.style.borderColor='rgba(255,26,94,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'" />
-        <div id="adminLoginError" style="font-size:11px;color:#ff6b6b;margin-top:6px;min-height:16px;"></div>
+      <div class="adm-brand-bottom">
+        © 2026 Gud Space Gym — Parang, Marikina
       </div>
+    </aside>
 
-      <a href="login.html" class="adm-back-link">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-        Back to Member Login
-      </a>
-    </div>
+    <!-- RIGHT: FORM PANEL -->
+    <main class="adm-form-panel">
+      <div class="adm-form-inner">
+
+        <h1 class="adm-form-title">ADMIN<br /><span style="color:var(--pink)">LOGIN</span></h1>
+        <p class="adm-form-sub">
+          Sign in to your <span>Gud Space Gym</span> owner account.
+        </p>
+
+        <div class="adm-field">
+          <label class="adm-field-label" for="adminLoginEmail">Email Address</label>
+          <input class="adm-field-input" type="email" id="adminLoginEmail"
+            placeholder="admin@email.com" autocomplete="email" />
+        </div>
+
+        <div class="adm-field">
+          <label class="adm-field-label" for="adminLoginPw">Password</label>
+          <input class="adm-field-input" type="password" id="adminLoginPw"
+            placeholder="Your password" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter') adminLogin()" />
+        </div>
+
+        <div class="adm-login-error" id="adminLoginError"></div>
+
+        <button class="adm-login-btn" id="adminLoginBtn" onclick="adminLogin()">
+          <span class="adm-btn-text">Access Dashboard →</span>
+          <div class="adm-btn-spinner"></div>
+        </button>
+
+        <a href="login.html" class="adm-back-link" style="margin-top:24px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Member Login
+        </a>
+
+      </div>
+    </main>
+
   </div>
 
   <!-- ==================== ADMIN DASHBOARD ==================== -->
@@ -1430,10 +1446,6 @@
      ADMIN PORTAL LOGIC
   ===================================================== */
 
-  const ADMIN_PIN_KEY = 'adminPin';
-  const DEFAULT_PIN   = '1234';
-
-  let pinBuffer  = '';
   let activeTab  = 'overview';
   let memberFilter = 'all';
   let memberSearch = '';
@@ -1533,11 +1545,9 @@
   /* ---- Check saved admin session ---- */
   document.addEventListener('DOMContentLoaded', () => {
     const admSession = sessionStorage.getItem('gudspace_admin');
-    // If returning to admin portal and already have a stored user token, use it
     if (admSession === 'true') showAdminDashboard();
     updateAdmDate();
 
-    // Set auto logout setting
     const saved = window.GudSpace.storage.get('autoLogoutHours');
     if (saved) {
       const sel = document.getElementById('autoLogoutSetting');
@@ -1545,91 +1555,48 @@
     }
   });
 
-  /* ---- PIN ENTRY ---- */
-  function pinPress(val) {
-    const errEl = document.getElementById('pinError');
+  /* ---- ADMIN LOGIN ---- */
+  async function adminLogin() {
+    const email  = document.getElementById('adminLoginEmail').value.trim();
+    const pw     = document.getElementById('adminLoginPw').value;
+    const errEl  = document.getElementById('adminLoginError');
+    const btn    = document.getElementById('adminLoginBtn');
+
     errEl.textContent = '';
 
-    if (val === 'clear') {
-      pinBuffer = '';
-    } else if (val === 'del') {
-      pinBuffer = pinBuffer.slice(0, -1);
-    } else if (pinBuffer.length < 4) {
-      pinBuffer += val;
+    if (!email || !pw) {
+      errEl.textContent = '⚠️ Please enter your email and password.';
+      return;
     }
 
-    updatePinDots();
+    btn.classList.add('loading');
+    btn.disabled = true;
 
-    if (pinBuffer.length === 4) {
-      setTimeout(() => checkPin(), 120);
-    }
-  }
+    try {
+      const res = await window.GudAPI.login({ email, password: pw });
 
-  // Keyboard support
-  document.addEventListener('keydown', (e) => {
-    if (document.getElementById('adminDashboard').style.display !== 'none') return;
-    if (e.key >= '0' && e.key <= '9') pinPress(e.key);
-    if (e.key === 'Backspace') pinPress('del');
-    if (e.key === 'Escape') pinPress('clear');
-  });
-
-  function updatePinDots() {
-    for (let i = 0; i < 4; i++) {
-      const dot = document.getElementById('pd' + i);
-      dot.className = 'adm-pin-dot' + (i < pinBuffer.length ? ' filled' : '');
-    }
-  }
-
-  async function checkPin() {
-    const stored = window.GudSpace.storage.get(ADMIN_PIN_KEY) || DEFAULT_PIN;
-    if (pinBuffer === stored) {
-
-      // Also log in as admin user so we get a JWT token.
-      // This token is needed by the API for announcements, messages, etc.
-      const email = document.getElementById('adminLoginEmail').value.trim();
-      const pw    = document.getElementById('adminLoginPw').value;
-      const errEl = document.getElementById('adminLoginError');
-
-      if (email && pw) {
-        try {
-          const res = await window.GudAPI.login({ email, password: pw });
-          if (res.error) {
-            // Wrong credentials — block entry and show error
-            errEl.textContent = '❌ ' + res.error;
-            pinBuffer = '';
-            updatePinDots();
-            return;
-          }
-          // Save token so GudAPI.getToken() works everywhere
-          window.GudSpace.storage.set('currentUser', { ...res.user, token: res.token });
-          errEl.textContent = '';
-        } catch(e) {
-          errEl.textContent = '❌ Could not connect to server. Check your internet.';
-          pinBuffer = '';
-          updatePinDots();
-          return;
-        }
+      if (res.error) {
+        errEl.textContent = '❌ ' + res.error;
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        return;
       }
-      // If fields are blank, we still let them in (PIN is enough for viewing),
-      // but announcements and messages will still prompt for login.
 
+      if (!res.user?.is_admin) {
+        errEl.textContent = '🚫 Access denied. Admin accounts only.';
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        return;
+      }
+
+      window.GudSpace.storage.set('currentUser', { ...res.user, token: res.token });
       sessionStorage.setItem('gudspace_admin', 'true');
       showAdminDashboard();
-    } else {
-      // Error — shake row + red dots
-      const pinRow = document.getElementById('pinDots');
-      for (let i = 0; i < 4; i++) {
-        document.getElementById('pd' + i).className = 'adm-pin-dot error';
-      }
-      pinRow.classList.remove('shake');
-      void pinRow.offsetWidth; // reflow to restart
-      pinRow.classList.add('shake');
-      document.getElementById('pinError').textContent = 'Incorrect PIN. Try again.';
-      setTimeout(() => {
-        pinBuffer = '';
-        updatePinDots();
-        pinRow.classList.remove('shake');
-      }, 700);
+
+    } catch(e) {
+      errEl.textContent = '❌ Could not connect to server. Check your internet.';
+      btn.classList.remove('loading');
+      btn.disabled = false;
     }
   }
 
@@ -1643,7 +1610,7 @@
     renderTimeouts();
     renderAdminNotifications();
 
-    // Auto-refresh every 30 seconds so "Currently In Gym" stays live
+    // Auto-refresh every 30 seconds
     setInterval(async () => {
       await fetchAdmUsers();
       if (activeTab === 'overview')    renderOverview();
@@ -1654,10 +1621,9 @@
 
   function adminLogout() {
     sessionStorage.removeItem('gudspace_admin');
-    pinBuffer = '';
-    updatePinDots();
+    window.GudSpace.storage.remove('currentUser');
     document.getElementById('adminDashboard').style.display   = 'none';
-    document.getElementById('adminLoginScreen').style.display = 'flex';
+    document.getElementById('adminLoginScreen').style.display = 'grid';
   }
 
   /* ---- TABS ---- */
@@ -2105,36 +2071,13 @@
     const u = users.find(u => u.id === userId);
     if (!u) return;
 
-    const name = ((u.firstName || '') + ' ' + (u.lastName || '')).trim() || u.name || 'N/A';
-    const initial = (u.firstName || u.name || '?').charAt(0).toUpperCase();
+    const p = u.profile || {};
+    const name = ((u.firstName || '') + ' ' + (u.lastName || '')).trim();
+    const initial = (u.firstName || '?').charAt(0).toUpperCase();
     const color = avatarColor(u.id);
     const attendance = (u.attendance || []).sort((a,b) => new Date(b.date)-new Date(a.date));
-
-    // Pull stats directly from user fields (from DB)
-    const weightKg = parseFloat(u.weight) || 0;
-    const heightCm = parseFloat(u.height) || 0;
-    const age      = parseInt(u.age)      || 0;
-    const gender   = u.gender             || 'male';
-    const goal     = u.goal               || '';
-    const activity = parseFloat(u.activity_level) || 1.375;
-
-    // Compute BMI
-    let bmiVal = '--', bmiClass = '', bmiColor = 'var(--white)';
-    if (weightKg && heightCm) {
-      const bmiResult = window.GudSpace.calculateBMI(weightKg, heightCm);
-      bmiVal   = bmiResult.bmi;
-      bmiClass = bmiResult.classification;
-      bmiColor = bmiResult.color;
-    }
-
-    // Compute Nutrition
-    let calories = '--', protein = '--', carbs = '--';
-    if (weightKg && heightCm && age && gender) {
-      const n = window.GudSpace.calculateNutrition({ gender, age, weightKg, heightCm, activityLevel: activity });
-      calories = n.tdee.toLocaleString();
-      protein  = n.protein;
-      carbs    = n.carbs;
-    }
+    const bmiClass = (p.bmiClass || '').toLowerCase();
+    const bmiColor = bmiClass.includes('normal') ? '#2ed573' : bmiClass.includes('over') ? '#fdcb6e' : bmiClass.includes('obese') ? '#ff6b6b' : '#74b9ff';
 
     const attRows = attendance.slice(0, 10).map(s => `
       <div class="mm-att-row">
@@ -2148,25 +2091,25 @@
       <div class="mm-header">
         <div class="mm-avatar" style="background:${color}">${initial}</div>
         <div>
-          <div class="mm-name">${name.toUpperCase()}</div>
+          <div class="mm-name">${name.toUpperCase() || 'N/A'}</div>
           <div class="mm-email">${u.email}</div>
-          <span class="goal-tag" style="margin-top:6px;display:inline-block;">${GOAL_LABELS[goal] || '—'}</span>
+          <span class="goal-tag" style="margin-top:6px;display:inline-block;">${GOAL_LABELS[p.goal] || '—'}</span>
         </div>
       </div>
 
       <div class="mm-section">Body Stats</div>
       <div class="mm-grid">
-        <div class="mm-item"><div class="mm-item-label">Weight</div><div class="mm-item-value">${weightKg || '--'} kg</div></div>
-        <div class="mm-item"><div class="mm-item-label">Height</div><div class="mm-item-value">${heightCm || '--'} cm</div></div>
-        <div class="mm-item"><div class="mm-item-label">Age</div><div class="mm-item-value">${age || '--'} yrs</div></div>
-        <div class="mm-item"><div class="mm-item-label">BMI</div><div class="mm-item-value" style="color:${bmiColor}">${bmiVal} <span style="font-size:12px;">${bmiClass}</span></div></div>
+        <div class="mm-item"><div class="mm-item-label">Weight</div><div class="mm-item-value">${p.weightKg || '--'} kg</div></div>
+        <div class="mm-item"><div class="mm-item-label">Height</div><div class="mm-item-value">${p.heightCm || '--'} cm</div></div>
+        <div class="mm-item"><div class="mm-item-label">Age</div><div class="mm-item-value">${p.age || '--'} yrs</div></div>
+        <div class="mm-item"><div class="mm-item-label">BMI</div><div class="mm-item-value" style="color:${bmiColor}">${p.bmi || '--'} <span style="font-size:12px;">${p.bmiClass || ''}</span></div></div>
       </div>
 
       <div class="mm-section">Daily Nutrition Targets</div>
       <div class="mm-grid">
-        <div class="mm-item"><div class="mm-item-label">Calories</div><div class="mm-item-value">${calories} kcal</div></div>
-        <div class="mm-item"><div class="mm-item-label">Protein</div><div class="mm-item-value">${protein} g</div></div>
-        <div class="mm-item"><div class="mm-item-label">Carbs</div><div class="mm-item-value">${carbs} g</div></div>
+        <div class="mm-item"><div class="mm-item-label">Calories</div><div class="mm-item-value">${(p.calories||'--').toLocaleString()} kcal</div></div>
+        <div class="mm-item"><div class="mm-item-label">Protein</div><div class="mm-item-value">${p.protein || '--'} g</div></div>
+        <div class="mm-item"><div class="mm-item-label">Carbs</div><div class="mm-item-value">${p.carbs || '--'} g</div></div>
         <div class="mm-item"><div class="mm-item-label">Total Visits</div><div class="mm-item-value" style="color:var(--pink)">${attendance.length}</div></div>
       </div>
 
