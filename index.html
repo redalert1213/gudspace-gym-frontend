@@ -472,16 +472,38 @@
       .footer { padding:40px 24px; }
       .feat-header,.feat-dots { padding-left:24px; padding-right:24px; }
       .feat-nav-btn { width:36px; height:36px; font-size:14px; margin:0 4px; }
-      .hero-stats { flex-wrap:wrap; gap:0; }
-      .stat { border-right:none; padding-right:0; margin-right:0; padding-bottom:12px; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,.08); }
-      .stat:last-child { border-bottom:none; padding-bottom:0; margin-bottom:0; }
+
+      /* Hero title — prevent overflow on small screens */
+      .hero-content { padding:0 24px 60px; max-width:100%; }
+      .hero-title { font-size:clamp(36px,10vw,64px); }
+
+      /* Hero stats — stack vertically, full width */
+      .hero-stats { flex-direction:column; align-items:flex-start; gap:0; width:100%; }
+      .stat { border-right:none; border-bottom:1px solid rgba(255,255,255,.08); padding:10px 0; margin:0; width:100%; display:flex; align-items:center; gap:16px; }
+      .stat:last-child { border-bottom:none; }
+      .stat-num { font-size:28px; min-width:70px; }
+
+      /* Reviews — single column */
+      .rev-track { gap:16px; }
+
+      /* Footer — stack items neatly */
+      .footer-inner { flex-direction:column; align-items:flex-start; gap:20px; }
+      .footer-logo { font-size:18px; display:inline-flex; align-items:baseline; gap:4px; }
+      .footer-links { gap:20px; flex-wrap:wrap; }
+
+      /* Pricing */
       .pricing-section { padding:80px 24px; }
-      .pricing-all-row { grid-template-columns:1fr 1fr; }
+      .pricing-all-row { grid-template-columns:1fr; }
       .pricing-top { flex-direction:column; align-items:flex-start; }
       .pricing-subtitle { text-align:left; }
       .price-notes { flex-direction:column; gap:16px; }
       .price-note-cta { margin-left:0; width:100%; }
       .price-note-cta a { width:100%; justify-content:center; }
+    }
+
+    @media(max-width:400px){
+      .hero-title { font-size:clamp(30px,9vw,50px); }
+      .stat-num { font-size:22px; }
     }
   </style>
 </head>
