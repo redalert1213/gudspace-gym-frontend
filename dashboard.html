@@ -1729,35 +1729,40 @@
     }
 
     /* ---- ANNOUNCEMENTS BANNER ---- */
-    function loadAnnouncementBanners() {
+    async function loadAnnouncementBanners() {
       const area = document.getElementById('annBannerArea');
       if (!area) return;
-      const all  = window.GudSpace.storage.get('announcements') || [];
-      const now  = Date.now();
-      const dismissed = (window.GudSpace.storage.get('ann_dismissed_' + currentUser.id) || []).map(String);
-      const active = all.filter(a => {
-        if (dismissed.includes(String(a.id))) return false;
-        if (a.expiresAt && new Date(a.expiresAt).getTime() <= now) return false;
-        return true;
-      });
-      const ICONS = { urgent:'🚨', warning:'⚠️', info:'ℹ️' };
+      try {
+        const res  = await window.GudAPI.getAnnouncements();
+        const all  = res.announcements || [];
+        const now  = Date.now();
+        const dismissed = (window.GudSpace.storage.get('ann_dismissed_' + currentUser.id) || []).map(String);
+        const active = all.filter(a => {
+          if (dismissed.includes(String(a.id))) return false;
+          if (a.expires_at && new Date(a.expires_at).getTime() <= now) return false;
+          return true;
+        });
+        const ICONS = { urgent:'🚨', warning:'⚠️', info:'ℹ️' };
 
-      if (!active.length) {
-        area.innerHTML = '';
-        area.classList.remove('has-banners');
-        return;
+        if (!active.length) {
+          area.innerHTML = '';
+          area.classList.remove('has-banners');
+          return;
+        }
+
+        area.innerHTML = active.map(a => `
+          <div class="ann-banner priority-${a.priority}" id="annBanner_${a.id}">
+            <span class="ann-banner-icon">${ICONS[a.priority] || 'ℹ️'}</span>
+            <div class="ann-banner-body">
+              <div class="ann-banner-title">${a.title}</div>
+              <div class="ann-banner-text">${a.body}</div>
+            </div>
+            <button class="ann-banner-dismiss" onclick="dismissBanner('${a.id}')" title="Dismiss">✕</button>
+          </div>`).join('');
+        area.classList.add('has-banners');
+      } catch(e) {
+        console.warn('loadAnnouncementBanners error:', e);
       }
-
-      area.innerHTML = active.map(a => `
-        <div class="ann-banner priority-${a.priority}" id="annBanner_${a.id}">
-          <span class="ann-banner-icon">${ICONS[a.priority] || 'ℹ️'}</span>
-          <div class="ann-banner-body">
-            <div class="ann-banner-title">${a.title}</div>
-            <div class="ann-banner-text">${a.body}</div>
-          </div>
-          <button class="ann-banner-dismiss" onclick="dismissBanner(${a.id})" title="Dismiss">✕</button>
-        </div>`).join('');
-      area.classList.add('has-banners');
     }
 
     function dismissBanner(id) {
