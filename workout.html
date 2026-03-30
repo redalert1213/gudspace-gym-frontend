@@ -1221,6 +1221,7 @@
   </div>
 
   <script src="script.js"></script>
+  <script src="api.js"></script>
   <script>
   /* =====================================================
      WORKOUT PAGE — GUD SPACE GYM
@@ -2063,11 +2064,10 @@
 
   /* ===== RECOMMENDATION ENGINE ===== */
   function getRecommendedSplit() {
-    const p = currentUser.profile || {};
-    const freq = p.workoutFreq || 3;
-    const exp = p.trainingExp || 'never';
-    const dur = p.trainingDuration || 'less-1mo';
-    const goal = p.goal || 'overall-fitness';
+    const freq = currentUser.workoutFreq || 3;
+    const exp  = currentUser.trainingExp || 'never';
+    const dur  = currentUser.trainingDuration || 'less-1mo';
+    const goal = currentUser.goal || 'overall-fitness';
 
     // Determine level
     let level = 'beginner';
@@ -2130,16 +2130,16 @@
 
   /* ===== RENDER ===== */
   function renderSidebar() {
-    const p = currentUser.profile || {};
-    document.getElementById('sbName').textContent = ((currentUser.firstName || '') + ' ' + (currentUser.lastName || '')).trim().toUpperCase() || 'MEMBER';
-    document.getElementById('sbMeta').textContent = `${p.age || '—'} yrs · ${p.weightKg || '—'} kg · ${p.heightCm || '—'} cm`;
+    const u    = currentUser;
+    const name = u.name || 'Member';
+    document.getElementById('sbName').textContent = name.toUpperCase();
+    document.getElementById('sbMeta').textContent = `${u.age || '—'} yrs · ${u.weight || '—'} kg · ${u.height || '—'} cm`;
     const goalLabels = { 'build-strength':'Build Strength','lose-weight':'Lose Weight','get-lean':'Get Lean','get-in-shape':'Get in Shape','build-muscle':'Build Muscle','overall-fitness':'Overall Fitness' };
-    document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalLabels[p.goal] || 'Set Your Goal');
-    const initial = (currentUser.firstName || '?').charAt(0).toUpperCase();
-    document.getElementById('sbAvatar').childNodes[0].textContent = initial;
-    if (currentUser.photoUrl) {
+    document.getElementById('sbGoalBadge').textContent = '🎯 ' + (goalLabels[u.goal] || 'Set Your Goal');
+    document.getElementById('sbAvatar').childNodes[0].textContent = name.charAt(0).toUpperCase();
+    if (u.avatar_url) {
       const img = document.getElementById('sbAvatarImg');
-      img.src = currentUser.photoUrl;
+      img.src = u.avatar_url;
       img.style.display = 'block';
     }
   }
@@ -2254,10 +2254,6 @@
     // Update dashboard workout plan too
     const split = SPLITS[idx];
     currentUser.activeSplit = idx;
-    const users = GS.storage.get('users') || [];
-    const ui = users.findIndex(u => u.id === currentUser.id);
-    if (ui >= 0) users[ui] = { ...users[ui], activeSplit: idx };
-    GS.storage.set('users', users);
     GS.storage.set('currentUser', { ...currentUser, activeSplit: idx });
 
     // Update UI
@@ -2502,7 +2498,16 @@
   }
 
   /* ===== INIT ===== */
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Fetch fresh profile so sidebar shows correct data
+    try {
+      const res = await window.GudAPI.getProfile();
+      if (res.user) {
+        currentUser = { ...currentUser, ...res.user };
+        GS.storage.set('currentUser', currentUser);
+      }
+    } catch(e) { console.warn('Could not refresh profile.'); }
+
     renderSidebar();
     renderRecommended();
     renderActiveProgramBar();

@@ -1628,6 +1628,7 @@
       }
       if (waterGlasses === MAX_GLASSES) window.GudSpace.showToast('Hydration goal reached! 💧', '🎉');
     }
+    function renderWaterDrops() {
       const el = document.getElementById('waterDrops');
       el.innerHTML = '';
       for (let i = 0; i < MAX_GLASSES; i++) {
@@ -1639,12 +1640,10 @@
       }
       document.getElementById('waterValue').textContent = waterGlasses;
 
-      // Progress bar
       const pct = (waterGlasses / MAX_GLASSES) * 100;
       const bar = document.getElementById('waterProgressBar');
       if (bar) bar.style.width = pct + '%';
 
-      // Status message
       const statusEl = document.getElementById('waterStatus');
       if (statusEl) {
         if (waterGlasses === 0) {
@@ -1951,10 +1950,6 @@
 
     /* ---- HELPERS ---- */
     function saveUser() {
-      const users = window.GudSpace.storage.get('users') || [];
-      const idx   = users.findIndex(u => u.id === currentUser.id);
-      if (idx >= 0) users[idx] = currentUser;
-      window.GudSpace.storage.set('users', users);
       window.GudSpace.storage.set('currentUser', currentUser);
     }
 
@@ -1995,14 +1990,27 @@
       return Math.max(1, Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / 86400000));
     }
 
-    function initMembership() {
-      /* Always read fresh from users array — admin may have assigned/changed plan */
-      const users     = window.GudSpace.storage.get('users') || [];
-      const freshUser = users.find(u => u.id === currentUser.id);
-      if (freshUser) {
-        currentUser.membership     = freshUser.membership;
-        currentUser.renewalRequest = freshUser.renewalRequest;
-      }
+    async function initMembership() {
+      try {
+        const res = await window.GudAPI.getMyMembership();
+        if (res.membership) {
+          currentUser.membership = {
+            name:      res.membership.name,
+            price:     res.membership.price,
+            startDate: res.membership.start_date,
+            endDate:   res.membership.end_date,
+          };
+        } else {
+          currentUser.membership = null;
+        }
+        // Also refresh renewal_request flag from profile
+        const profRes = await window.GudAPI.getProfile();
+        if (profRes.user) {
+          currentUser.renewalRequest = profRes.user.renewal_request || false;
+          currentUser = { ...currentUser, ...profRes.user };
+          window.GudSpace.storage.set('currentUser', currentUser);
+        }
+      } catch(e) { console.warn('Could not fetch membership.'); }
 
       const plan   = currentUser.membership;
       const status = getMemStatus(plan);
@@ -2122,13 +2130,6 @@
       if (!panel) return;
 
       if (panel.style.display === 'none' || !panel.style.display) {
-        /* Always read fresh from users array so admin changes reflect immediately */
-        const users     = window.GudSpace.storage.get('users') || [];
-        const freshUser = users.find(u => u.id === currentUser.id);
-        if (freshUser) {
-          currentUser.membership     = freshUser.membership;
-          currentUser.renewalRequest = freshUser.renewalRequest;
-        }
         const plan   = currentUser.membership;
         const status = getMemStatus(plan);
         const days   = getMemDaysLeft(plan);
@@ -2184,12 +2185,13 @@
       if (panel) panel.style.display = 'none';
     }
 
-    function requestRenewal() {
-      /* Save renewal request flag on user */
-      currentUser.renewalRequest = true;
-      saveUser();
+    async function requestRenewal() {
+      try {
+        await window.GudAPI.requestRenewal();
+        currentUser.renewalRequest = true;
+        window.GudSpace.storage.set('currentUser', currentUser);
+      } catch(e) { console.warn('Could not send renewal request.'); }
 
-      /* Update all buttons */
       ['renewBtn','renewBtnBell'].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) { btn.disabled = true; btn.textContent = '✅ Renewal Requested'; }
