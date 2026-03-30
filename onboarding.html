@@ -1272,6 +1272,29 @@
   </div>
 
   <script src="script.js"></script>
+  <script src="api.js"></script>
+  <script>
+    // Fix cursor for dynamically rendered onboarding steps
+    // Use event delegation so dynamically added buttons/links also trigger scale
+    document.addEventListener('mouseover', (e) => {
+      const cursor   = document.getElementById('cursor');
+      const follower = document.getElementById('cursorFollower');
+      if (!cursor || !follower) return;
+      if (e.target.closest('a, button, [data-cursor]')) {
+        cursor.style.transform   = 'translate(-50%, -50%) scale(1.8)';
+        follower.style.transform = 'translate(-50%, -50%) scale(1.3)';
+      }
+    });
+    document.addEventListener('mouseout', (e) => {
+      const cursor   = document.getElementById('cursor');
+      const follower = document.getElementById('cursorFollower');
+      if (!cursor || !follower) return;
+      if (e.target.closest('a, button, [data-cursor]')) {
+        cursor.style.transform   = 'translate(-50%, -50%) scale(1)';
+        follower.style.transform = 'translate(-50%, -50%) scale(1)';
+      }
+    });
+  </script>
   <script>
   /* =========================================================
      ONBOARDING LOGIC
@@ -1602,29 +1625,42 @@
     advanceStep();
   }
 
-  function showGetStarted() {
+  async function showGetStarted() {
     // Finalise user data
     const pending = window.GudSpace.storage.get('pendingUser') || {};
+
+    // Push onboarding data to backend profile
+    try {
+      await window.GudAPI.updateProfile({
+        gender:         data.gender,
+        age:            data.age,
+        weight:         data.weightKg,
+        height:         data.heightCm,
+        goal:           data.goal,
+        activity_level: data.activityLevel || 1.375
+      });
+    } catch(e) { console.warn('Could not sync onboarding data to backend.'); }
+
     const finalUser = {
       ...pending,
-      profile: { ...data },
+      gender:   data.gender,
+      age:      data.age,
+      weight:   data.weightKg,
+      height:   data.heightCm,
+      goal:     data.goal,
       onboardingDone: true,
-      loginTime: null,
     };
 
-    // Save user
-    const users = window.GudSpace.storage.get('users') || [];
-    const idx = users.findIndex(u => u.id === finalUser.id);
-    if (idx >= 0) users[idx] = finalUser; else users.push(finalUser);
-    window.GudSpace.storage.set('users', users);
+    // Update local cache + cleanup
+    window.GudSpace.storage.set('currentUser', finalUser);
     window.GudSpace.storage.remove('pendingUser');
 
     // Setup get started screen
-    const name = finalUser.firstName || 'CHAMP';
+    const name = finalUser.name || pending.name || 'CHAMP';
     document.getElementById('gsAvatar').textContent = name.charAt(0).toUpperCase();
-    document.getElementById('gsName').textContent   = name.toUpperCase() + '!';
+    document.getElementById('gsName').textContent   = name.split(' ')[0].toUpperCase() + '!';
     document.getElementById('gsSub').innerHTML =
-      `Your personalized plan is ready, <strong>${name}</strong>! Every workout, every macro, every session — built for <em>you</em>.`;
+      `Your personalized plan is ready, <strong>${name.split(' ')[0]}</strong>! Every workout, every macro, every session — built for <em>you</em>.`;
 
     const goalLabels = {
       'build-strength':'Build Strength','lose-weight':'Lose Weight','get-lean':'Get Lean',
@@ -1649,9 +1685,10 @@
     document.getElementById('loadingScreen').classList.remove('show');
     document.getElementById('getStartedScreen').classList.add('show');
 
-    // Store completed user for auto-login to dashboard
-    window.GudSpace.storage.set('currentUser', finalUser);
-    window.GudSpace.storage.set('loginTime', Date.now());
+    // loginTime already set during registration
+    if (!window.GudSpace.storage.get('loginTime')) {
+      window.GudSpace.storage.set('loginTime', Date.now());
+    }
   }
 
   function enterDashboard() {
@@ -1659,11 +1696,10 @@
   }
 
   /* ------- INIT ------- */
-  // Check pending user
   document.addEventListener('DOMContentLoaded', () => {
-    const pending = window.GudSpace.storage.get('pendingUser');
-    if (!pending) {
-      // No pending registration — redirect
+    // Must have a logged-in user (just registered) to do onboarding
+    const user = window.GudSpace.storage.get('currentUser');
+    if (!user || !user.token) {
       window.location.href = 'register.html';
       return;
     }
