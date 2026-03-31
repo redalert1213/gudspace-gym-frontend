@@ -436,6 +436,12 @@
                 </div>
               </div>
               <div class="pf-row">
+                <div class="pf-field" style="grid-column:1/-1;">
+                  <label class="pf-label">Mobile Number</label>
+                  <input type="tel" class="pf-input" id="pfPhone" placeholder="e.g. 09123456789" maxlength="15" />
+                </div>
+              </div>
+              <div class="pf-row">
                 <div class="pf-field">
                   <label class="pf-label">Gender</label>
                   <select class="pf-input" id="pfGender">
@@ -671,6 +677,7 @@
       set('pfWeight',    u.weight);
       set('pfHeight',    u.height);
       set('pfGoal',      u.goal);
+      set('pfPhone',     u.phone);
     }
 
     /* ---- LIVE PREVIEW ---- */
@@ -709,6 +716,7 @@
       const weight    = parseFloat(get('pfWeight'));
       const height    = parseFloat(get('pfHeight'));
       const goal      = get('pfGoal');
+      const phone     = get('pfPhone');
 
       const name = [firstName, lastName].filter(Boolean).join(' ');
 
@@ -718,7 +726,7 @@
 
       try {
         const res = await window.GudAPI.updateProfile({
-          name, gender, age, weight, height, goal
+          name, gender, age, weight, height, goal, phone
         });
 
         if (res.error) {
