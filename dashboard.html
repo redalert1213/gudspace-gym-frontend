@@ -2198,57 +2198,60 @@
 
     if (!payments.length && !plan.price) { el.innerHTML = ''; return; }
 
-    const total   = parseFloat(plan.price) || 0;
-    const paid    = payments.reduce((s, p) => s + parseFloat(p.amount), 0);
-    const balance = total - paid;
-    const pct     = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
-    const isFull  = balance <= 0;
+    const total    = parseFloat(plan.price) || 0;
+    const paid     = payments.reduce(function(s, p) { return s + parseFloat(p.amount); }, 0);
+    const balance  = total - paid;
+    const pct      = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+    const isFull   = balance <= 0;
     const isPartial = paid > 0 && !isFull;
 
     const badge = isFull
-      ? '<span class="mem-pay-badge full">✅ Fully Paid</span>'
+      ? '<span class="mem-pay-badge full">&#x2705; Fully Paid</span>'
       : isPartial
-        ? '<span class="mem-pay-badge partial">⚡ Partial Payment</span>'
-        : '<span class="mem-pay-badge unpaid">⚠️ Unpaid</span>';
+        ? '<span class="mem-pay-badge partial">&#x26A1; Partial Payment</span>'
+        : '<span class="mem-pay-badge unpaid">&#x26A0;&#xFE0F; Unpaid</span>';
 
-    const histRows = payments.slice(0, 5).map(p => {
+    let histRows = '';
+    payments.slice(0, 5).forEach(function(p) {
       const d = new Date(p.paid_at);
-      const phD = new Date(d.getTime() + 8*60*60*1000);
-      const dateStr = phD.toLocaleDateString('en-PH', { month:'short', day:'numeric' });
-      return \`
-        <div class="mem-pay-hist-row">
-          <span class="mem-pay-hist-amt">₱\${parseFloat(p.amount).toLocaleString()}</span>
-          \${p.note ? \`<span class="mem-pay-hist-note">\${p.note}</span>\` : ''}
-          <span class="mem-pay-hist-date">\${dateStr}</span>
-        </div>\`;
-    }).join('');
+      const phD = new Date(d.getTime() + 8 * 60 * 60 * 1000);
+      const dateStr = phD.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+      histRows += '<div class="mem-pay-hist-row">'
+        + '<span class="mem-pay-hist-amt">&#x20B1;' + parseFloat(p.amount).toLocaleString() + '</span>'
+        + (p.note ? '<span class="mem-pay-hist-note">' + p.note + '</span>' : '')
+        + '<span class="mem-pay-hist-date">' + dateStr + '</span>'
+        + '</div>';
+    });
 
-    el.innerHTML = \`
-      <hr class="mem-pay-divider">
-      <div class="mem-pay-label">💳 Payment Breakdown</div>
-      <div class="mem-pay-bars">
-        <div class="mem-pay-row">
-          <span class="mem-pay-row-label">Total</span>
-          <div class="mem-pay-track"><div class="mem-pay-fill" style="width:100%;background:rgba(255,255,255,0.15);"></div></div>
-          <span class="mem-pay-row-val" style="color:rgba(255,255,255,0.6);">₱\${total.toLocaleString()}</span>
-        </div>
-        <div class="mem-pay-row">
-          <span class="mem-pay-row-label">Paid</span>
-          <div class="mem-pay-track"><div class="mem-pay-fill" style="width:\${pct}%;background:#2ed573;"></div></div>
-          <span class="mem-pay-row-val" style="color:#2ed573;">₱\${paid.toLocaleString()}</span>
-        </div>
-        <div class="mem-pay-row">
-          <span class="mem-pay-row-label">Balance</span>
-          <div class="mem-pay-track"><div class="mem-pay-fill" style="width:\${isFull ? 0 : 100-pct}%;background:\${isFull ? '#2ed573' : '#ff6b6b'};"></div></div>
-          <span class="mem-pay-row-val" style="color:\${isFull ? '#2ed573' : '#ff6b6b'};">\${isFull ? '₱0' : '₱' + Math.abs(balance).toLocaleString()}</span>
-        </div>
-      </div>
-      \${badge}
-      \${histRows ? \`<div class="mem-pay-history">\${histRows}</div>\` : ''}
-    \`;
+    const balColor  = isFull ? '#2ed573' : '#ff6b6b';
+    const balWidth  = isFull ? '0' : String(100 - pct);
+    const balAmount = isFull ? '&#x20B1;0' : '&#x20B1;' + Math.abs(balance).toLocaleString();
+
+    el.innerHTML =
+      '<hr class="mem-pay-divider">'
+      + '<div class="mem-pay-label">&#x1F4B3; Payment Breakdown</div>'
+      + '<div class="mem-pay-bars">'
+        + '<div class="mem-pay-row">'
+          + '<span class="mem-pay-row-label">Total</span>'
+          + '<div class="mem-pay-track"><div class="mem-pay-fill" style="width:100%;background:rgba(255,255,255,0.15);"></div></div>'
+          + '<span class="mem-pay-row-val" style="color:rgba(255,255,255,0.6);">&#x20B1;' + total.toLocaleString() + '</span>'
+        + '</div>'
+        + '<div class="mem-pay-row">'
+          + '<span class="mem-pay-row-label">Paid</span>'
+          + '<div class="mem-pay-track"><div class="mem-pay-fill" style="width:' + pct + '%;background:#2ed573;"></div></div>'
+          + '<span class="mem-pay-row-val" style="color:#2ed573;">&#x20B1;' + paid.toLocaleString() + '</span>'
+        + '</div>'
+        + '<div class="mem-pay-row">'
+          + '<span class="mem-pay-row-label">Balance</span>'
+          + '<div class="mem-pay-track"><div class="mem-pay-fill" style="width:' + balWidth + '%;background:' + balColor + ';"></div></div>'
+          + '<span class="mem-pay-row-val" style="color:' + balColor + ';">' + balAmount + '</span>'
+        + '</div>'
+      + '</div>'
+      + badge
+      + (histRows ? '<div class="mem-pay-history">' + histRows + '</div>' : '');
   }
 
-    function showMemPopup(plan, status, days) {
+      function showMemPopup(plan, status, days) {
       const overlay = document.getElementById('memExpiryPopup');
       if (!overlay) return;
 
