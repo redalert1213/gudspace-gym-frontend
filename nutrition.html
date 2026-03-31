@@ -859,7 +859,15 @@
       .page-main { margin-left: 0; overflow-x: hidden; }
       .db-menu-btn { display: flex; }
       .page-content { padding: 16px; }
-      .bmi-calc-display { flex-direction: column; align-items: flex-start; }
+      .bmi-calc-display { flex-direction: column; align-items: center; text-align: center; }
+      .bmi-ring-wrap { width: 140px; height: 140px; margin: 0 auto 16px; }
+      .bmi-ring-svg { width: 140px; height: 140px; }
+      .bmi-ring-value { font-size: 32px; }
+      .bmi-calc-result { width: 100%; }
+      .bmi-class-badge { display: block; text-align: center; margin-bottom: 14px; }
+      .bmi-scale-bar { width: 100%; }
+      .bmi-stat-row { justify-content: center; gap: 10px; }
+      .bmi-stat-item { flex: 1; text-align: center; }
       .macro-rings { grid-template-columns: repeat(4, 1fr); }
       .water-full-layout { flex-direction: column; }
       .goal-meal-grid { grid-template-columns: 1fr; }
@@ -1395,37 +1403,6 @@
               </div>
             </div>
             <div class="macro-goal-note" id="macroGoalNote">Calculated for your goal</div>
-          </div>
-        </div>
-
-        <!-- WATER TRACKER -->
-        <div class="view-section-title"><span class="vst-dot"></span>DAILY WATER TRACKER</div>
-        <div class="db-card">
-          <div class="card-label"><div class="card-label-dot"></div> HYDRATION GOAL · 10 GLASSES</div>
-          <div class="water-full-layout">
-            <div class="water-bottle-wrap">
-              <div class="water-bottle-cap"></div>
-              <div class="water-bottle">
-                <div class="water-bottle-fill" id="waterBottleFill"></div>
-                <div class="water-bottle-label" id="waterBottlePct">0%</div>
-              </div>
-            </div>
-            <div class="water-full-right">
-              <div class="water-full-count">
-                <button class="water-btn" id="waterMinus" onclick="changeWater(-1)">−</button>
-                <div class="water-value-wrap">
-                  <div class="water-value" id="waterValue">0</div>
-                  <div class="water-unit">/ 10 glasses</div>
-                </div>
-                <button class="water-btn" id="waterPlus" onclick="changeWater(1)">+</button>
-              </div>
-              <div class="water-drops" id="waterDrops"></div>
-              <div class="water-tips">
-                <div class="water-tip">💡 Drink a glass before each meal</div>
-                <div class="water-tip">💡 Keep a bottle at your workout station</div>
-                <div class="water-tip">💡 8–10 glasses = proper hydration</div>
-              </div>
-            </div>
           </div>
         </div>
 
