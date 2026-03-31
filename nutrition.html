@@ -1905,8 +1905,10 @@
         }
       }
 
-      document.getElementById('waterMinus').disabled = waterCount <= 0;
-      document.getElementById('waterPlus').disabled  = waterCount >= MAX_GLASSES;
+      const minusBtn = document.getElementById('waterMinus');
+      const plusBtn  = document.getElementById('waterPlus');
+      if (minusBtn) minusBtn.disabled = waterCount <= 0;
+      if (plusBtn)  plusBtn.disabled  = waterCount >= MAX_GLASSES;
     }
 
     /* ---- MEAL CARDS ---- */
