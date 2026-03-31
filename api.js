@@ -291,4 +291,36 @@ window.GudAPI = {
     });
     return res.json();
   },
+
+  /* ---- PAYMENTS ---- */
+  addPayment: async function(data) {
+    const res = await fetch(`${API_URL}/payments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.getToken()
+      },
+      body: JSON.stringify(data)
+    });
+    return res.json();
+  },
+  getMemberPayments: async function(user_id) {
+    const res = await fetch(`${API_URL}/payments/member/${user_id}`, {
+      headers: { 'Authorization': 'Bearer ' + this.getToken() }
+    });
+    return res.json();
+  },
+  getMyPayments: async function() {
+    const res = await fetch(`${API_URL}/payments/me`, {
+      headers: { 'Authorization': 'Bearer ' + this.getToken() }
+    });
+    return res.json();
+  },
+  deletePayment: async function(id) {
+    const res = await fetch(`${API_URL}/payments/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + this.getToken() }
+    });
+    return res.json();
+  },
 };

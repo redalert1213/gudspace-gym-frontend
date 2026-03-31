@@ -291,6 +291,24 @@
     .mem-progress-wrap { background: rgba(255,255,255,0.06); border-radius: 6px; height: 6px; overflow: hidden; margin-bottom: 8px; }
     .mem-progress-bar { height: 100%; border-radius: 6px; transition: width 0.6s ease; }
     .mem-days-remaining { font-family: var(--font-cond); font-size: 12px; color: rgba(255,255,255,0.4); letter-spacing: 0.06em; }
+    /* Payment breakdown in membership card */
+    .mem-pay-divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 18px 0 14px; }
+    .mem-pay-label { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--pink); margin-bottom: 10px; }
+    .mem-pay-bars { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .mem-pay-row { display: flex; align-items: center; gap: 10px; }
+    .mem-pay-row-label { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.35); width: 60px; flex-shrink: 0; }
+    .mem-pay-track { flex: 1; height: 5px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; }
+    .mem-pay-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+    .mem-pay-row-val { font-family: var(--font-cond); font-size: 12px; font-weight: 700; width: 80px; text-align: right; flex-shrink: 0; }
+    .mem-pay-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 100px; font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+    .mem-pay-badge.full { background: rgba(46,213,115,0.12); color: #2ed573; border: 1px solid rgba(46,213,115,0.25); }
+    .mem-pay-badge.partial { background: rgba(253,203,110,0.12); color: #fdcb6e; border: 1px solid rgba(253,203,110,0.3); }
+    .mem-pay-badge.unpaid { background: rgba(255,107,107,0.1); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.2); }
+    .mem-pay-history { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; max-height: 120px; overflow-y: auto; }
+    .mem-pay-hist-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; background: rgba(255,255,255,0.03); border-radius: 6px; }
+    .mem-pay-hist-amt { font-family: var(--font-cond); font-size: 13px; font-weight: 700; color: #2ed573; }
+    .mem-pay-hist-date { font-size: 11px; color: rgba(255,255,255,0.3); }
+    .mem-pay-hist-note { font-size: 11px; color: rgba(255,255,255,0.4); font-style: italic; }
     .mem-renew-btn {
       display: inline-flex; align-items: center; gap: 6px;
       margin-top: 14px; padding: 9px 20px; border-radius: 8px;
@@ -2157,8 +2175,78 @@
         </div>
         <div class="mem-days-remaining">${daysText}</div>
         ${renewBtn}
+        <div id="memPayBreakdown" style="margin-top:4px;">
+          <div style="font-size:11px;color:rgba(255,255,255,0.2);padding:6px 0;">Loading payment info...</div>
+        </div>
       `;
+      // Load payment breakdown after render
+      loadMemPayBreakdown(plan);
     }
+
+  async function loadMemPayBreakdown(plan) {
+    const el = document.getElementById('memPayBreakdown');
+    if (!el || !plan) return;
+
+    let payments = [];
+    try {
+      const res = await GudAPI.getMyPayments();
+      payments = res.payments || [];
+    } catch(e) {
+      el.innerHTML = '';
+      return;
+    }
+
+    if (!payments.length && !plan.price) { el.innerHTML = ''; return; }
+
+    const total   = parseFloat(plan.price) || 0;
+    const paid    = payments.reduce((s, p) => s + parseFloat(p.amount), 0);
+    const balance = total - paid;
+    const pct     = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+    const isFull  = balance <= 0;
+    const isPartial = paid > 0 && !isFull;
+
+    const badge = isFull
+      ? '<span class="mem-pay-badge full">✅ Fully Paid</span>'
+      : isPartial
+        ? '<span class="mem-pay-badge partial">⚡ Partial Payment</span>'
+        : '<span class="mem-pay-badge unpaid">⚠️ Unpaid</span>';
+
+    const histRows = payments.slice(0, 5).map(p => {
+      const d = new Date(p.paid_at);
+      const phD = new Date(d.getTime() + 8*60*60*1000);
+      const dateStr = phD.toLocaleDateString('en-PH', { month:'short', day:'numeric' });
+      return \`
+        <div class="mem-pay-hist-row">
+          <span class="mem-pay-hist-amt">₱\${parseFloat(p.amount).toLocaleString()}</span>
+          \${p.note ? \`<span class="mem-pay-hist-note">\${p.note}</span>\` : ''}
+          <span class="mem-pay-hist-date">\${dateStr}</span>
+        </div>\`;
+    }).join('');
+
+    el.innerHTML = \`
+      <hr class="mem-pay-divider">
+      <div class="mem-pay-label">💳 Payment Breakdown</div>
+      <div class="mem-pay-bars">
+        <div class="mem-pay-row">
+          <span class="mem-pay-row-label">Total</span>
+          <div class="mem-pay-track"><div class="mem-pay-fill" style="width:100%;background:rgba(255,255,255,0.15);"></div></div>
+          <span class="mem-pay-row-val" style="color:rgba(255,255,255,0.6);">₱\${total.toLocaleString()}</span>
+        </div>
+        <div class="mem-pay-row">
+          <span class="mem-pay-row-label">Paid</span>
+          <div class="mem-pay-track"><div class="mem-pay-fill" style="width:\${pct}%;background:#2ed573;"></div></div>
+          <span class="mem-pay-row-val" style="color:#2ed573;">₱\${paid.toLocaleString()}</span>
+        </div>
+        <div class="mem-pay-row">
+          <span class="mem-pay-row-label">Balance</span>
+          <div class="mem-pay-track"><div class="mem-pay-fill" style="width:\${isFull ? 0 : 100-pct}%;background:\${isFull ? '#2ed573' : '#ff6b6b'};"></div></div>
+          <span class="mem-pay-row-val" style="color:\${isFull ? '#2ed573' : '#ff6b6b'};">\${isFull ? '₱0' : '₱' + Math.abs(balance).toLocaleString()}</span>
+        </div>
+      </div>
+      \${badge}
+      \${histRows ? \`<div class="mem-pay-history">\${histRows}</div>\` : ''}
+    \`;
+  }
 
     function showMemPopup(plan, status, days) {
       const overlay = document.getElementById('memExpiryPopup');
