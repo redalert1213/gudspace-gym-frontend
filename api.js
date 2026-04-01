@@ -296,10 +296,7 @@ window.GudAPI = {
   addPayment: async function(data) {
     const res = await fetch(`${API_URL}/payments`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this.getToken()
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + this.getToken() },
       body: JSON.stringify(data)
     });
     return res.json();

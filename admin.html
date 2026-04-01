@@ -774,16 +774,14 @@
     }
     .mm-att-date { font-family: var(--font-cond); font-size: 12px; font-weight: 700; letter-spacing: 0.05em; color: var(--white); }
     .mm-att-times { font-size: 12px; color: rgba(255,255,255,0.3); }
-
-    /* ── PAYMENT STYLES ── */
     .pay-summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-    .pay-summary-card { border-radius: 10px; padding: 14px 12px; text-align: center; position: relative; overflow: hidden; }
-    .pay-summary-card.total  { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); }
-    .pay-summary-card.paid   { background: rgba(46,213,115,0.08);  border: 1px solid rgba(46,213,115,0.2); }
+    .pay-summary-card { border-radius: 10px; padding: 14px 12px; text-align: center; }
+    .pay-summary-card.total   { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); }
+    .pay-summary-card.paid    { background: rgba(46,213,115,0.08);  border: 1px solid rgba(46,213,115,0.2); }
     .pay-summary-card.balance { background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.2); }
     .pay-summary-card.balance.clear { background: rgba(46,213,115,0.08); border: 1px solid rgba(46,213,115,0.2); }
     .pay-summary-label { font-family: var(--font-cond); font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 6px; }
-    .pay-summary-val { font-family: var(--font-display); font-size: 18px; letter-spacing: 0.02em; }
+    .pay-summary-val { font-family: var(--font-display); font-size: 18px; }
     .pay-summary-card.total   .pay-summary-val { color: var(--white); }
     .pay-summary-card.paid    .pay-summary-val { color: #2ed573; }
     .pay-summary-card.balance .pay-summary-val { color: #ff6b6b; }
@@ -796,14 +794,13 @@
     .pay-history-amount { font-family: var(--font-cond); font-size: 15px; font-weight: 700; color: #2ed573; }
     .pay-history-meta { font-size: 11px; color: rgba(255,255,255,0.3); flex: 1; }
     .pay-history-note { font-size: 11px; color: rgba(255,255,255,0.45); font-style: italic; }
-    .pay-history-del { background: none; border: none; color: rgba(255,107,107,0.5); cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; transition: color 0.2s; }
+    .pay-history-del { background: none; border: none; color: rgba(255,107,107,0.5); cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; }
     .pay-history-del:hover { color: #ff6b6b; }
     .pay-add-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .pay-input { flex: 1; min-width: 120px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; font-family: var(--font-body); outline: none; transition: border-color 0.2s; }
+    .pay-input { flex: 1; min-width: 120px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; font-family: var(--font-body); outline: none; }
     .pay-input:focus { border-color: var(--pink); }
     .pay-input::placeholder { color: rgba(255,255,255,0.25); }
-    .pay-add-btn { background: var(--pink); color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-family: var(--font-cond); font-size: 12px; font-weight: 700; letter-spacing: .08em; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
-    .pay-add-btn:hover { background: #e01050; }
+    .pay-add-btn { background: var(--pink); color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-family: var(--font-cond); font-size: 12px; font-weight: 700; letter-spacing: .08em; cursor: pointer; white-space: nowrap; }
     .pay-msg { font-size: 12px; margin-top: 6px; min-height: 16px; }
     .pay-empty { font-size: 12px; color: rgba(255,255,255,0.25); padding: 8px 0; text-align: center; }
 
@@ -1527,15 +1524,11 @@
 
           let nutCalories = null, nutProtein = null, nutCarbs = null, nutFat = null;
           if (u.weight && u.height && u.age && u.gender) {
-            let bmr;
-            if (u.gender === 'male') {
-              bmr = 10 * u.weight + 6.25 * u.height - 5 * u.age + 5;
-            } else {
-              bmr = 10 * u.weight + 6.25 * u.height - 5 * u.age - 161;
-            }
-            const actMap = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9 };
-            const actMult = actMap[u.activity_level] || 1.375;
-            const tdee = Math.round(bmr * actMult);
+            let bmr = u.gender === 'male'
+              ? 10 * u.weight + 6.25 * u.height - 5 * u.age + 5
+              : 10 * u.weight + 6.25 * u.height - 5 * u.age - 161;
+            const actMap = { sedentary:1.2, light:1.375, moderate:1.55, active:1.725, very_active:1.9 };
+            const tdee = Math.round(bmr * (actMap[u.activity_level] || 1.375));
             nutProtein  = Math.round(u.weight * 1.8);
             nutFat      = Math.round(tdee * 0.25 / 9);
             nutCarbs    = Math.round((tdee - nutProtein * 4 - nutFat * 9) / 4);
@@ -1780,7 +1773,6 @@
   /* ---- HELPER: format time ---- */
   function fmt12(isoStr) {
     if (!isoStr) return '--';
-    // Force UTC parsing then convert to PH time (UTC+8)
     if (!/Z|[+-]\d{2}:?\d{2}$/.test(isoStr)) isoStr = isoStr + 'Z';
     const d = new Date(isoStr);
     let h = (d.getUTCHours() + 8) % 24;
@@ -2146,14 +2138,13 @@
         <div>
           <div class="mm-name">${name.toUpperCase() || 'N/A'}</div>
           <div class="mm-email">${u.email}</div>
-          ${u.phone
-            ? '<div style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:3px;display:flex;align-items:center;gap:8px;">'
-              + '<span>📱 ' + u.phone + '</span>'
-              + '<a href="tel:' + u.phone + '" style="color:var(--pink);font-size:11px;font-family:var(--font-cond);font-weight:700;letter-spacing:.08em;text-decoration:none;border:1px solid rgba(255,26,94,0.3);border-radius:4px;padding:2px 8px;">CALL</a>'
-              + '<a href="https://wa.me/' + u.phone.replace(/[^0-9]/g,'') + '" target="_blank" style="color:#25D366;font-size:11px;font-family:var(--font-cond);font-weight:700;letter-spacing:.08em;text-decoration:none;border:1px solid rgba(37,211,102,0.3);border-radius:4px;padding:2px 8px;">WHATSAPP</a>'
-              + '</div>'
-            : '<div style="font-size:12px;color:rgba(255,255,255,0.25);margin-top:3px;">📱 No phone number</div>'
-          }
+          <div style="font-size:13px;color:rgba(255,255,255,0.45);margin-top:3px;">${
+            u.phone
+              ? '📱 ' + u.phone
+                + ' <a href="tel:' + u.phone + '" style="color:var(--pink);font-size:11px;font-family:var(--font-cond);font-weight:700;text-decoration:none;border:1px solid rgba(255,26,94,0.3);border-radius:4px;padding:2px 8px;margin-left:6px;">CALL</a>'
+                + ' <a href="https://wa.me/' + u.phone.replace(/[^0-9]/g,'') + '" target="_blank" style="color:#25D366;font-size:11px;font-family:var(--font-cond);font-weight:700;text-decoration:none;border:1px solid rgba(37,211,102,0.3);border-radius:4px;padding:2px 8px;margin-left:4px;">WHATSAPP</a>'
+              : '📱 No phone number'
+          }</div>
           <span class="goal-tag" style="margin-top:6px;display:inline-block;">${GOAL_LABELS[p.goal] || '—'}</span>
         </div>
       </div>
@@ -2203,129 +2194,87 @@
     document.getElementById('memberModal').classList.remove('show');
   }
 
-  /* ══ RESET PASSWORD ══ */
   async function doResetPassword(userId) {
     const input = document.getElementById('resetPwInput_' + userId);
     const msgEl = document.getElementById('resetPwMsg_' + userId);
     if (!input || !msgEl) return;
     const password = input.value.trim();
-    if (!password || password.length < 6) {
-      msgEl.style.color = '#ff6b6b';
-      msgEl.textContent = '⚠️ Password must be at least 6 characters.';
-      return;
-    }
-    msgEl.style.color = 'rgba(255,255,255,0.4)';
-    msgEl.textContent = 'Resetting...';
+    if (!password || password.length < 6) { msgEl.style.color='#ff6b6b'; msgEl.textContent='⚠️ Min 6 characters.'; return; }
+    msgEl.style.color='rgba(255,255,255,0.4)'; msgEl.textContent='Resetting...';
     try {
       const res = await GudAPI.adminResetPassword(userId, password);
-      if (res.success || res.message) {
-        msgEl.style.color = '#2ed573';
-        msgEl.textContent = '✅ Password reset successfully!';
-        input.value = '';
-      } else {
-        msgEl.style.color = '#ff6b6b';
-        msgEl.textContent = '❌ ' + (res.error || 'Something went wrong.');
-      }
-    } catch(err) {
-      msgEl.style.color = '#ff6b6b';
-      msgEl.textContent = '❌ Network error.';
-    }
+      if (res.success || res.message) { msgEl.style.color='#2ed573'; msgEl.textContent='✅ Password reset!'; input.value=''; }
+      else { msgEl.style.color='#ff6b6b'; msgEl.textContent='❌ '+(res.error||'Error.'); }
+    } catch(e) { msgEl.style.color='#ff6b6b'; msgEl.textContent='❌ Network error.'; }
   }
 
-  /* ══ PAYMENT TRACKER ══ */
   async function loadPaymentBlock(userId, membership) {
     const block = document.getElementById('payBlock_' + userId);
     if (!block) return;
     const total = membership ? parseFloat(membership.price) : 0;
     let payments = [];
-    try {
-      const res = await GudAPI.getMemberPayments(userId);
-      payments = res.payments || [];
-    } catch(e) {
-      block.innerHTML = '<div class="pay-empty">Could not load payments.</div>';
-      return;
-    }
-    const paid    = payments.reduce((s, p) => s + parseFloat(p.amount), 0);
+    try { const res = await GudAPI.getMemberPayments(userId); payments = res.payments || []; }
+    catch(e) { block.innerHTML = '<div class="pay-empty">Could not load payments.</div>'; return; }
+    const paid = payments.reduce(function(s,p){ return s + parseFloat(p.amount); }, 0);
     const balance = total - paid;
-    const pct     = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+    const pct = total > 0 ? Math.min(100, Math.round((paid/total)*100)) : 0;
     const isClear = balance <= 0;
-
-    const histRows = payments.length
-      ? payments.map(p => {
-          const d = new Date(p.paid_at);
-          const phD = new Date(d.getTime() + 8*60*60*1000);
-          const dateStr = phD.toLocaleDateString('en-PH', { month:'short', day:'numeric', year:'numeric' });
-          return '<div class="pay-history-row">'
-            + '<span class="pay-history-amount">₱' + parseFloat(p.amount).toLocaleString() + '</span>'
-            + '<span class="pay-history-meta">' + dateStr + '</span>'
-            + (p.note ? '<span class="pay-history-note">' + p.note + '</span>' : '')
-            + '<button class="pay-history-del" onclick="doDeletePayment('' + p.id + '','' + userId + '')">✕</button>'
-            + '</div>';
-        }).join('')
-      : '<div class="pay-empty">No payments recorded yet.</div>';
-
+    let histRows = '';
+    payments.forEach(function(p) {
+      const d = new Date(new Date(p.paid_at).getTime() + 8*60*60*1000);
+      const ds = d.toLocaleDateString('en-PH', {month:'short',day:'numeric',year:'numeric'});
+      histRows += '<div class="pay-history-row">'
+        + '<span class="pay-history-amount">&#x20B1;' + parseFloat(p.amount).toLocaleString() + '</span>'
+        + '<span class="pay-history-meta">' + ds + '</span>'
+        + (p.note ? '<span class="pay-history-note">'+p.note+'</span>' : '')
+        + '<button class="pay-history-del" onclick="doDeletePayment(''+p.id+'',''+userId+'')">&#x2715;</button>'
+        + '</div>';
+    });
     block.innerHTML =
       '<div class="pay-summary">'
-        + '<div class="pay-summary-card total"><div class="pay-summary-label">Total</div><div class="pay-summary-val">₱' + total.toLocaleString() + '</div></div>'
-        + '<div class="pay-summary-card paid"><div class="pay-summary-label">Paid</div><div class="pay-summary-val">₱' + paid.toLocaleString() + '</div></div>'
-        + '<div class="pay-summary-card balance ' + (isClear ? 'clear' : '') + '"><div class="pay-summary-label">' + (isClear ? '✅ Fully Paid' : 'Balance') + '</div><div class="pay-summary-val">' + (isClear ? '₱0' : '₱' + Math.abs(balance).toLocaleString()) + '</div></div>'
+      + '<div class="pay-summary-card total"><div class="pay-summary-label">Total</div><div class="pay-summary-val">&#x20B1;'+total.toLocaleString()+'</div></div>'
+      + '<div class="pay-summary-card paid"><div class="pay-summary-label">Paid</div><div class="pay-summary-val">&#x20B1;'+paid.toLocaleString()+'</div></div>'
+      + '<div class="pay-summary-card balance '+(isClear?'clear':'')+'"><div class="pay-summary-label">'+(isClear?'&#x2705; Fully Paid':'Balance')+'</div><div class="pay-summary-val">'+(isClear?'&#x20B1;0':'&#x20B1;'+Math.abs(balance).toLocaleString())+'</div></div>'
       + '</div>'
-      + '<div class="pay-progress-wrap"><div class="pay-progress-bar" style="width:' + pct + '%;background:' + (isClear ? '#2ed573' : '#FF1A5E') + ';"></div></div>'
-      + '<div class="pay-progress-label">' + pct + '% paid</div>'
-      + '<div class="pay-history-list">' + histRows + '</div>'
+      + '<div class="pay-progress-wrap"><div class="pay-progress-bar" style="width:'+pct+'%;background:'+(isClear?'#2ed573':'#FF1A5E')+'"></div></div>'
+      + '<div class="pay-progress-label">'+pct+'% paid</div>'
+      + '<div class="pay-history-list">'+(histRows||'<div class="pay-empty">No payments recorded yet.</div>')+'</div>'
       + '<div class="pay-add-row">'
-        + '<input class="pay-input" type="number" id="payAmt_' + userId + '" placeholder="Amount (₱)" min="1" />'
-        + '<input class="pay-input" type="text" id="payNote_' + userId + '" placeholder="Note (optional)" style="flex:2;" />'
-        + '<button class="pay-add-btn" onclick="doAddPayment('' + userId + '','' + (membership ? membership.id || '' : '') + '')">+ ADD</button>'
+      + '<input class="pay-input" type="number" id="payAmt_'+userId+'" placeholder="Amount (&#x20B1;)" min="1"/>'
+      + '<input class="pay-input" type="text" id="payNote_'+userId+'" placeholder="Note (optional)" style="flex:2"/>'
+      + '<button class="pay-add-btn" onclick="doAddPayment(''+userId+'',''+(membership?membership.id||'':'')+'')">+ ADD</button>'
       + '</div>'
-      + '<div class="pay-msg" id="payMsg_' + userId + '"></div>';
+      + '<div class="pay-msg" id="payMsg_'+userId+'"></div>';
   }
 
   async function doAddPayment(userId, membershipId) {
-    const amtEl  = document.getElementById('payAmt_'  + userId);
-    const noteEl = document.getElementById('payNote_' + userId);
-    const msgEl  = document.getElementById('payMsg_'  + userId);
-    if (!amtEl || !msgEl) return;
+    const amtEl = document.getElementById('payAmt_'+userId);
+    const noteEl = document.getElementById('payNote_'+userId);
+    const msgEl = document.getElementById('payMsg_'+userId);
+    if (!amtEl||!msgEl) return;
     const amount = parseFloat(amtEl.value);
-    if (!amount || amount <= 0) {
-      msgEl.style.color = '#ff6b6b';
-      msgEl.textContent = '⚠️ Enter a valid amount.';
-      return;
-    }
-    msgEl.style.color = 'rgba(255,255,255,0.4)';
-    msgEl.textContent = 'Saving...';
+    if (!amount||amount<=0) { msgEl.style.color='#ff6b6b'; msgEl.textContent='⚠️ Enter valid amount.'; return; }
+    msgEl.style.color='rgba(255,255,255,0.4)'; msgEl.textContent='Saving...';
     try {
-      const res = await GudAPI.addPayment({
-        user_id: userId,
-        membership_id: membershipId || null,
-        amount,
-        note: noteEl.value.trim() || null
-      });
+      const res = await GudAPI.addPayment({ user_id:userId, membership_id:membershipId||null, amount, note:noteEl.value.trim()||null });
       if (res.payment) {
-        msgEl.style.color = '#2ed573';
-        msgEl.textContent = '✅ Payment recorded!';
-        amtEl.value = ''; noteEl.value = '';
-        const u = admUsers.find(x => x.id === userId);
-        setTimeout(() => loadPaymentBlock(userId, u ? u.membership : null), 400);
-      } else {
-        msgEl.style.color = '#ff6b6b';
-        msgEl.textContent = '❌ ' + (res.error || 'Something went wrong.');
-      }
-    } catch(e) {
-      msgEl.style.color = '#ff6b6b';
-      msgEl.textContent = '❌ Network error.';
-    }
+        msgEl.style.color='#2ed573'; msgEl.textContent='✅ Payment recorded!';
+        amtEl.value=''; noteEl.value='';
+        const u = admUsers.find(function(x){return x.id===userId;});
+        setTimeout(function(){ loadPaymentBlock(userId, u?u.membership:null); }, 400);
+      } else { msgEl.style.color='#ff6b6b'; msgEl.textContent='❌ '+(res.error||'Error.'); }
+    } catch(e) { msgEl.style.color='#ff6b6b'; msgEl.textContent='❌ Network error.'; }
   }
 
   async function doDeletePayment(payId, userId) {
-    if (!confirm('Delete this payment entry?')) return;
+    if (!confirm('Delete this payment?')) return;
     try {
       const res = await GudAPI.deletePayment(payId);
       if (res.message) {
-        const u = admUsers.find(x => x.id === userId);
-        loadPaymentBlock(userId, u ? u.membership : null);
+        const u = admUsers.find(function(x){return x.id===userId;});
+        loadPaymentBlock(userId, u?u.membership:null);
       }
-    } catch(e) { console.error('deletePayment error:', e); }
+    } catch(e) { console.error('deletePayment error:',e); }
   }
   document.getElementById('memberModal').addEventListener('click', function(e) {
     if (e.target === this) closeMemberModal();
