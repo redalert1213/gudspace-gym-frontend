@@ -2242,7 +2242,7 @@
       + '<div class="pay-add-row">'
       + '<input class="pay-input" type="number" id="payAmt_'+userId+'" placeholder="Amount (&#x20B1;)" min="1"/>'
       + '<input class="pay-input" type="text" id="payNote_'+userId+'" placeholder="Note (optional)" style="flex:2"/>'
-      + '<button class="pay-add-btn" onclick="doAddPayment(''+userId+'',''+(membership?membership.id||'':'')+'')">+ ADD</button>'
+      + '<button class="pay-add-btn" onclick="doAddPayment(\'' + userId + '\',\'' + (membership ? membership.id || '' : '') + '\')">+ ADD</button>'
       + '</div>'
       + '<div class="pay-msg" id="payMsg_'+userId+'"></div>';
   }
