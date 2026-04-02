@@ -2227,7 +2227,7 @@
         + '<span class="pay-history-amount">&#x20B1;' + parseFloat(p.amount).toLocaleString() + '</span>'
         + '<span class="pay-history-meta">' + ds + '</span>'
         + (p.note ? '<span class="pay-history-note">'+p.note+'</span>' : '')
-        + '<button class="pay-history-del" onclick="doDeletePayment(''+p.id+'',''+userId+'')">&#x2715;</button>'
+        + '<button class="pay-history-del" data-pid="' + p.id + '" data-uid="' + userId + '" onclick="doDeletePayment(this.dataset.pid,this.dataset.uid)">&#x2715;</button>'
         + '</div>';
     });
     block.innerHTML =
