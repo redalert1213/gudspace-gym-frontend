@@ -18,7 +18,7 @@
   text-transform: uppercase;
   padding: 10px 20px;
   border-radius: 100px;
-  cursor: pointer;
+  cursor: none;
   box-shadow: 0 4px 24px rgba(255,26,94,.45);
   display: flex;
   align-items: center;
@@ -58,12 +58,14 @@
   overflow: hidden;
   box-shadow: 0 16px 64px rgba(0,0,0,.7), 0 0 0 1px rgba(255,26,94,.12);
   animation: kotsSlideUp .25s cubic-bezier(.16,1,.3,1);
-  cursor: default;
+  cursor: none;
 }
-#kots-window * { cursor: default; }
-#kots-window a { cursor: pointer; }
-#kots-window button { cursor: pointer; }
-#kots-window textarea, #kots-window input { cursor: text; }
+#kots-window * { cursor: none; }
+#kots-window a { cursor: none; }
+#kots-window button { cursor: none; }
+#kots-window textarea, #kots-window input { cursor: none; }
+#kots-window::-webkit-scrollbar { display: none; }
+#kots-window { scrollbar-width: none; -ms-overflow-style: none; }
 @keyframes kotsSlideUp {
   from { opacity: 0; transform: translateY(16px) scale(.97); }
   to   { opacity: 1; transform: translateY(0)   scale(1);    }
@@ -133,7 +135,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: none;
   color: rgba(255,255,255,.5);
   font-size: 14px;
   transition: background .2s, color .2s;
@@ -237,7 +239,7 @@
   border: 1px solid rgba(255,255,255,.1);
   border-radius: 100px;
   padding: 5px 12px;
-  cursor: pointer;
+  cursor: none;
   transition: background .2s, color .2s, border-color .2s;
   white-space: nowrap;
 }
@@ -257,7 +259,7 @@
   border: 1px dashed rgba(255,26,94,.3);
   border-radius: 100px;
   padding: 5px 12px;
-  cursor: pointer;
+  cursor: none;
   transition: all .2s;
   white-space: nowrap;
 }
@@ -291,7 +293,7 @@
   resize: none;
   max-height: 80px;
   line-height: 1.5;
-  cursor: text;
+  cursor: none;
 }
 #kots-input::placeholder { color: rgba(255,255,255,.28); }
 #kots-input:focus { border-color: rgba(255,26,94,.5); }
@@ -301,7 +303,7 @@
   background: #FF1A5E;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
+  cursor: none;
   display: flex;
   align-items: center;
   justify-content: center;
