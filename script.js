@@ -312,65 +312,11 @@ window.GudSpace.calculateNutrition = function({ gender, age, weightKg, heightCm,
   return { bmr: Math.round(bmr), tdee, protein, fat, carbs };
 };
 
-/* ===== AUTO LOGOUT (3 hours) ===== */
-window.GudSpace.initAutoLogout = function() {
-  const SESSION_DURATION = 3 * 60 * 60 * 1000; // 3 hours in ms
-  const loginTime = window.GudSpace.storage.get('loginTime');
-
-  if (!loginTime) return;
-
-  const elapsed = Date.now() - loginTime;
-  const remaining = SESSION_DURATION - elapsed;
-
-  if (remaining <= 0) {
-    // Already expired
-    window.GudSpace.logout();
-    return;
-  }
-
-  // Schedule auto logout
-  setTimeout(() => {
-    window.GudSpace.logout(true);
-  }, remaining);
-
-  // Warn 10 min before
-  const warnTime = remaining - 10 * 60 * 1000;
-  if (warnTime > 0) {
-    setTimeout(() => {
-      window.GudSpace.showToast('⚠️ You will be logged out in 10 minutes due to inactivity.', '⏰', 8000);
-    }, warnTime);
-  }
-};
-
-window.GudSpace.logout = function(isAuto = false) {
-  const user = window.GudSpace.storage.get('currentUser');
-
-  if (user) {
-    // Record auto-timeout
-    if (isAuto) {
-      const timeout = {
-        userId: user.email,
-        name: user.name,
-        timeoutAt: new Date().toISOString(),
-        reason: 'auto_timeout_3h'
-      };
-      const timeouts = window.GudSpace.storage.get('autoTimeouts') || [];
-      timeouts.push(timeout);
-      window.GudSpace.storage.set('autoTimeouts', timeouts);
-    }
-  }
-
+/* ===== LOGOUT ===== */
+window.GudSpace.logout = function() {
   window.GudSpace.storage.remove('currentUser');
   window.GudSpace.storage.remove('loginTime');
-
-  if (isAuto) {
-    window.GudSpace.showToast('You were automatically logged out after 3 hours.', '🔒', 5000);
-    setTimeout(() => {
-      window.location.href = 'login.html';
-    }, 2000);
-  } else {
-    window.location.href = 'login.html';
-  }
+  window.location.href = 'login.html';
 };
 
 /* ===== DATE UTILITIES ===== */
