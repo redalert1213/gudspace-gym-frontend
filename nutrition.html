@@ -1160,6 +1160,9 @@
   <div class="cursor-follower" id="cursorFollower"></div>
   <div class="noise-overlay"></div>
 
+  <!-- AI SUGGEST SOUND EFFECT -->
+  <audio id="ftAiSound" src="YEAH_BABY.mp3" preload="auto" style="display:none;"></audio>
+
 
   <!-- SIDEBAR OVERLAY -->
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
@@ -2398,7 +2401,15 @@
     /* ===== AI FOOD SUGGESTIONS ===== */
     let ftAiLastLog = '';
 
+    function playAiSound() {
+      const snd = document.getElementById('ftAiSound');
+      if (!snd) return;
+      snd.currentTime = 0; // restart every time so rapid clicks always replay
+      snd.play().catch(function() { /* autoplay blocked — fail silently */ });
+    }
+
     function ftAskAI() {
+      playAiSound();
       const u = currentUser;
       let targetKcal = 2000, targetProtein = 150, targetCarbs = 200, targetFat = 55;
       if (u.weight && u.height && u.age && u.gender) {
@@ -2425,6 +2436,7 @@ Give 2-3 specific, practical Filipino or common food suggestions to fill the rem
     }
 
     function ftAskAIPrompt(customPrompt) {
+      playAiSound();
       const u = currentUser;
       let targetKcal = 2000, targetProtein = 150;
       if (u.weight && u.height && u.age && u.gender) {
