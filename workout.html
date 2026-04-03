@@ -192,6 +192,27 @@
     .db-topbar-right { display: flex; align-items: center; gap: 16px; }
     .db-menu-btn { display: none; background: none; border: none; color: var(--white); cursor: pointer; padding: 4px; }
 
+    /* ── MUSIC MUTE BUTTON ── */
+    .wo-music-btn {
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px;
+      padding: 6px 12px;
+      color: rgba(255,255,255,.6);
+      font-family: var(--font-cond);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background .2s, color .2s, border-color .2s;
+    }
+    .wo-music-btn:hover { background: rgba(255,255,255,.12); color: var(--white); }
+    .wo-music-btn.muted { background: rgba(255,26,94,.08); border-color: rgba(255,26,94,.25); color: rgba(255,26,94,.7); }
+
     /* ── WORKOUT HERO BANNER ── */
     .wo-hero {
       position: relative;
@@ -1003,12 +1024,21 @@
   <!-- MAIN -->
   <div class="db-main">
 
+    <!-- WORKOUT BACKGROUND MUSIC -->
+    <audio id="woMusic" src="WORKOUT_MUSIC.mp3" loop preload="auto" style="display:none;"></audio>
+
     <div class="db-topbar">
       <div class="db-topbar-left">
         <div class="db-page-label">GUD SPACE GYM</div>
         <div class="db-page-title">Your <span>Workout</span> Program</div>
       </div>
       <div class="db-topbar-right">
+        <button class="wo-music-btn" id="woMusicBtn" onclick="woToggleMusic()">
+          <svg id="woMusicIcon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 18V5l12-2v13M9 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm12-2c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z"/>
+          </svg>
+          <span id="woMusicLabel">Music</span>
+        </button>
         <button class="db-menu-btn" onclick="openSidebar()">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
@@ -2498,6 +2528,75 @@
     GS.showToast('Session extended by 3 hours ✅', '⏱');
   }
 
+  /* ===== WORKOUT MUSIC ===== */
+  let woMusicMuted = false;
+  let woMusicPausedByHiit = false;
+
+  function woInitMusic() {
+    const music = document.getElementById('woMusic');
+    if (!music) return;
+    music.volume = 0.35;
+
+    // Try autoplay
+    const playPromise = music.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(function() {
+        // Autoplay blocked — play on first user interaction
+        const startOnInteract = function() {
+          if (!woMusicMuted) {
+            music.play().catch(function(){});
+          }
+          document.removeEventListener('click',     startOnInteract);
+          document.removeEventListener('keydown',   startOnInteract);
+          document.removeEventListener('touchstart', startOnInteract);
+        };
+        document.addEventListener('click',      startOnInteract, { once: true, passive: true });
+        document.addEventListener('keydown',    startOnInteract, { once: true, passive: true });
+        document.addEventListener('touchstart', startOnInteract, { once: true, passive: true });
+      });
+    }
+  }
+
+  function woToggleMusic() {
+    const music  = document.getElementById('woMusic');
+    const btn    = document.getElementById('woMusicBtn');
+    const label  = document.getElementById('woMusicLabel');
+    if (!music) return;
+
+    woMusicMuted = !woMusicMuted;
+    woMusicPausedByHiit = false; // manual override clears HIIT pause
+
+    if (woMusicMuted) {
+      music.pause();
+      btn.classList.add('muted');
+      label.textContent = 'Muted';
+    } else {
+      music.play().catch(function(){});
+      btn.classList.remove('muted');
+      label.textContent = 'Music';
+    }
+  }
+
+  // Called by HIIT timer when it starts
+  function woMusicPause() {
+    const music = document.getElementById('woMusic');
+    if (!music || woMusicMuted) return;
+    if (!music.paused) {
+      music.pause();
+      woMusicPausedByHiit = true;
+    }
+  }
+
+  // Called by HIIT timer when it finishes or resets
+  function woMusicResume() {
+    const music = document.getElementById('woMusic');
+    if (!music || woMusicMuted) return;
+    if (woMusicPausedByHiit) {
+      music.play().catch(function(){});
+      woMusicPausedByHiit = false;
+    }
+  }
+
   /* ===== INIT ===== */
   document.addEventListener('DOMContentLoaded', async () => {
     // Fetch fresh profile so sidebar shows correct data
@@ -2513,6 +2612,7 @@
     renderRecommended();
     renderActiveProgramBar();
     renderSplitsGrid('all');
+    woInitMusic();
   });
 
 
@@ -2696,6 +2796,7 @@
           s.remaining = 0;
           htVibrate([200, 100, 200, 100, 400]);
           htBeepSequence('done');
+          woMusicResume(); // resume music when HIIT is fully done
         } else {
           s.phase     = 'rest';
           s.remaining = s.restSecs;
@@ -2733,10 +2834,12 @@
       }
       s.running    = true;
       s.intervalId = setInterval(() => htTick(key), 1000);
+      woMusicPause(); // pause music when HIIT is running
     } else {
       // Pause
       s.running = false;
       clearInterval(s.intervalId);
+      woMusicResume(); // resume music when user pauses HIIT
     }
 
     htUpdateUI(s);
@@ -2797,6 +2900,7 @@
     const timeEl = document.getElementById('htTime_' + key);
     if (timeEl) timeEl.textContent = mins + ':' + secs;
     htUpdateUI(fresh);
+    woMusicResume(); // resume music when HIIT is reset
   }
 
   /* ── toggleExercise now handles timer init directly (see definition above) ── */
