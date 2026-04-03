@@ -903,8 +903,7 @@
     }
     .word-quote-mark { font-family: var(--font-display); font-size: 48px; color: var(--pink); opacity: .25; line-height: .6; flex-shrink: 0; margin-top: 4px; }
     .word-quote { font-size: 14px; color: rgba(255,255,255,.55); line-height: 1.75; font-style: italic; margin-bottom: 10px; }
-    .word-author { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.3); display: flex; align-items: center; gap: 8px; }
-    .word-creator-badge { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,26,94,.12); border: 1px solid rgba(255,26,94,.25); border-radius: 2px; padding: 3px 10px; color: var(--pink); font-size: 9px; letter-spacing: .18em; }
+    .word-author { font-family: var(--font-cond); font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--pink); }
 
     /* ─── PRESENCE ─── */
     .presence-card { flex: 1; overflow-y: auto; }
@@ -930,7 +929,24 @@
       letter-spacing: .12em; text-transform: uppercase; color: var(--pink);
     }
 
-
+    /* ─── AUTO LOGOUT BAR ─── */
+    .auto-logout-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+      background: rgba(255,59,48,.9); backdrop-filter: blur(10px);
+      padding: 10px 24px; display: none;
+      align-items: center; justify-content: space-between; gap: 16px;
+      font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase; color: white;
+    }
+    .auto-logout-bar.show { display: flex; animation: slideDown .3s ease; }
+    @keyframes slideDown { from{transform:translateY(-100%)} to{transform:translateY(0)} }
+    .alb-stay-btn {
+      background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.3);
+      border-radius: 6px; padding: 5px 16px; color: white;
+      font-family: var(--font-cond); font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: background .2s;
+    }
+    .alb-stay-btn:hover { background: rgba(255,255,255,.3); }
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 199; }
     .sidebar-overlay.show { display: block; }
 
@@ -979,7 +995,11 @@
     <div class="ambient-blob ambient-blob-2"></div>
   </div>
 
-
+  <!-- AUTO LOGOUT BAR -->
+  <div class="auto-logout-bar" id="autoLogoutBar">
+    <span>⚠️ Auto logout in <strong id="alb-countdown">10:00</strong></span>
+    <button class="alb-stay-btn" onclick="extendSession()">Stay Logged In</button>
+  </div>
 
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
@@ -1329,12 +1349,12 @@
     /* ---- DATA ---- */
     const QUOTES = [
       { q: "Hindi mo kailangang maging motivated araw-araw. Kailangan mo lang magpakita at magsimula.", a: "— TONED" },
-      { q: "The only bad workout is the one that didn't happen.", a: "creator" },
-      { q: "Your body can stand almost anything. It's your mind you have to convince.", a: "creator" },
-      { q: "Ang tagumpay ay hindi nanggagaling sa kung ano ang ginagawa mo paminsan-minsan — kundi kung ano ang ginagawa mo nang tuluy-tuloy.", a: "creator" },
-      { q: "Small daily improvements are the key to staggering long-term results.", a: "creator" },
-      { q: "Don't wish for it. Work for it.", a: "creator" },
-      { q: "Push yourself because no one else is going to do it for you.", a: "creator" },
+      { q: "The only bad workout is the one that didn't happen.", a: "— Unknown" },
+      { q: "Your body can stand almost anything. It's your mind you have to convince.", a: "— Unknown" },
+      { q: "Ang tagumpay ay hindi nanggagaling sa kung ano ang ginagawa mo paminsan-minsan — kundi kung ano ang ginagawa mo nang tuluy-tuloy.", a: "— Unknown" },
+      { q: "Small daily improvements are the key to staggering long-term results.", a: "— Unknown" },
+      { q: "Don't wish for it. Work for it.", a: "— Unknown" },
+      { q: "Push yourself because no one else is going to do it for you.", a: "— Unknown" },
       { q: "Consistency over perfection, always.", a: "— GUD SPACE GYM" },
       { q: "Mahal ang magkasakit. Mas mura pa ring mag-ehersisyo.", a: "— GUD SPACE GYM" },
       { q: "Every rep is a step closer to who you want to be.", a: "— GUD SPACE GYM" },
@@ -1370,6 +1390,8 @@
     let sessionStart         = null;
     let sessionTimerInterval = null;
     let waterGlasses         = 0;
+    let autoLogoutTimer      = null;
+    let autoLogoutCountdown  = null;
     const MAX_GLASSES        = 10;
 
     /* ---- INIT ---- */
@@ -1389,6 +1411,7 @@
       loadAnnouncementBanners();
       loadInboxUnread();
       checkTodaySession(); // loads presence + streak from API
+      startAutoLogoutTimer();
       initMembership();
       setInterval(loadDateAndGreeting, 60000);
       setInterval(loadInboxUnread, 5000);
@@ -1866,13 +1889,8 @@
 
     function loadTodayQuote() {
       const q = QUOTES[new Date().getDate() % QUOTES.length];
-      document.getElementById('todayQuote').textContent = q.q;
-      const authorEl = document.getElementById('todayAuthor');
-      if (q.a === 'creator') {
-        authorEl.innerHTML = '<span class="word-creator-badge">✦ Creator</span>';
-      } else {
-        authorEl.textContent = q.a;
-      }
+      document.getElementById('todayQuote').textContent  = q.q;
+      document.getElementById('todayAuthor').textContent = q.a;
     }
 
     /* ---- GYM PRESENCE ---- */
@@ -1915,7 +1933,11 @@
       }
     }
 
-
+    /* ---- AUTO LOGOUT (disabled) ---- */
+    function startAutoLogoutTimer() { /* disabled */ }
+    function showAutoLogoutWarning() { /* disabled */ }
+    function extendSession() { /* disabled */ }
+    function doAutoLogout() { /* disabled */ }
 
     /* ---- SIDEBAR MOBILE ---- */
     function openSidebar()  { document.getElementById('sidebar').classList.add('open');    document.getElementById('sidebarOverlay').classList.add('show'); }
@@ -1958,9 +1980,8 @@
     }
 
     function formatTime12(date) {
-      const phDate = new Date(date.getTime() + (8 * 60 * 60 * 1000));
-      let h      = phDate.getUTCHours();
-      const m    = String(phDate.getUTCMinutes()).padStart(2,'0');
+      let h      = date.getHours();
+      const m    = String(date.getMinutes()).padStart(2,'0');
       const ampm = h >= 12 ? 'PM' : 'AM';
       h = h % 12 || 12;
       return `${String(h).padStart(2,'0')}:${m} ${ampm}`;
