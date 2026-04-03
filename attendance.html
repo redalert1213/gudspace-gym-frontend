@@ -18,6 +18,7 @@
       display: flex;
       min-height: 100vh;
       overflow-x: hidden;
+      cursor: none;
     }
 
     /* =================== SIDEBAR =================== */
@@ -428,6 +429,42 @@
     .att-badge.active   { background: rgba(255,26,94,0.12);  color: var(--pink); }
     .att-badge.auto     { background: rgba(255,107,107,0.12);color: #ff6b6b; }
 
+    /* =================== AUTO LOGOUT BAR =================== */
+    .auto-logout-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 9999;
+      background: rgba(255,59,48,0.9);
+      backdrop-filter: blur(8px);
+      padding: 10px 24px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      font-family: var(--font-cond);
+      font-size: 13px; font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: white;
+    }
+    .auto-logout-bar.show { display: flex; animation: slideDown 0.3s ease; }
+    @keyframes slideDown {
+      from { transform: translateY(-100%); }
+      to   { transform: translateY(0); }
+    }
+    .alb-stay-btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: var(--radius-sm);
+      padding: 6px 16px;
+      color: white;
+      font-family: var(--font-cond);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .alb-stay-btn:hover { background: rgba(255,255,255,0.3); }
+
     .sidebar-overlay {
       display: none;
       position: fixed; inset: 0;
@@ -462,6 +499,12 @@
   <div class="cursor" id="cursor"></div>
   <div class="cursor-follower" id="cursorFollower"></div>
   <div class="noise-overlay"></div>
+
+  <!-- AUTO LOGOUT BAR -->
+  <div class="auto-logout-bar" id="autoLogoutBar">
+    <span>⚠️ You will be automatically logged out in <strong id="alb-countdown">10:00</strong></span>
+    <button class="alb-stay-btn" onclick="extendSession()">Stay Logged In</button>
+  </div>
 
   <!-- SIDEBAR OVERLAY -->
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
@@ -687,6 +730,8 @@
     let sessionTimerInterval = null;
     let autoTimeOutTimer     = null;
     let calMonthOffset       = 0;
+    let autoLogoutTimer      = null;
+    let autoLogoutCountdown  = null;
 
     const DAYS_SHORT   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     const MONTHS       = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -736,6 +781,7 @@
       loadTodaySession();
       renderStreakCalendar();
       renderAttTable();
+      startAutoLogoutTimer();
     }
 
     /* ---- SIDEBAR ---- */
@@ -1057,6 +1103,39 @@
       if (confirm('Are you sure you want to log out?')) {
         window.GudSpace.logout();
       }
+    }
+
+    /* ---- AUTO LOGOUT ---- */
+    function startAutoLogoutTimer() {
+      const loginTime = window.GudSpace.storage.get('loginTime');
+      if (!loginTime) return;
+      const SESSION   = 3 * 60 * 60 * 1000;
+      const remaining = SESSION - (Date.now() - loginTime);
+      if (remaining <= 0) { window.GudSpace.logout(true); return; }
+      const warnAt = remaining - 10 * 60 * 1000;
+      if (warnAt > 0) setTimeout(() => showLogoutWarning(10 * 60), warnAt);
+      else showLogoutWarning(Math.floor(remaining / 1000));
+      autoLogoutTimer = setTimeout(() => window.GudSpace.logout(true), remaining);
+    }
+
+    function showLogoutWarning(secs) {
+      document.getElementById('autoLogoutBar').classList.add('show');
+      let s = secs;
+      autoLogoutCountdown = setInterval(() => {
+        s--;
+        if (s <= 0) { clearInterval(autoLogoutCountdown); return; }
+        document.getElementById('alb-countdown').textContent =
+          Math.floor(s / 60).toString().padStart(2, '0') + ':' + (s % 60).toString().padStart(2, '0');
+      }, 1000);
+    }
+
+    function extendSession() {
+      clearTimeout(autoLogoutTimer);
+      clearInterval(autoLogoutCountdown);
+      window.GudSpace.storage.set('loginTime', Date.now());
+      document.getElementById('autoLogoutBar').classList.remove('show');
+      window.GudSpace.showToast('Session extended by 3 hours ✅', '⏱');
+      startAutoLogoutTimer();
     }
 
     /* ---- HELPERS ---- */
