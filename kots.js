@@ -83,11 +83,30 @@ If you are ever unsure about something specific (like current promos, events, or
     { label: 'How to Check In',         prompt: 'How do I check in using the portal?' },
   ];
 
+  /* ---- STORAGE KEY (per-page so each page has its own memory) ---- */
+  const STORAGE_KEY = 'kots_convo_' + (window.location.pathname.split('/').pop() || 'index');
+
   /* ---- STATE ---- */
   let isOpen        = false;
   let isThinking    = false;
   let showingMore   = false;
   let conversation  = []; // { role, content }
+
+  /* ---- MEMORY: save & load conversation ---- */
+  function saveConvo() {
+    try {
+      const toSave = conversation.slice(-20);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    } catch(e) { /* fail silently */ }
+  }
+
+  function loadConvo() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      return JSON.parse(raw) || [];
+    } catch(e) { return []; }
+  }
 
   /* ---- HELPERS ---- */
   function getToken() {
@@ -180,8 +199,19 @@ If you are ever unsure about something specific (like current promos, events, or
       this.style.height = Math.min(this.scrollHeight, 80) + 'px';
     });
 
-    renderChips(false);
-    sendWelcome();
+    renderChips(showingMore);
+
+    // Restore saved conversation if any
+    const saved = loadConvo();
+    if (saved.length > 0) {
+      conversation = saved;
+      // Render saved messages in UI
+      saved.forEach(function(msg) {
+        appendMessage(msg.role === 'assistant' ? 'kots' : 'user', msg.content);
+      });
+    } else {
+      sendWelcome();
+    }
   }
 
   /* ---- CHIPS ---- */
@@ -210,6 +240,15 @@ If you are ever unsure about something specific (like current promos, events, or
         renderChips(true);
       });
       faqEl.appendChild(more);
+    } else {
+      const less = document.createElement('button');
+      less.id = 'kots-see-more';
+      less.textContent = 'See Less';
+      less.addEventListener('click', function() {
+        showingMore = false;
+        renderChips(false);
+      });
+      faqEl.appendChild(less);
     }
   }
 
@@ -313,11 +352,12 @@ If you are ever unsure about something specific (like current promos, events, or
     // Add to conversation history
     conversation.push({ role: 'user', content: prompt });
 
-    // Keep history to last 10 exchanges (20 messages) to avoid token overload
+    // Keep history to last 20 messages to avoid token overload
     if (conversation.length > 20) {
       conversation = conversation.slice(conversation.length - 20);
     }
 
+    saveConvo();
     callKots();
   }
 
@@ -346,6 +386,7 @@ If you are ever unsure about something specific (like current promos, events, or
 
       const reply = data.reply || "I'm having a bit of trouble right now. Try again in a moment.";
       conversation.push({ role: 'assistant', content: reply });
+      saveConvo();
       appendMessage('kots', reply);
 
     } catch (err) {

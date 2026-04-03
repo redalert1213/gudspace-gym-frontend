@@ -58,7 +58,12 @@
   overflow: hidden;
   box-shadow: 0 16px 64px rgba(0,0,0,.7), 0 0 0 1px rgba(255,26,94,.12);
   animation: kotsSlideUp .25s cubic-bezier(.16,1,.3,1);
+  cursor: default;
 }
+#kots-window * { cursor: default; }
+#kots-window a { cursor: pointer; }
+#kots-window button { cursor: pointer; }
+#kots-window textarea, #kots-window input { cursor: text; }
 @keyframes kotsSlideUp {
   from { opacity: 0; transform: translateY(16px) scale(.97); }
   to   { opacity: 1; transform: translateY(0)   scale(1);    }
@@ -286,6 +291,7 @@
   resize: none;
   max-height: 80px;
   line-height: 1.5;
+  cursor: text;
 }
 #kots-input::placeholder { color: rgba(255,255,255,.28); }
 #kots-input:focus { border-color: rgba(255,26,94,.5); }
