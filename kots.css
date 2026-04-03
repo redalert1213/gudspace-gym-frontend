@@ -1,0 +1,326 @@
+/* ============================================================
+   KOTS — AI Chat Assistant
+   Fully isolated CSS — no interference with existing styles
+   ============================================================ */
+
+/* ---- PILL (minimized state) ---- */
+#kots-pill {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99000;
+  background: #FF1A5E;
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  border-radius: 100px;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(255,26,94,.45);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform .2s, box-shadow .2s;
+  user-select: none;
+}
+#kots-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(255,26,94,.55);
+}
+#kots-pill .kots-pill-dot {
+  width: 7px;
+  height: 7px;
+  background: #fff;
+  border-radius: 50%;
+  animation: kotsBlink 2s ease-in-out infinite;
+}
+@keyframes kotsBlink {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .3; }
+}
+
+/* ---- CHAT WINDOW ---- */
+#kots-window {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99000;
+  width: 360px;
+  max-height: 560px;
+  background: #111111;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 16px 64px rgba(0,0,0,.7), 0 0 0 1px rgba(255,26,94,.12);
+  animation: kotsSlideUp .25s cubic-bezier(.16,1,.3,1);
+}
+@keyframes kotsSlideUp {
+  from { opacity: 0; transform: translateY(16px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+/* ---- HEADER ---- */
+#kots-header {
+  background: #161616;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.kots-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.kots-avatar {
+  width: 34px;
+  height: 34px;
+  background: #FF1A5E;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 14px;
+  color: #fff;
+  letter-spacing: .06em;
+  flex-shrink: 0;
+}
+.kots-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #fff;
+  line-height: 1.1;
+}
+.kots-status {
+  font-family: 'Barlow', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255,255,255,.4);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.kots-status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #2ed573;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.kots-minimize-btn {
+  background: rgba(255,255,255,.07);
+  border: none;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(255,255,255,.5);
+  font-size: 14px;
+  transition: background .2s, color .2s;
+  flex-shrink: 0;
+}
+.kots-minimize-btn:hover {
+  background: rgba(255,255,255,.13);
+  color: #fff;
+}
+
+/* ---- MESSAGES ---- */
+#kots-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.1) transparent;
+}
+#kots-messages::-webkit-scrollbar { width: 4px; }
+#kots-messages::-webkit-scrollbar-track { background: transparent; }
+#kots-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
+
+.kots-msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 88%;
+  gap: 4px;
+}
+.kots-msg.kots { align-self: flex-start; }
+.kots-msg.user { align-self: flex-end; }
+
+.kots-bubble {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 13.5px;
+  font-weight: 400;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.kots-msg.kots .kots-bubble {
+  background: #1e1e1e;
+  border: 1px solid rgba(255,255,255,.07);
+  color: rgba(255,255,255,.88);
+  border-bottom-left-radius: 4px;
+}
+.kots-msg.user .kots-bubble {
+  background: #FF1A5E;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.kots-msg-time {
+  font-family: 'Barlow', sans-serif;
+  font-size: 10px;
+  color: rgba(255,255,255,.22);
+  padding: 0 2px;
+}
+.kots-msg.user .kots-msg-time { text-align: right; }
+
+/* typing indicator */
+.kots-typing .kots-bubble {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 16px;
+}
+.kots-typing-dot {
+  width: 6px;
+  height: 6px;
+  background: rgba(255,255,255,.4);
+  border-radius: 50%;
+  animation: kotsTyping .9s ease-in-out infinite;
+}
+.kots-typing-dot:nth-child(2) { animation-delay: .15s; }
+.kots-typing-dot:nth-child(3) { animation-delay: .30s; }
+@keyframes kotsTyping {
+  0%,60%,100% { transform: translateY(0);   opacity: .4; }
+  30%          { transform: translateY(-5px); opacity: 1;  }
+}
+
+/* ---- FAQ CHIPS ---- */
+#kots-faq {
+  padding: 0 16px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.kots-chip {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.6);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 100px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background .2s, color .2s, border-color .2s;
+  white-space: nowrap;
+}
+.kots-chip:hover {
+  background: rgba(255,26,94,.15);
+  border-color: rgba(255,26,94,.4);
+  color: #FF1A5E;
+}
+#kots-see-more {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255,26,94,.7);
+  background: none;
+  border: 1px dashed rgba(255,26,94,.3);
+  border-radius: 100px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+#kots-see-more:hover {
+  background: rgba(255,26,94,.08);
+  border-color: rgba(255,26,94,.6);
+  color: #FF1A5E;
+}
+
+/* ---- INPUT ---- */
+#kots-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  flex-shrink: 0;
+  background: #111111;
+}
+#kots-input {
+  flex: 1;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 13px;
+  color: #fff;
+  outline: none;
+  transition: border-color .2s;
+  resize: none;
+  max-height: 80px;
+  line-height: 1.5;
+}
+#kots-input::placeholder { color: rgba(255,255,255,.28); }
+#kots-input:focus { border-color: rgba(255,26,94,.5); }
+#kots-send-btn {
+  width: 36px;
+  height: 36px;
+  background: #FF1A5E;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background .2s, transform .15s;
+}
+#kots-send-btn:hover  { background: #CC1049; transform: scale(1.05); }
+#kots-send-btn:active { transform: scale(.96); }
+#kots-send-btn svg { width: 16px; height: 16px; fill: #fff; }
+
+/* ---- MOBILE ---- */
+@media (max-width: 480px) {
+  #kots-window {
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    max-height: 75vh;
+    border-radius: 16px 16px 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+  }
+  #kots-pill {
+    bottom: 16px;
+    right: 16px;
+  }
+}
