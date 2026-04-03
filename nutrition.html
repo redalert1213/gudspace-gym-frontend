@@ -2441,7 +2441,7 @@ Give 2-3 specific, practical Filipino or common food suggestions to fill the rem
     }
 
     async function ftCallAI(prompt) {
-      const btn = document.getElementById('ftAiBtn');
+      const btn  = document.getElementById('ftAiBtn');
       const resp = document.getElementById('ftAiResponse');
       if (!btn || !resp) return;
 
@@ -2451,17 +2451,17 @@ Give 2-3 specific, practical Filipino or common food suggestions to fill the rem
       resp.innerHTML = '<div class="ai-dots"><span></span><span></span><span></span></div> Thinking…';
 
       try {
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
+        const res = await fetch('https://gudspace-gym-backend.onrender.com/api/ai/food-suggest', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 1000,
-            messages: [{ role: 'user', content: prompt }]
-          })
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + (window.GudSpace.storage.get('currentUser')?.token || '')
+          },
+          body: JSON.stringify({ prompt })
         });
         const data = await res.json();
-        const text = data.content?.find(c => c.type === 'text')?.text || 'No suggestion available.';
+        if (data.error) throw new Error(data.error);
+        const text = data.suggestion || 'No suggestion available.';
         resp.className = 'ft-ai-response';
         resp.innerHTML = text.replace(/\n/g, '<br/>');
       } catch (err) {
