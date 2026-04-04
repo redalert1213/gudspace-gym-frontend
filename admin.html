@@ -1492,8 +1492,7 @@
       const res  = await fetch(`${API_BASE}/admin/users`, { headers });
       const data = await res.json();
 
-      // Fetch all memberships
-      const memRes   = await fetch(`${API_BASE}/memberships/admin/assign`, { headers }).catch(() => null);
+      // Memberships are already included in /admin/users response (u.membership)
 
       if (Array.isArray(data)) {
         admUsers = data.map(u => {
