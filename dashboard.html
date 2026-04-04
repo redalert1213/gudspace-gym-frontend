@@ -1827,8 +1827,8 @@
         } else {
           body.innerHTML = thread.map(m => {
             const side = m.from_role === 'admin' ? 'from-admin' : 'from-me';
-            const _msgD = new Date(new Date(m.created_at).getTime() + 8*60*60*1000);
-            const time = _msgD.toLocaleTimeString('en-PH', { hour:'2-digit', minute:'2-digit', hour12:true, timeZone:'UTC' });
+            const _msgD = new Date(m.created_at);
+            const time = _msgD.toLocaleTimeString('en-PH', { hour:'2-digit', minute:'2-digit', hour12:true, timeZone:'Asia/Manila' });
             return `<div class="inbox-msg-wrap ${side}">
               <div class="inbox-bubble">${m.text}</div>
               <div class="inbox-bubble-time">${time}</div>
@@ -1958,11 +1958,10 @@
     }
 
     function formatTime12(date) {
-      let h      = date.getHours();
-      const m    = String(date.getMinutes()).padStart(2,'0');
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      h = h % 12 || 12;
-      return `${String(h).padStart(2,'0')}:${m} ${ampm}`;
+      return date.toLocaleTimeString("en-PH", {
+        hour: "2-digit", minute: "2-digit", hour12: true,
+        timeZone: "Asia/Manila"
+      });
     }
 
     /* ============================================================
