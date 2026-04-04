@@ -1501,15 +1501,15 @@
 
         if (todaySess && todaySess.check_in && !todaySess.check_out) {
           activeSessionId = todaySess.id;
-          sessionStart = new Date(todaySess.check_in);
+          sessionStart = parseTS(todaySess.check_in);
           setTimeInUI(sessionStart);
           startSessionTimer(sessionStart);
           document.getElementById('timeInBtn').disabled  = true;
           document.getElementById('timeOutBtn').disabled = false;
           document.getElementById('sessionCard').classList.add('active-session');
         } else if (todaySess && todaySess.check_in && todaySess.check_out) {
-          setTimeInUI(new Date(todaySess.check_in));
-          setTimeOutUI(new Date(todaySess.check_out));
+          setTimeInUI(parseTS(todaySess.check_in));
+          setTimeOutUI(parseTS(todaySess.check_out));
           document.getElementById('timeInBtn').disabled  = true;
           document.getElementById('timeOutBtn').disabled = true;
         }
@@ -1532,7 +1532,7 @@
           document.getElementById('timeInBtn').disabled = false;
           return;
         }
-        const now = new Date(res.attendance.check_in);
+        const now = parseTS(res.attendance.check_in);
         activeSessionId = res.attendance.id;
         sessionStart = now;
         setTimeInUI(now);
@@ -1564,7 +1564,7 @@
           document.getElementById('timeOutBtn').disabled = false;
           return;
         }
-        const now = new Date(res.attendance.check_out);
+        const now = parseTS(res.attendance.check_out);
         setTimeOutUI(now);
         clearInterval(sessionTimerInterval);
         document.getElementById('sessionActiveBadge').classList.remove('show');
@@ -1895,7 +1895,7 @@
           const name    = s.users?.name || 'Member';
           const initial = name.charAt(0).toUpperCase();
           const color   = colors[(s.user_id || '').charCodeAt(0) % colors.length] || '#FF1A5E';
-          const timeIn  = formatTime12(new Date(s.check_in));
+          const timeIn  = formatTime12(parseTS(s.check_in));
           const avatarImg = s.users?.avatar_url
             ? `<img src="${s.users.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;inset:0;" />`
             : '';
@@ -1962,6 +1962,15 @@
         hour: "2-digit", minute: "2-digit", hour12: true,
         timeZone: "Asia/Manila"
       });
+    }
+
+    // Safely parse Supabase timestamps — ensures UTC interpretation
+    function parseTS(str) {
+      if (!str) return null;
+      // Supabase returns '2026-04-04 02:08:00+00' or '2026-04-04T02:08:00'
+      // Normalize to proper UTC ISO string
+      const s = str.replace(' ', 'T').replace(/\+00$/, 'Z');
+      return new Date(s.endsWith('Z') || s.includes('+') ? s : s + 'Z');
     }
 
     /* ============================================================
