@@ -978,6 +978,15 @@
     .adm-notif-text strong { color: var(--white); font-family: var(--font-cond); font-size: 13px; }
     .adm-notif-empty { text-align: center; color: rgba(255,255,255,0.25); font-family: var(--font-cond); font-size: 12px; letter-spacing: 0.08em; padding: 12px 0; }
   </style>
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#FF1A5E">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GUD SPACE">
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+  <link rel="icon" type="image/png" href="icons/icon-192x192.png">
 </head>
 <body>
 
@@ -1483,7 +1492,8 @@
       const res  = await fetch(`${API_BASE}/admin/users`, { headers });
       const data = await res.json();
 
-      // Memberships are already included in /admin/users response (u.membership)
+      // Fetch all memberships
+      const memRes   = await fetch(`${API_BASE}/memberships/admin/assign`, { headers }).catch(() => null);
 
       if (Array.isArray(data)) {
         admUsers = data.map(u => {
@@ -2973,6 +2983,15 @@
     }
     draw();
   })();
+  </script>
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .catch(err => console.log('SW registration failed:', err));
+      });
+    }
   </script>
 </body>
 </html>

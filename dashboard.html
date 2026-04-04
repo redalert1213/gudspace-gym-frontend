@@ -966,6 +966,15 @@
       .db-streak-label { display: none; }
     }
   </style>
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#FF1A5E">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GUD SPACE">
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+  <link rel="icon" type="image/png" href="icons/icon-192x192.png">
 </head>
 <body>
 
@@ -1967,8 +1976,6 @@
     // Safely parse Supabase timestamps — ensures UTC interpretation
     function parseTS(str) {
       if (!str) return null;
-      // Supabase returns '2026-04-04 02:08:00+00' or '2026-04-04T02:08:00'
-      // Normalize to proper UTC ISO string
       const s = str.replace(' ', 'T').replace(/\+00$/, 'Z');
       return new Date(s.endsWith('Z') || s.includes('+') ? s : s + 'Z');
     }
@@ -2256,5 +2263,14 @@
 
   </script>
   <script src="kots.js"></script>
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .catch(err => console.log('SW registration failed:', err));
+      });
+    }
+  </script>
 </body>
 </html>
