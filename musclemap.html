@@ -1328,14 +1328,6 @@
     function confirmLogout() {
       if (confirm('Are you sure you want to log out?')) window.GudSpace.logout();
     }
-      const warnAt = remaining - 10*60*1000;
-      if (warnAt > 0) setTimeout(()=>showLogoutWarning(10*60), warnAt);
-      else showLogoutWarning(Math.floor(remaining/1000));
-    }
-    function showLogoutWarning(secs) {
-      let s = secs; if (s<=0){return;}
-      },1000);
-    }
 
     /* ── SIDEBAR MOBILE ── */
     function openSidebar()  { document.getElementById('sidebar').classList.add('open');    document.getElementById('sidebarOverlay').classList.add('show'); }
