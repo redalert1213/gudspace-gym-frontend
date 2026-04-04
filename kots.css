@@ -8,7 +8,7 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 99000;
+  z-index: 99900;
   background: #FF1A5E;
   color: #fff;
   font-family: 'Barlow Condensed', sans-serif;
@@ -46,7 +46,7 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 99000;
+  z-index: 99900;
   width: 360px;
   max-height: 560px;
   background: #111111;
