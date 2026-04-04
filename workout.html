@@ -940,10 +940,10 @@
     .modal-select-btn.selected { background: #2ed573; box-shadow: 0 6px 24px rgba(46,213,115,0.35); }
 
     /* ── AUTO LOGOUT BAR ── */
-    .auto-logout-bar { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 9000; background: rgba(45,26,0,0.97); border-bottom: 1px solid rgba(255,165,0,0.25); padding: 10px 24px; text-align: center; font-size: 13px; color: #fdcb6e; gap: 16px; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-    .auto-logout-bar.show { display: flex; }
-    .alb-stay-btn { background: rgba(253,203,110,0.12); border: 1px solid rgba(253,203,110,0.25); color: #fdcb6e; border-radius: var(--radius-sm); padding: 5px 14px; font-family: var(--font-cond); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; cursor: pointer; transition: all 0.2s; }
-    .alb-stay-btn:hover { background: rgba(253,203,110,0.22); }
+    
+    
+    
+    
 
     /* ── NOISE ── */
     .noise-overlay { position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); opacity: 0.035; pointer-events: none; z-index: 9990; }
@@ -975,10 +975,7 @@
   <div class="cursor-follower" id="cursorFollower"></div>
   <div class="noise-overlay"></div>
 
-  <div class="auto-logout-bar" id="autoLogoutBar">
-    <span>⚠️ You will be automatically logged out in <strong id="alb-countdown">10:00</strong></span>
-    <button class="alb-stay-btn" onclick="extendSession()">Stay Logged In</button>
-  </div>
+  
 
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
@@ -1264,7 +1261,6 @@
 
   let activeSplitIndex = null;
   let currentModalSplitIndex = null;
-  let autoLogoutTimer, autoLogoutCountdown;
 
   /* ===== ALL 16 SPLITS DATA ===== */
   const SPLITS = [
@@ -2519,13 +2515,6 @@
   function closeSidebar() {
     document.getElementById('sidebar').classList.remove('open');
     document.getElementById('sidebarOverlay').classList.remove('show');
-  }
-  function extendSession() {
-    clearTimeout(autoLogoutTimer);
-    clearInterval(autoLogoutCountdown);
-    GS.storage.set('loginTime', Date.now());
-    document.getElementById('autoLogoutBar').classList.remove('show');
-    GS.showToast('Session extended by 3 hours ✅', '⏱');
   }
 
   /* ===== WORKOUT MUSIC ===== */
